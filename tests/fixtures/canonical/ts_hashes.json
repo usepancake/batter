@@ -1,0 +1,360 @@
+[
+  {
+    "name": "single_row_yes_resolved",
+    "schema": {
+      "columns": [
+        {
+          "name": "mkt",
+          "type": "string",
+          "semantic_role": "market_link"
+        },
+        {
+          "name": "dec_ts",
+          "type": "int",
+          "semantic_role": "decision_time"
+        },
+        {
+          "name": "res_ts",
+          "type": "int",
+          "semantic_role": "resolution_time"
+        },
+        {
+          "name": "price",
+          "type": "number",
+          "semantic_role": "entry_price",
+          "range": [
+            0,
+            1
+          ]
+        },
+        {
+          "name": "outcome",
+          "type": "int",
+          "semantic_role": "resolved_outcome_numeric"
+        },
+        {
+          "name": "alpha",
+          "type": "number",
+          "semantic_role": "feature"
+        },
+        {
+          "name": "target",
+          "type": "int",
+          "semantic_role": "feature"
+        }
+      ]
+    },
+    "rows": [
+      {
+        "mkt": "m/A",
+        "dec_ts": 1700000000,
+        "res_ts": 1700100000,
+        "price": 0.5,
+        "outcome": 1,
+        "alpha": 2.5,
+        "target": 1
+      }
+    ],
+    "schema_sha256": "b80bb80c860d89a5b896d71a514a4fcd35a2a7318855257a23b7ac068a0471f6",
+    "rows_sha256": "0855823e9e3d97214f7ec0614f06924a24b7991ed94c43bba7802a52f7299e31"
+  },
+  {
+    "name": "single_row_no_side_at_0_96",
+    "schema": {
+      "columns": [
+        {
+          "name": "mkt",
+          "type": "string",
+          "semantic_role": "market_link"
+        },
+        {
+          "name": "dec_ts",
+          "type": "int",
+          "semantic_role": "decision_time"
+        },
+        {
+          "name": "res_ts",
+          "type": "int",
+          "semantic_role": "resolution_time"
+        },
+        {
+          "name": "price",
+          "type": "number",
+          "semantic_role": "entry_price",
+          "range": [
+            0,
+            1
+          ]
+        },
+        {
+          "name": "outcome",
+          "type": "int",
+          "semantic_role": "resolved_outcome_numeric"
+        },
+        {
+          "name": "alpha",
+          "type": "number",
+          "semantic_role": "feature"
+        },
+        {
+          "name": "target",
+          "type": "int",
+          "semantic_role": "feature"
+        }
+      ]
+    },
+    "rows": [
+      {
+        "mkt": "m/B",
+        "dec_ts": 1700200000,
+        "res_ts": 1700300000,
+        "price": 0.96,
+        "outcome": 0,
+        "alpha": 3,
+        "target": 0
+      }
+    ],
+    "schema_sha256": "b80bb80c860d89a5b896d71a514a4fcd35a2a7318855257a23b7ac068a0471f6",
+    "rows_sha256": "5b4c6c5fd7b15be4d77b599b02f345c9e30ce68d3c9e737240275411ea18df82"
+  },
+  {
+    "name": "three_rows_mixed_outcomes",
+    "schema": {
+      "columns": [
+        {
+          "name": "mkt",
+          "type": "string",
+          "semantic_role": "market_link"
+        },
+        {
+          "name": "dec_ts",
+          "type": "int",
+          "semantic_role": "decision_time"
+        },
+        {
+          "name": "res_ts",
+          "type": "int",
+          "semantic_role": "resolution_time"
+        },
+        {
+          "name": "price",
+          "type": "number",
+          "semantic_role": "entry_price",
+          "range": [
+            0,
+            1
+          ]
+        },
+        {
+          "name": "outcome",
+          "type": "int",
+          "semantic_role": "resolved_outcome_numeric"
+        },
+        {
+          "name": "alpha",
+          "type": "number",
+          "semantic_role": "feature"
+        },
+        {
+          "name": "target",
+          "type": "int",
+          "semantic_role": "feature"
+        }
+      ]
+    },
+    "rows": [
+      {
+        "mkt": "m/C",
+        "dec_ts": 1700400000,
+        "res_ts": 1700500000,
+        "price": 0.42,
+        "outcome": 1,
+        "alpha": 2.1,
+        "target": 1
+      },
+      {
+        "mkt": "m/C",
+        "dec_ts": 1700600000,
+        "res_ts": 1700700000,
+        "price": 0.58,
+        "outcome": 0,
+        "alpha": 2.7,
+        "target": 0
+      },
+      {
+        "mkt": "m/D",
+        "dec_ts": 1700800000,
+        "res_ts": 1700900000,
+        "price": 0.2,
+        "outcome": 1,
+        "alpha": 4,
+        "target": 1
+      }
+    ],
+    "schema_sha256": "b80bb80c860d89a5b896d71a514a4fcd35a2a7318855257a23b7ac068a0471f6",
+    "rows_sha256": "7759ea5f06681f98863b98ca9a2d35ca35fc57c13c1fdc2fc054ecafe81d9ee0"
+  },
+  {
+    "name": "fractional_alpha_values",
+    "schema": {
+      "columns": [
+        {
+          "name": "mkt",
+          "type": "string",
+          "semantic_role": "market_link"
+        },
+        {
+          "name": "dec_ts",
+          "type": "int",
+          "semantic_role": "decision_time"
+        },
+        {
+          "name": "res_ts",
+          "type": "int",
+          "semantic_role": "resolution_time"
+        },
+        {
+          "name": "price",
+          "type": "number",
+          "semantic_role": "entry_price",
+          "range": [
+            0,
+            1
+          ]
+        },
+        {
+          "name": "outcome",
+          "type": "int",
+          "semantic_role": "resolved_outcome_numeric"
+        },
+        {
+          "name": "alpha",
+          "type": "number",
+          "semantic_role": "feature"
+        },
+        {
+          "name": "target",
+          "type": "int",
+          "semantic_role": "feature"
+        }
+      ]
+    },
+    "rows": [
+      {
+        "mkt": "m/E",
+        "dec_ts": 1701000000,
+        "res_ts": 1701100000,
+        "price": 0.125,
+        "outcome": 0,
+        "alpha": 0.1,
+        "target": 0
+      },
+      {
+        "mkt": "m/E",
+        "dec_ts": 1701200000,
+        "res_ts": 1701300000,
+        "price": 0.875,
+        "outcome": 1,
+        "alpha": 0.30000000000000004,
+        "target": 1
+      }
+    ],
+    "schema_sha256": "b80bb80c860d89a5b896d71a514a4fcd35a2a7318855257a23b7ac068a0471f6",
+    "rows_sha256": "0068c65b48317098dbd142392f8f37de3d559fb15015152dfef0c01d5e85ec14"
+  },
+  {
+    "name": "five_rows_chronological",
+    "schema": {
+      "columns": [
+        {
+          "name": "mkt",
+          "type": "string",
+          "semantic_role": "market_link"
+        },
+        {
+          "name": "dec_ts",
+          "type": "int",
+          "semantic_role": "decision_time"
+        },
+        {
+          "name": "res_ts",
+          "type": "int",
+          "semantic_role": "resolution_time"
+        },
+        {
+          "name": "price",
+          "type": "number",
+          "semantic_role": "entry_price",
+          "range": [
+            0,
+            1
+          ]
+        },
+        {
+          "name": "outcome",
+          "type": "int",
+          "semantic_role": "resolved_outcome_numeric"
+        },
+        {
+          "name": "alpha",
+          "type": "number",
+          "semantic_role": "feature"
+        },
+        {
+          "name": "target",
+          "type": "int",
+          "semantic_role": "feature"
+        }
+      ]
+    },
+    "rows": [
+      {
+        "mkt": "m/F",
+        "dec_ts": 1702000000,
+        "res_ts": 1702086400,
+        "price": 0.1,
+        "outcome": 0,
+        "alpha": 1,
+        "target": 0
+      },
+      {
+        "mkt": "m/F",
+        "dec_ts": 1702172800,
+        "res_ts": 1702259200,
+        "price": 0.25,
+        "outcome": 1,
+        "alpha": 2,
+        "target": 1
+      },
+      {
+        "mkt": "m/G",
+        "dec_ts": 1702345600,
+        "res_ts": 1702432000,
+        "price": 0.5,
+        "outcome": 1,
+        "alpha": 3,
+        "target": 1
+      },
+      {
+        "mkt": "m/G",
+        "dec_ts": 1702518400,
+        "res_ts": 1702604800,
+        "price": 0.75,
+        "outcome": 0,
+        "alpha": 4,
+        "target": 0
+      },
+      {
+        "mkt": "m/H",
+        "dec_ts": 1702691200,
+        "res_ts": 1702777600,
+        "price": 0.9,
+        "outcome": 1,
+        "alpha": 5,
+        "target": 1
+      }
+    ],
+    "schema_sha256": "b80bb80c860d89a5b896d71a514a4fcd35a2a7318855257a23b7ac068a0471f6",
+    "rows_sha256": "45001df5b4713a82cdec6c672c0b0ae5c4d1958efc024fe614803b49a3c2d443"
+  }
+]

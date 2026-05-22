@@ -1,0 +1,55 @@
+[build-system]
+requires = ["hatchling >= 1.18"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pancake-engine-py"
+version = "0.3.0"
+description = "Pancake Engine 0.3 — deterministic Python research engine over EvidenceDataset. Correctness-first, not TS parity; known TS divergences are documented."
+readme = "README.md"
+requires-python = ">= 3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Michael Mustopo" }]
+keywords = ["pancake", "backtest", "evidence", "deterministic", "prediction-market"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Office/Business :: Financial :: Investment",
+]
+dependencies = [
+  "pydantic >= 2.5, < 3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest >= 8",
+  "pytest-cov",
+  "ruff",
+  "mypy",
+]
+
+[project.scripts]
+pancake-engine = "pancake_engine.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pancake_engine"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-ra"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["pancake_engine"]
