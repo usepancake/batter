@@ -14,7 +14,6 @@ from itertools import groupby
 from typing import Any, Optional
 
 from ..__version__ import ENGINE, ENGINE_MODE, ENGINE_VERSION
-from ..canonical import canonicalize
 from ..compile import CompiledSpec, compile_spec
 from ..config import BacktestConfig
 from ..hash import sha256_canonical
@@ -191,8 +190,6 @@ def run_backtest(
     ))
 
     # 8. Hashes
-    schema_dict = spec.model_dump(by_alias=True, exclude_none=True, mode="python")
-    # schema_sha256 / rows_sha256 come from the dataset; we re-hash to confirm
     schema_sha256 = sha256_canonical(_dataset_schema_dict(dataset))
     rows_sha256 = sha256_canonical(rows)
     config_hash = sha256_canonical({**config.canonical_dict(), "observation_time": obs_time})

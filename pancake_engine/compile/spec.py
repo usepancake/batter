@@ -10,7 +10,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from ..canonical import canonicalize
 from ..hash import sha256_canonical
 from ..types import EvidenceSpec
 from .condition import Condition, compile_condition

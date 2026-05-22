@@ -69,38 +69,31 @@ def run_walkforward(
             "mark_at_last_observed_price (PR-3+). Use 'allow_overhang' or 'skip_overhang'."
         )
 
-    # 3. Build schedule
+    # 3. Build schedule + insufficient-folds gate
     schedule = build_fold_schedule(dataset, wf_config, role_lookup)
-    if len(schedule) < 2:
+    if len(schedule) < wf_config.min_fold_count:
         verdict.add_error(
             "E_WALKFORWARD_INSUFFICIENT_FOLDS",
-            f"schedule produced {len(schedule)} folds (need ≥ 2); check dataset span vs step/test_horizon",
+            f"schedule produced {len(schedule)} folds (need ≥ {wf_config.min_fold_count}); "
+            "check dataset span vs step/test_horizon",
             fold_count=len(schedule),
+            min_fold_count=wf_config.min_fold_count,
         )
         return _empty_wf_result(spec, dataset, wf_config, backtest_config, verdict)
 
     aggregate_warnings: list[Warning] = []
     # OVERRIDE_MIN_FOLD_COUNT — fires whenever user explicitly drops min_fold_count
-    # below the default of 3 (i.e., to 2). Below 2 was already rejected above.
+    # below the default of 3 (i.e., to 2). Below 2 was already rejected at config validation.
     if wf_config.min_fold_count == 2:
         aggregate_warnings.append(Warning(
             code=WarningCode.OVERRIDE_MIN_FOLD_COUNT,
             severity=Severity.INFO,
             message=(
-                f"min_fold_count overridden to 2 (default 3). Walk-forward "
-                f"dispersion checks are weaker with fewer folds."
+                "min_fold_count overridden to 2 (default 3). Walk-forward "
+                "dispersion checks are weaker with fewer folds."
             ),
             context={"min_fold_count": wf_config.min_fold_count},
         ))
-
-    if len(schedule) < wf_config.min_fold_count:
-        verdict.add_error(
-            "E_WALKFORWARD_INSUFFICIENT_FOLDS",
-            f"schedule produced {len(schedule)} folds (need ≥ {wf_config.min_fold_count})",
-            fold_count=len(schedule),
-            min_fold_count=wf_config.min_fold_count,
-        )
-        return _empty_wf_result(spec, dataset, wf_config, backtest_config, verdict)
 
     # 4. Provenance lookahead-check
     provenance = _get_provenance(dataset)
@@ -161,16 +154,17 @@ def run_walkforward(
                     message=f"fold {fold_def.index}: zero trades over test window.",
                     context={"fold_index": fold_def.index},
                 ))
-            elif fold_result.metrics.standard.num_trades < 10:
+            elif fold_result.metrics.standard.num_trades < wf_config.min_test_rows:
                 fold_result.warnings.append(Warning(
                     code=WarningCode.LOW_TRADES_IN_FOLD,
                     severity=Severity.WARN,
                     message=(
                         f"fold {fold_def.index}: {fold_result.metrics.standard.num_trades} "
-                        f"trades (< 10)."
+                        f"trades (< min_test_rows = {wf_config.min_test_rows})."
                     ),
                     context={"fold_index": fold_def.index,
-                             "num_trades": fold_result.metrics.standard.num_trades},
+                             "num_trades": fold_result.metrics.standard.num_trades,
+                             "min_test_rows": wf_config.min_test_rows},
                 ))
 
         folds.append(Fold(definition=fold_def, result=fold_result))
