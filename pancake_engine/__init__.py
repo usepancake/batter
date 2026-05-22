@@ -9,7 +9,7 @@ PR-1 ships the event-time ledger runner, validation, metrics, warnings, and CLI.
 
 from .__version__ import ENGINE, ENGINE_MODE, ENGINE_VERSION, __version__
 from .canonical import canonical_string, canonicalize
-from .config import BacktestConfig
+from .config import BacktestConfig, WalkforwardConfig
 from .hash import sha256_canonical
 from .io.dump import dump_result, result_to_canonical_json
 from .io.load import load_dataset, load_json, load_spec
@@ -23,6 +23,13 @@ from .result import (
     MonthlyReturn,
 )
 from .runner import run_backtest
+from .walkforward import (
+    AggregateMetrics,
+    Fold,
+    FoldDefinition,
+    WalkforwardResult,
+    run_walkforward,
+)
 from .types import EvidenceDataset, EvidenceSpec
 from .validate import ValidationVerdict
 from .warnings import Severity, Warning, WarningCode
@@ -55,4 +62,10 @@ __all__ = [
     "WarningCode",
     "ValidationVerdict",
     "run_backtest",
+    "WalkforwardConfig",
+    "WalkforwardResult",
+    "Fold",
+    "FoldDefinition",
+    "AggregateMetrics",
+    "run_walkforward",
 ]

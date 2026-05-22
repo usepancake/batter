@@ -30,6 +30,10 @@ dev = [
   "pytest-cov",
   "ruff",
   "mypy",
+  # Notebook execution (PR-2). nbclient runs notebooks without a Jupyter UI.
+  "nbclient >= 0.10",
+  "nbformat >= 5.10",
+  "ipykernel >= 6.29",
 ]
 
 [project.scripts]

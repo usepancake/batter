@@ -1,0 +1,164 @@
+{
+  "id": "ex_rapture",
+  "provenance": {
+    "feature_construction_verified_no_lookahead": true,
+    "label": "synthetic"
+  },
+  "row_count": 12,
+  "rows_inline": [
+    {
+      "alpha": 3.3682,
+      "dec_ts": 1704067200,
+      "mkt": "m/RAPTURE_Y2024",
+      "outcome": 0,
+      "price": 0.9604,
+      "res_ts": 1719792000,
+      "target": 1
+    },
+    {
+      "alpha": 2.4611,
+      "dec_ts": 1706745600,
+      "mkt": "m/RAPTURE_Y2024",
+      "outcome": 0,
+      "price": 0.984,
+      "res_ts": 1722470400,
+      "target": 1
+    },
+    {
+      "alpha": 3.468,
+      "dec_ts": 1709251200,
+      "mkt": "m/RAPTURE_Y2024",
+      "outcome": 0,
+      "price": 0.9559,
+      "res_ts": 1725148800,
+      "target": 1
+    },
+    {
+      "alpha": 2.4278,
+      "dec_ts": 1711929600,
+      "mkt": "m/RAPTURE_Y2024",
+      "outcome": 0,
+      "price": 0.9552,
+      "res_ts": 1727740800,
+      "target": 1
+    },
+    {
+      "alpha": 3.6753,
+      "dec_ts": 1714521600,
+      "mkt": "m/RAPTURE_Y2024",
+      "outcome": 0,
+      "price": 0.9618,
+      "res_ts": 1730419200,
+      "target": 1
+    },
+    {
+      "alpha": 2.5517,
+      "dec_ts": 1717200000,
+      "mkt": "m/RAPTURE_Y2024",
+      "outcome": 1,
+      "price": 0.9743,
+      "res_ts": 1733011200,
+      "target": 1
+    },
+    {
+      "alpha": 3.6195,
+      "dec_ts": 1719792000,
+      "mkt": "m/RAPTURE_Y2024",
+      "outcome": 0,
+      "price": 0.9559,
+      "res_ts": 1735689600,
+      "target": 1
+    },
+    {
+      "alpha": 3.4895,
+      "dec_ts": 1722470400,
+      "mkt": "m/RAPTURE_Y2024",
+      "outcome": 0,
+      "price": 0.9822,
+      "res_ts": 1738368000,
+      "target": 1
+    },
+    {
+      "alpha": 2.5134,
+      "dec_ts": 1725148800,
+      "mkt": "m/RAPTURE_Y2024",
+      "outcome": 0,
+      "price": 0.988,
+      "res_ts": 1740787200,
+      "target": 1
+    },
+    {
+      "alpha": 3.51,
+      "dec_ts": 1727740800,
+      "mkt": "m/RAPTURE_Y2024",
+      "outcome": 0,
+      "price": 0.984,
+      "res_ts": 1743465600,
+      "target": 1
+    },
+    {
+      "alpha": 2.7284,
+      "dec_ts": 1730419200,
+      "mkt": "m/RAPTURE_Y2024",
+      "outcome": 0,
+      "price": 0.9726,
+      "res_ts": 1746057600,
+      "target": 1
+    },
+    {
+      "alpha": 2.2347,
+      "dec_ts": 1733011200,
+      "mkt": "m/RAPTURE_Y2024",
+      "outcome": 0,
+      "price": 0.9672,
+      "res_ts": 1748736000,
+      "target": 1
+    }
+  ],
+  "rows_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "schema": {
+    "columns": [
+      {
+        "name": "mkt",
+        "semantic_role": "market_link",
+        "type": "string"
+      },
+      {
+        "name": "dec_ts",
+        "semantic_role": "decision_time",
+        "type": "int"
+      },
+      {
+        "name": "res_ts",
+        "semantic_role": "resolution_time",
+        "type": "int"
+      },
+      {
+        "name": "price",
+        "range": [
+          0,
+          1
+        ],
+        "semantic_role": "entry_price",
+        "type": "number"
+      },
+      {
+        "name": "outcome",
+        "semantic_role": "resolved_outcome_numeric",
+        "type": "int"
+      },
+      {
+        "name": "alpha",
+        "semantic_role": "feature",
+        "type": "number"
+      },
+      {
+        "name": "target",
+        "semantic_role": "feature",
+        "type": "int"
+      }
+    ]
+  },
+  "schema_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "storage_mode": "inline"
+}

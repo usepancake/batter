@@ -1,0 +1,272 @@
+{
+  "id": "ex_btc_pred",
+  "provenance": {
+    "feature_construction_verified_no_lookahead": true,
+    "label": "synthetic"
+  },
+  "row_count": 24,
+  "rows_inline": [
+    {
+      "alpha": 0.101,
+      "dec_ts": 1672876800,
+      "mkt": "m/FED_CUT_2023_01",
+      "outcome": 0,
+      "price": 0.3715,
+      "res_ts": 1675555200,
+      "target": 1
+    },
+    {
+      "alpha": 0.0621,
+      "dec_ts": 1675555200,
+      "mkt": "m/FED_CUT_2023_02",
+      "outcome": 0,
+      "price": 0.4005,
+      "res_ts": 1677974400,
+      "target": 0
+    },
+    {
+      "alpha": 0.0958,
+      "dec_ts": 1677974400,
+      "mkt": "m/FED_CUT_2023_03",
+      "outcome": 0,
+      "price": 0.5155,
+      "res_ts": 1680652800,
+      "target": 0
+    },
+    {
+      "alpha": 0.2346,
+      "dec_ts": 1680652800,
+      "mkt": "m/FED_CUT_2023_04",
+      "outcome": 1,
+      "price": 0.4687,
+      "res_ts": 1683244800,
+      "target": 1
+    },
+    {
+      "alpha": 0.1533,
+      "dec_ts": 1683244800,
+      "mkt": "m/FED_CUT_2023_05",
+      "outcome": 0,
+      "price": 0.6608,
+      "res_ts": 1685923200,
+      "target": 1
+    },
+    {
+      "alpha": 0.0935,
+      "dec_ts": 1685923200,
+      "mkt": "m/FED_CUT_2023_06",
+      "outcome": 1,
+      "price": 0.5729,
+      "res_ts": 1688515200,
+      "target": 0
+    },
+    {
+      "alpha": 0.0381,
+      "dec_ts": 1688515200,
+      "mkt": "m/FED_CUT_2023_07",
+      "outcome": 0,
+      "price": 0.64,
+      "res_ts": 1691193600,
+      "target": 0
+    },
+    {
+      "alpha": 0.0847,
+      "dec_ts": 1691193600,
+      "mkt": "m/FED_CUT_2023_08",
+      "outcome": 0,
+      "price": 0.5115,
+      "res_ts": 1693872000,
+      "target": 0
+    },
+    {
+      "alpha": 0.1936,
+      "dec_ts": 1693872000,
+      "mkt": "m/FED_CUT_2023_09",
+      "outcome": 1,
+      "price": 0.461,
+      "res_ts": 1696464000,
+      "target": 1
+    },
+    {
+      "alpha": 0.0673,
+      "dec_ts": 1696464000,
+      "mkt": "m/FED_CUT_2023_10",
+      "outcome": 1,
+      "price": 0.3815,
+      "res_ts": 1699142400,
+      "target": 0
+    },
+    {
+      "alpha": 0.2474,
+      "dec_ts": 1699142400,
+      "mkt": "m/FED_CUT_2023_11",
+      "outcome": 1,
+      "price": 0.4848,
+      "res_ts": 1701734400,
+      "target": 1
+    },
+    {
+      "alpha": 0.2251,
+      "dec_ts": 1701734400,
+      "mkt": "m/FED_CUT_2023_12",
+      "outcome": 1,
+      "price": 0.6907,
+      "res_ts": 1704412800,
+      "target": 1
+    },
+    {
+      "alpha": 0.0894,
+      "dec_ts": 1704412800,
+      "mkt": "m/FED_CUT_2024_01",
+      "outcome": 1,
+      "price": 0.6683,
+      "res_ts": 1707091200,
+      "target": 0
+    },
+    {
+      "alpha": 0.0402,
+      "dec_ts": 1707091200,
+      "mkt": "m/FED_CUT_2024_02",
+      "outcome": 0,
+      "price": 0.5382,
+      "res_ts": 1709596800,
+      "target": 0
+    },
+    {
+      "alpha": 0.2457,
+      "dec_ts": 1709596800,
+      "mkt": "m/FED_CUT_2024_03",
+      "outcome": 1,
+      "price": 0.5641,
+      "res_ts": 1712275200,
+      "target": 1
+    },
+    {
+      "alpha": 0.0093,
+      "dec_ts": 1712275200,
+      "mkt": "m/FED_CUT_2024_04",
+      "outcome": 1,
+      "price": 0.4895,
+      "res_ts": 1714867200,
+      "target": 0
+    },
+    {
+      "alpha": 0.2049,
+      "dec_ts": 1714867200,
+      "mkt": "m/FED_CUT_2024_05",
+      "outcome": 0,
+      "price": 0.4702,
+      "res_ts": 1717545600,
+      "target": 1
+    },
+    {
+      "alpha": 0.0215,
+      "dec_ts": 1717545600,
+      "mkt": "m/FED_CUT_2024_06",
+      "outcome": 1,
+      "price": 0.3023,
+      "res_ts": 1720137600,
+      "target": 0
+    },
+    {
+      "alpha": 0.0824,
+      "dec_ts": 1720137600,
+      "mkt": "m/FED_CUT_2024_07",
+      "outcome": 0,
+      "price": 0.3803,
+      "res_ts": 1722816000,
+      "target": 0
+    },
+    {
+      "alpha": 0.1968,
+      "dec_ts": 1722816000,
+      "mkt": "m/FED_CUT_2024_08",
+      "outcome": 0,
+      "price": 0.3846,
+      "res_ts": 1725494400,
+      "target": 1
+    },
+    {
+      "alpha": 0.0644,
+      "dec_ts": 1725494400,
+      "mkt": "m/FED_CUT_2024_09",
+      "outcome": 0,
+      "price": 0.6055,
+      "res_ts": 1728086400,
+      "target": 0
+    },
+    {
+      "alpha": 0.0885,
+      "dec_ts": 1728086400,
+      "mkt": "m/FED_CUT_2024_10",
+      "outcome": 0,
+      "price": 0.6689,
+      "res_ts": 1730764800,
+      "target": 0
+    },
+    {
+      "alpha": 0.0327,
+      "dec_ts": 1730764800,
+      "mkt": "m/FED_CUT_2024_11",
+      "outcome": 0,
+      "price": 0.5399,
+      "res_ts": 1733356800,
+      "target": 0
+    },
+    {
+      "alpha": 0.1868,
+      "dec_ts": 1733356800,
+      "mkt": "m/FED_CUT_2024_12",
+      "outcome": 1,
+      "price": 0.4633,
+      "res_ts": 1736035200,
+      "target": 1
+    }
+  ],
+  "rows_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "schema": {
+    "columns": [
+      {
+        "name": "mkt",
+        "semantic_role": "market_link",
+        "type": "string"
+      },
+      {
+        "name": "dec_ts",
+        "semantic_role": "decision_time",
+        "type": "int"
+      },
+      {
+        "name": "res_ts",
+        "semantic_role": "resolution_time",
+        "type": "int"
+      },
+      {
+        "name": "price",
+        "range": [
+          0,
+          1
+        ],
+        "semantic_role": "entry_price",
+        "type": "number"
+      },
+      {
+        "name": "outcome",
+        "semantic_role": "resolved_outcome_numeric",
+        "type": "int"
+      },
+      {
+        "name": "alpha",
+        "semantic_role": "feature",
+        "type": "number"
+      },
+      {
+        "name": "target",
+        "semantic_role": "feature",
+        "type": "int"
+      }
+    ]
+  },
+  "schema_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "storage_mode": "inline"
+}

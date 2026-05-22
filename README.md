@@ -34,10 +34,32 @@ License: Apache-2.0.
   from pancake-production. 3 match within `1e-9`; 2 documented divergence (D-1 cash leak,
   D-11 fee realized at entry).
 
+**PR-2 — frozen-spec walk-forward + 4 domain examples**:
+
+- `run_walkforward(spec, dataset, wf_config, bt_config) -> WalkforwardResult` — pure function
+- Fold schedule generators: `expanding`, `rolling`, `anchored` (calendar `MS` / `QS`)
+- Per-fold `BacktestResult` (each with its own `result_hash`) + aggregate
+  (`PooledMetrics`, `FoldMeanMetrics`, `FoldStdMetrics`, dispersion ratios)
+- Walk-forward warnings: `EMPTY_FOLD`, `LOW_TRADES_IN_FOLD`, `UNEQUAL_FOLD_SIZE`,
+  `WALKFORWARD_DISPERSION_HIGH`, `WALKFORWARD_SIGN_FLIP`, `WALKFORWARD_SINGLE_FOLD_CARRIES`,
+  `OVERHANG_SKIPPED`, `FEATURE_LOOKAHEAD_UNCHECKED`, `OVERRIDE_MIN_FOLD_COUNT`
+- Overhang policy: `allow_overhang` (default), `skip_overhang`. `truncate_at_window_end`
+  raises `E_OVERHANG_TRUNCATION_UNSUPPORTED` until a mark-policy upgrade (PR-3+)
+- `aggregate_result_hash` includes `walkforward_version` + `result_kind` to prevent
+  collision with vanilla `BacktestResult.result_hash`
+- `pancake-engine walkforward --spec --dataset --window-type --test-horizon --step ...`
+- 4 domain examples (`examples/toy`, `jakarta_temperature`, `rapture_family`,
+  `btc_pred_hedge`) — synthetic, deterministically regenerated via `regen.py`,
+  hash-pinned via `expected_result.json`; tested through `run.py` smoke
+- One Jupyter notebook (`notebooks/walkforward_tour.ipynb`) — rendering of test-pinned
+  facts; executed in CI via `nbclient`
+- Per-fold TS parity proven: `ts_walkforward_oracle.mjs` slices a fixture and calls
+  real `runEvidenceBacktest` per slice; Engine 0.3 matches within `1e-9`
+- `test_no_domain_leak` guards `pancake_engine/` from example-specific tokens
+
 **Not yet shipped** (later PRs):
 
-- Walk-forward — PR-2
-- Domain examples / notebooks — PR-2
+- Refit walk-forward — 0.4
 - ResultEnvelope adapter — PR-4+
 - Other sizing / mark / slippage modes, multi-outcome, `fair_probability`, CLV, benchmark,
   cost-sensitivity, bootstrap CIs — PR-3+
@@ -52,14 +74,27 @@ node tests/fixtures/canonical/v8_oracle.js   # regenerate the V8 oracle expected
 pytest -v
 ```
 
-Hash, validate, and run from the CLI:
+Hash, validate, run, and walk-forward from the CLI:
 
 ```bash
-pancake-engine hash     --dataset path/to/dataset.json
-pancake-engine hash     --spec    path/to/spec.json
-pancake-engine validate --spec path/to/spec.json --dataset path/to/dataset.json
-pancake-engine run      --spec path/to/spec.json --dataset path/to/dataset.json \
-                        --out result.json --observation-time 1700000000
+pancake-engine hash         --dataset path/to/dataset.json
+pancake-engine hash         --spec    path/to/spec.json
+pancake-engine validate     --spec path/to/spec.json --dataset path/to/dataset.json
+pancake-engine run          --spec path/to/spec.json --dataset path/to/dataset.json \
+                            --out result.json --observation-time 1700000000
+pancake-engine walkforward  --spec path/to/spec.json --dataset path/to/dataset.json \
+                            --window-type anchored --test-horizon QS --step QS \
+                            --min-fold-count 3 --observation-time 1730000000 \
+                            --out wf_result.json
+```
+
+Run an example:
+
+```bash
+python examples/toy/run.py
+python examples/jakarta_temperature/run.py
+python examples/rapture_family/run.py
+python examples/btc_pred_hedge/run.py     # uses walk-forward
 ```
 
 ## Canonical-form contract

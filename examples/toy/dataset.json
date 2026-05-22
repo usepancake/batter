@@ -1,0 +1,506 @@
+{
+  "id": "ex_toy",
+  "provenance": {
+    "feature_construction_verified_no_lookahead": true,
+    "label": "synthetic"
+  },
+  "row_count": 50,
+  "rows_inline": [
+    {
+      "alpha": 3.3774,
+      "dec_ts": 0,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.3214,
+      "res_ts": 43200,
+      "target": 0
+    },
+    {
+      "alpha": 1.1279,
+      "dec_ts": 86400,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.7745,
+      "res_ts": 129600,
+      "target": 0
+    },
+    {
+      "alpha": 0.8912,
+      "dec_ts": 172800,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.2156,
+      "res_ts": 216000,
+      "target": 1
+    },
+    {
+      "alpha": 1.547,
+      "dec_ts": 259200,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.6512,
+      "res_ts": 302400,
+      "target": 0
+    },
+    {
+      "alpha": 3.656,
+      "dec_ts": 345600,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.5625,
+      "res_ts": 388800,
+      "target": 1
+    },
+    {
+      "alpha": 4.1424,
+      "dec_ts": 432000,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.2618,
+      "res_ts": 475200,
+      "target": 0
+    },
+    {
+      "alpha": 2.4018,
+      "dec_ts": 518400,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.82,
+      "res_ts": 561600,
+      "target": 1
+    },
+    {
+      "alpha": 2.0147,
+      "dec_ts": 604800,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.4013,
+      "res_ts": 648000,
+      "target": 0
+    },
+    {
+      "alpha": 2.0478,
+      "dec_ts": 691200,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.6608,
+      "res_ts": 734400,
+      "target": 1
+    },
+    {
+      "alpha": 2.913,
+      "dec_ts": 777600,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.3552,
+      "res_ts": 820800,
+      "target": 1
+    },
+    {
+      "alpha": 3.3289,
+      "dec_ts": 864000,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.6432,
+      "res_ts": 907200,
+      "target": 1
+    },
+    {
+      "alpha": 0.7062,
+      "dec_ts": 950400,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.8397,
+      "res_ts": 993600,
+      "target": 0
+    },
+    {
+      "alpha": 4.3489,
+      "dec_ts": 1036800,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.4674,
+      "res_ts": 1080000,
+      "target": 0
+    },
+    {
+      "alpha": 4.2535,
+      "dec_ts": 1123200,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.2967,
+      "res_ts": 1166400,
+      "target": 0
+    },
+    {
+      "alpha": 1.7014,
+      "dec_ts": 1209600,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.2698,
+      "res_ts": 1252800,
+      "target": 0
+    },
+    {
+      "alpha": 3.7811,
+      "dec_ts": 1296000,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.339,
+      "res_ts": 1339200,
+      "target": 0
+    },
+    {
+      "alpha": 4.6643,
+      "dec_ts": 1382400,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.74,
+      "res_ts": 1425600,
+      "target": 0
+    },
+    {
+      "alpha": 3.992,
+      "dec_ts": 1468800,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.7135,
+      "res_ts": 1512000,
+      "target": 0
+    },
+    {
+      "alpha": 2.3052,
+      "dec_ts": 1555200,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.81,
+      "res_ts": 1598400,
+      "target": 0
+    },
+    {
+      "alpha": 4.4437,
+      "dec_ts": 1641600,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.4995,
+      "res_ts": 1684800,
+      "target": 1
+    },
+    {
+      "alpha": 4.4811,
+      "dec_ts": 1728000,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.2477,
+      "res_ts": 1771200,
+      "target": 1
+    },
+    {
+      "alpha": 3.8525,
+      "dec_ts": 1814400,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.4499,
+      "res_ts": 1857600,
+      "target": 1
+    },
+    {
+      "alpha": 3.1259,
+      "dec_ts": 1900800,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.8483,
+      "res_ts": 1944000,
+      "target": 1
+    },
+    {
+      "alpha": 2.7929,
+      "dec_ts": 1987200,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.7528,
+      "res_ts": 2030400,
+      "target": 0
+    },
+    {
+      "alpha": 1.1878,
+      "dec_ts": 2073600,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.4455,
+      "res_ts": 2116800,
+      "target": 0
+    },
+    {
+      "alpha": 0.7859,
+      "dec_ts": 2160000,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.4776,
+      "res_ts": 2203200,
+      "target": 1
+    },
+    {
+      "alpha": 1.6314,
+      "dec_ts": 2246400,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.2302,
+      "res_ts": 2289600,
+      "target": 0
+    },
+    {
+      "alpha": 4.4815,
+      "dec_ts": 2332800,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.3881,
+      "res_ts": 2376000,
+      "target": 1
+    },
+    {
+      "alpha": 1.8208,
+      "dec_ts": 2419200,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.8177,
+      "res_ts": 2462400,
+      "target": 0
+    },
+    {
+      "alpha": 4.4413,
+      "dec_ts": 2505600,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.6834,
+      "res_ts": 2548800,
+      "target": 1
+    },
+    {
+      "alpha": 2.7846,
+      "dec_ts": 2592000,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.3589,
+      "res_ts": 2635200,
+      "target": 0
+    },
+    {
+      "alpha": 3.3753,
+      "dec_ts": 2678400,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.6838,
+      "res_ts": 2721600,
+      "target": 0
+    },
+    {
+      "alpha": 2.9272,
+      "dec_ts": 2764800,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.492,
+      "res_ts": 2808000,
+      "target": 0
+    },
+    {
+      "alpha": 1.0034,
+      "dec_ts": 2851200,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.7322,
+      "res_ts": 2894400,
+      "target": 1
+    },
+    {
+      "alpha": 1.8838,
+      "dec_ts": 2937600,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.5471,
+      "res_ts": 2980800,
+      "target": 0
+    },
+    {
+      "alpha": 0.8544,
+      "dec_ts": 3024000,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.8346,
+      "res_ts": 3067200,
+      "target": 1
+    },
+    {
+      "alpha": 2.8972,
+      "dec_ts": 3110400,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.4827,
+      "res_ts": 3153600,
+      "target": 0
+    },
+    {
+      "alpha": 2.9741,
+      "dec_ts": 3196800,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.5746,
+      "res_ts": 3240000,
+      "target": 1
+    },
+    {
+      "alpha": 4.8396,
+      "dec_ts": 3283200,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.4293,
+      "res_ts": 3326400,
+      "target": 0
+    },
+    {
+      "alpha": 3.5226,
+      "dec_ts": 3369600,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.5123,
+      "res_ts": 3412800,
+      "target": 1
+    },
+    {
+      "alpha": 1.0445,
+      "dec_ts": 3456000,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.1647,
+      "res_ts": 3499200,
+      "target": 0
+    },
+    {
+      "alpha": 2.9926,
+      "dec_ts": 3542400,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.6455,
+      "res_ts": 3585600,
+      "target": 0
+    },
+    {
+      "alpha": 0.7649,
+      "dec_ts": 3628800,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.7517,
+      "res_ts": 3672000,
+      "target": 0
+    },
+    {
+      "alpha": 0.8189,
+      "dec_ts": 3715200,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.4898,
+      "res_ts": 3758400,
+      "target": 0
+    },
+    {
+      "alpha": 2.9266,
+      "dec_ts": 3801600,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.4811,
+      "res_ts": 3844800,
+      "target": 1
+    },
+    {
+      "alpha": 2.3318,
+      "dec_ts": 3888000,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.4517,
+      "res_ts": 3931200,
+      "target": 0
+    },
+    {
+      "alpha": 2.4061,
+      "dec_ts": 3974400,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.1879,
+      "res_ts": 4017600,
+      "target": 1
+    },
+    {
+      "alpha": 3.4405,
+      "dec_ts": 4060800,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.6597,
+      "res_ts": 4104000,
+      "target": 0
+    },
+    {
+      "alpha": 4.1027,
+      "dec_ts": 4147200,
+      "mkt": "m/TOY",
+      "outcome": 1,
+      "price": 0.2831,
+      "res_ts": 4190400,
+      "target": 0
+    },
+    {
+      "alpha": 2.5188,
+      "dec_ts": 4233600,
+      "mkt": "m/TOY",
+      "outcome": 0,
+      "price": 0.4738,
+      "res_ts": 4276800,
+      "target": 1
+    }
+  ],
+  "rows_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "schema": {
+    "columns": [
+      {
+        "name": "mkt",
+        "semantic_role": "market_link",
+        "type": "string"
+      },
+      {
+        "name": "dec_ts",
+        "semantic_role": "decision_time",
+        "type": "int"
+      },
+      {
+        "name": "res_ts",
+        "semantic_role": "resolution_time",
+        "type": "int"
+      },
+      {
+        "name": "price",
+        "range": [
+          0,
+          1
+        ],
+        "semantic_role": "entry_price",
+        "type": "number"
+      },
+      {
+        "name": "outcome",
+        "semantic_role": "resolved_outcome_numeric",
+        "type": "int"
+      },
+      {
+        "name": "alpha",
+        "semantic_role": "feature",
+        "type": "number"
+      },
+      {
+        "name": "target",
+        "semantic_role": "feature",
+        "type": "int"
+      }
+    ]
+  },
+  "schema_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "storage_mode": "inline"
+}

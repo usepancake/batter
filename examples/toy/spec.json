@@ -1,0 +1,74 @@
+{
+  "costs": {
+    "fee_bps": 0,
+    "slippage_bps": 0
+  },
+  "name": "toy-example",
+  "schema_requirements": {
+    "required_columns": [
+      {
+        "name": "mkt",
+        "semantic_role": "market_link",
+        "type": "string"
+      },
+      {
+        "name": "dec_ts",
+        "semantic_role": "decision_time",
+        "type": "int"
+      },
+      {
+        "name": "res_ts",
+        "semantic_role": "resolution_time",
+        "type": "int"
+      },
+      {
+        "name": "price",
+        "range": [
+          0,
+          1
+        ],
+        "semantic_role": "entry_price",
+        "type": "number"
+      },
+      {
+        "name": "outcome",
+        "semantic_role": "resolved_outcome_numeric",
+        "type": "int"
+      },
+      {
+        "name": "alpha",
+        "semantic_role": "feature",
+        "type": "number"
+      },
+      {
+        "name": "target",
+        "semantic_role": "feature",
+        "type": "int"
+      }
+    ]
+  },
+  "spec_family": "pancake-evidence-spec",
+  "spec_version": "0.1",
+  "starting_capital": 10000.0,
+  "strategy": {
+    "entry": {
+      "when": {
+        "feature": "alpha",
+        "gte": 2.0
+      }
+    },
+    "side": "YES",
+    "sizing": {
+      "mode": "fixed_fraction",
+      "value": 0.05
+    },
+    "yes_payoff": {
+      "when": {
+        "feature_equal": {
+          "a": "target",
+          "b": "outcome"
+        }
+      }
+    }
+  }
+}

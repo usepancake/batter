@@ -1,0 +1,596 @@
+{
+  "id": "ex_jkt_temp",
+  "provenance": {
+    "feature_construction_verified_no_lookahead": true,
+    "label": "synthetic"
+  },
+  "row_count": 60,
+  "rows_inline": [
+    {
+      "alpha": 30.7668,
+      "dec_ts": 1704088800,
+      "mkt": "m/JKT_HOT_00",
+      "outcome": 1,
+      "price": 0.5755,
+      "res_ts": 1704146400,
+      "target": 0
+    },
+    {
+      "alpha": 29.0071,
+      "dec_ts": 1704175200,
+      "mkt": "m/JKT_HOT_01",
+      "outcome": 0,
+      "price": 0.4328,
+      "res_ts": 1704232800,
+      "target": 0
+    },
+    {
+      "alpha": 28.906,
+      "dec_ts": 1704261600,
+      "mkt": "m/JKT_HOT_02",
+      "outcome": 0,
+      "price": 0.2687,
+      "res_ts": 1704319200,
+      "target": 0
+    },
+    {
+      "alpha": 31.5355,
+      "dec_ts": 1704348000,
+      "mkt": "m/JKT_HOT_03",
+      "outcome": 1,
+      "price": 0.2954,
+      "res_ts": 1704405600,
+      "target": 0
+    },
+    {
+      "alpha": 31.4716,
+      "dec_ts": 1704434400,
+      "mkt": "m/JKT_HOT_04",
+      "outcome": 0,
+      "price": 0.3119,
+      "res_ts": 1704492000,
+      "target": 0
+    },
+    {
+      "alpha": 30.0627,
+      "dec_ts": 1704520800,
+      "mkt": "m/JKT_HOT_05",
+      "outcome": 0,
+      "price": 0.7239,
+      "res_ts": 1704578400,
+      "target": 0
+    },
+    {
+      "alpha": 32.5397,
+      "dec_ts": 1704607200,
+      "mkt": "m/JKT_HOT_06",
+      "outcome": 1,
+      "price": 0.7381,
+      "res_ts": 1704664800,
+      "target": 1
+    },
+    {
+      "alpha": 28.8261,
+      "dec_ts": 1704693600,
+      "mkt": "m/JKT_HOT_07",
+      "outcome": 0,
+      "price": 0.3948,
+      "res_ts": 1704751200,
+      "target": 0
+    },
+    {
+      "alpha": 29.5098,
+      "dec_ts": 1704780000,
+      "mkt": "m/JKT_HOT_08",
+      "outcome": 1,
+      "price": 0.4042,
+      "res_ts": 1704837600,
+      "target": 0
+    },
+    {
+      "alpha": 34.2129,
+      "dec_ts": 1704866400,
+      "mkt": "m/JKT_HOT_09",
+      "outcome": 0,
+      "price": 0.5408,
+      "res_ts": 1704924000,
+      "target": 1
+    },
+    {
+      "alpha": 32.9724,
+      "dec_ts": 1704952800,
+      "mkt": "m/JKT_HOT_10",
+      "outcome": 1,
+      "price": 0.5239,
+      "res_ts": 1705010400,
+      "target": 1
+    },
+    {
+      "alpha": 28.9395,
+      "dec_ts": 1705039200,
+      "mkt": "m/JKT_HOT_11",
+      "outcome": 1,
+      "price": 0.353,
+      "res_ts": 1705096800,
+      "target": 0
+    },
+    {
+      "alpha": 33.2628,
+      "dec_ts": 1705125600,
+      "mkt": "m/JKT_HOT_12",
+      "outcome": 1,
+      "price": 0.4071,
+      "res_ts": 1705183200,
+      "target": 1
+    },
+    {
+      "alpha": 32.5989,
+      "dec_ts": 1705212000,
+      "mkt": "m/JKT_HOT_13",
+      "outcome": 1,
+      "price": 0.3999,
+      "res_ts": 1705269600,
+      "target": 1
+    },
+    {
+      "alpha": 34.0607,
+      "dec_ts": 1705298400,
+      "mkt": "m/JKT_HOT_14",
+      "outcome": 1,
+      "price": 0.372,
+      "res_ts": 1705356000,
+      "target": 1
+    },
+    {
+      "alpha": 32.521,
+      "dec_ts": 1705384800,
+      "mkt": "m/JKT_HOT_15",
+      "outcome": 1,
+      "price": 0.6876,
+      "res_ts": 1705442400,
+      "target": 1
+    },
+    {
+      "alpha": 33.6061,
+      "dec_ts": 1705471200,
+      "mkt": "m/JKT_HOT_16",
+      "outcome": 0,
+      "price": 0.7401,
+      "res_ts": 1705528800,
+      "target": 1
+    },
+    {
+      "alpha": 29.3265,
+      "dec_ts": 1705557600,
+      "mkt": "m/JKT_HOT_17",
+      "outcome": 0,
+      "price": 0.6286,
+      "res_ts": 1705615200,
+      "target": 0
+    },
+    {
+      "alpha": 29.5639,
+      "dec_ts": 1705644000,
+      "mkt": "m/JKT_HOT_18",
+      "outcome": 0,
+      "price": 0.2696,
+      "res_ts": 1705701600,
+      "target": 0
+    },
+    {
+      "alpha": 33.1775,
+      "dec_ts": 1705730400,
+      "mkt": "m/JKT_HOT_19",
+      "outcome": 1,
+      "price": 0.5365,
+      "res_ts": 1705788000,
+      "target": 1
+    },
+    {
+      "alpha": 34.6283,
+      "dec_ts": 1705816800,
+      "mkt": "m/JKT_HOT_20",
+      "outcome": 0,
+      "price": 0.5976,
+      "res_ts": 1705874400,
+      "target": 1
+    },
+    {
+      "alpha": 32.6606,
+      "dec_ts": 1705903200,
+      "mkt": "m/JKT_HOT_21",
+      "outcome": 1,
+      "price": 0.4781,
+      "res_ts": 1705960800,
+      "target": 1
+    },
+    {
+      "alpha": 34.3798,
+      "dec_ts": 1705989600,
+      "mkt": "m/JKT_HOT_22",
+      "outcome": 1,
+      "price": 0.487,
+      "res_ts": 1706047200,
+      "target": 1
+    },
+    {
+      "alpha": 33.1491,
+      "dec_ts": 1706076000,
+      "mkt": "m/JKT_HOT_23",
+      "outcome": 0,
+      "price": 0.6007,
+      "res_ts": 1706133600,
+      "target": 1
+    },
+    {
+      "alpha": 33.0299,
+      "dec_ts": 1706162400,
+      "mkt": "m/JKT_HOT_24",
+      "outcome": 1,
+      "price": 0.661,
+      "res_ts": 1706220000,
+      "target": 1
+    },
+    {
+      "alpha": 30.4922,
+      "dec_ts": 1706248800,
+      "mkt": "m/JKT_HOT_25",
+      "outcome": 0,
+      "price": 0.5843,
+      "res_ts": 1706306400,
+      "target": 0
+    },
+    {
+      "alpha": 28.6579,
+      "dec_ts": 1706335200,
+      "mkt": "m/JKT_HOT_26",
+      "outcome": 0,
+      "price": 0.334,
+      "res_ts": 1706392800,
+      "target": 0
+    },
+    {
+      "alpha": 29.3197,
+      "dec_ts": 1706421600,
+      "mkt": "m/JKT_HOT_27",
+      "outcome": 1,
+      "price": 0.6341,
+      "res_ts": 1706479200,
+      "target": 0
+    },
+    {
+      "alpha": 29.4054,
+      "dec_ts": 1706508000,
+      "mkt": "m/JKT_HOT_28",
+      "outcome": 1,
+      "price": 0.4455,
+      "res_ts": 1706565600,
+      "target": 0
+    },
+    {
+      "alpha": 34.6,
+      "dec_ts": 1706594400,
+      "mkt": "m/JKT_HOT_29",
+      "outcome": 0,
+      "price": 0.4746,
+      "res_ts": 1706652000,
+      "target": 1
+    },
+    {
+      "alpha": 32.3461,
+      "dec_ts": 1706680800,
+      "mkt": "m/JKT_HOT_30",
+      "outcome": 1,
+      "price": 0.6596,
+      "res_ts": 1706738400,
+      "target": 1
+    },
+    {
+      "alpha": 34.5479,
+      "dec_ts": 1706767200,
+      "mkt": "m/JKT_HOT_31",
+      "outcome": 0,
+      "price": 0.4576,
+      "res_ts": 1706824800,
+      "target": 1
+    },
+    {
+      "alpha": 31.0114,
+      "dec_ts": 1706853600,
+      "mkt": "m/JKT_HOT_32",
+      "outcome": 0,
+      "price": 0.7289,
+      "res_ts": 1706911200,
+      "target": 0
+    },
+    {
+      "alpha": 29.5564,
+      "dec_ts": 1706940000,
+      "mkt": "m/JKT_HOT_33",
+      "outcome": 1,
+      "price": 0.366,
+      "res_ts": 1706997600,
+      "target": 0
+    },
+    {
+      "alpha": 30.1334,
+      "dec_ts": 1707026400,
+      "mkt": "m/JKT_HOT_34",
+      "outcome": 0,
+      "price": 0.5446,
+      "res_ts": 1707084000,
+      "target": 0
+    },
+    {
+      "alpha": 30.3392,
+      "dec_ts": 1707112800,
+      "mkt": "m/JKT_HOT_35",
+      "outcome": 1,
+      "price": 0.4595,
+      "res_ts": 1707170400,
+      "target": 0
+    },
+    {
+      "alpha": 31.0848,
+      "dec_ts": 1707199200,
+      "mkt": "m/JKT_HOT_36",
+      "outcome": 0,
+      "price": 0.7265,
+      "res_ts": 1707256800,
+      "target": 0
+    },
+    {
+      "alpha": 33.3335,
+      "dec_ts": 1707285600,
+      "mkt": "m/JKT_HOT_37",
+      "outcome": 1,
+      "price": 0.5588,
+      "res_ts": 1707343200,
+      "target": 1
+    },
+    {
+      "alpha": 33.2334,
+      "dec_ts": 1707372000,
+      "mkt": "m/JKT_HOT_38",
+      "outcome": 0,
+      "price": 0.6998,
+      "res_ts": 1707429600,
+      "target": 1
+    },
+    {
+      "alpha": 33.9598,
+      "dec_ts": 1707458400,
+      "mkt": "m/JKT_HOT_39",
+      "outcome": 1,
+      "price": 0.6489,
+      "res_ts": 1707516000,
+      "target": 1
+    },
+    {
+      "alpha": 31.2467,
+      "dec_ts": 1707544800,
+      "mkt": "m/JKT_HOT_40",
+      "outcome": 0,
+      "price": 0.3018,
+      "res_ts": 1707602400,
+      "target": 0
+    },
+    {
+      "alpha": 32.94,
+      "dec_ts": 1707631200,
+      "mkt": "m/JKT_HOT_41",
+      "outcome": 0,
+      "price": 0.2837,
+      "res_ts": 1707688800,
+      "target": 1
+    },
+    {
+      "alpha": 29.9613,
+      "dec_ts": 1707717600,
+      "mkt": "m/JKT_HOT_42",
+      "outcome": 1,
+      "price": 0.42,
+      "res_ts": 1707775200,
+      "target": 0
+    },
+    {
+      "alpha": 28.868,
+      "dec_ts": 1707804000,
+      "mkt": "m/JKT_HOT_43",
+      "outcome": 1,
+      "price": 0.3256,
+      "res_ts": 1707861600,
+      "target": 0
+    },
+    {
+      "alpha": 29.2103,
+      "dec_ts": 1707890400,
+      "mkt": "m/JKT_HOT_44",
+      "outcome": 0,
+      "price": 0.2628,
+      "res_ts": 1707948000,
+      "target": 0
+    },
+    {
+      "alpha": 34.6203,
+      "dec_ts": 1707976800,
+      "mkt": "m/JKT_HOT_45",
+      "outcome": 1,
+      "price": 0.3243,
+      "res_ts": 1708034400,
+      "target": 1
+    },
+    {
+      "alpha": 30.2658,
+      "dec_ts": 1708063200,
+      "mkt": "m/JKT_HOT_46",
+      "outcome": 1,
+      "price": 0.4321,
+      "res_ts": 1708120800,
+      "target": 0
+    },
+    {
+      "alpha": 29.3599,
+      "dec_ts": 1708149600,
+      "mkt": "m/JKT_HOT_47",
+      "outcome": 0,
+      "price": 0.7466,
+      "res_ts": 1708207200,
+      "target": 0
+    },
+    {
+      "alpha": 31.7619,
+      "dec_ts": 1708236000,
+      "mkt": "m/JKT_HOT_48",
+      "outcome": 0,
+      "price": 0.2929,
+      "res_ts": 1708293600,
+      "target": 0
+    },
+    {
+      "alpha": 29.2153,
+      "dec_ts": 1708322400,
+      "mkt": "m/JKT_HOT_49",
+      "outcome": 1,
+      "price": 0.3824,
+      "res_ts": 1708380000,
+      "target": 0
+    },
+    {
+      "alpha": 34.302,
+      "dec_ts": 1708408800,
+      "mkt": "m/JKT_HOT_50",
+      "outcome": 0,
+      "price": 0.2615,
+      "res_ts": 1708466400,
+      "target": 1
+    },
+    {
+      "alpha": 35.1569,
+      "dec_ts": 1708495200,
+      "mkt": "m/JKT_HOT_51",
+      "outcome": 1,
+      "price": 0.3233,
+      "res_ts": 1708552800,
+      "target": 1
+    },
+    {
+      "alpha": 32.3022,
+      "dec_ts": 1708581600,
+      "mkt": "m/JKT_HOT_52",
+      "outcome": 0,
+      "price": 0.5141,
+      "res_ts": 1708639200,
+      "target": 1
+    },
+    {
+      "alpha": 35.3495,
+      "dec_ts": 1708668000,
+      "mkt": "m/JKT_HOT_53",
+      "outcome": 1,
+      "price": 0.5981,
+      "res_ts": 1708725600,
+      "target": 1
+    },
+    {
+      "alpha": 30.3278,
+      "dec_ts": 1708754400,
+      "mkt": "m/JKT_HOT_54",
+      "outcome": 0,
+      "price": 0.3335,
+      "res_ts": 1708812000,
+      "target": 0
+    },
+    {
+      "alpha": 33.9036,
+      "dec_ts": 1708840800,
+      "mkt": "m/JKT_HOT_55",
+      "outcome": 1,
+      "price": 0.6395,
+      "res_ts": 1708898400,
+      "target": 1
+    },
+    {
+      "alpha": 30.8077,
+      "dec_ts": 1708927200,
+      "mkt": "m/JKT_HOT_56",
+      "outcome": 1,
+      "price": 0.6558,
+      "res_ts": 1708984800,
+      "target": 0
+    },
+    {
+      "alpha": 35.3945,
+      "dec_ts": 1709013600,
+      "mkt": "m/JKT_HOT_57",
+      "outcome": 1,
+      "price": 0.653,
+      "res_ts": 1709071200,
+      "target": 1
+    },
+    {
+      "alpha": 34.2283,
+      "dec_ts": 1709100000,
+      "mkt": "m/JKT_HOT_58",
+      "outcome": 1,
+      "price": 0.3634,
+      "res_ts": 1709157600,
+      "target": 1
+    },
+    {
+      "alpha": 32.1235,
+      "dec_ts": 1709186400,
+      "mkt": "m/JKT_HOT_59",
+      "outcome": 1,
+      "price": 0.2645,
+      "res_ts": 1709244000,
+      "target": 1
+    }
+  ],
+  "rows_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "schema": {
+    "columns": [
+      {
+        "name": "mkt",
+        "semantic_role": "market_link",
+        "type": "string"
+      },
+      {
+        "name": "dec_ts",
+        "semantic_role": "decision_time",
+        "type": "int"
+      },
+      {
+        "name": "res_ts",
+        "semantic_role": "resolution_time",
+        "type": "int"
+      },
+      {
+        "name": "price",
+        "range": [
+          0,
+          1
+        ],
+        "semantic_role": "entry_price",
+        "type": "number"
+      },
+      {
+        "name": "outcome",
+        "semantic_role": "resolved_outcome_numeric",
+        "type": "int"
+      },
+      {
+        "name": "alpha",
+        "semantic_role": "feature",
+        "type": "number"
+      },
+      {
+        "name": "target",
+        "semantic_role": "feature",
+        "type": "int"
+      }
+    ]
+  },
+  "schema_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "storage_mode": "inline"
+}

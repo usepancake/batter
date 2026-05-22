@@ -1,0 +1,2966 @@
+{
+  "raw_spec": {
+    "spec_family": "pancake-evidence-spec",
+    "spec_version": "0.1",
+    "name": "ts-wf-fixture",
+    "evidence_dataset_id": "ev_wf",
+    "schema_requirements": {
+      "required_columns": [
+        {
+          "name": "mkt",
+          "type": "string",
+          "semantic_role": "market_link"
+        },
+        {
+          "name": "dec_ts",
+          "type": "int",
+          "semantic_role": "decision_time"
+        },
+        {
+          "name": "res_ts",
+          "type": "int",
+          "semantic_role": "resolution_time"
+        },
+        {
+          "name": "price",
+          "type": "number",
+          "semantic_role": "entry_price",
+          "range": [
+            0,
+            1
+          ]
+        },
+        {
+          "name": "outcome",
+          "type": "int",
+          "semantic_role": "resolved_outcome_numeric"
+        },
+        {
+          "name": "alpha",
+          "type": "number",
+          "semantic_role": "feature"
+        },
+        {
+          "name": "target",
+          "type": "int",
+          "semantic_role": "feature"
+        }
+      ]
+    },
+    "strategy": {
+      "side": "YES",
+      "entry": {
+        "when": {
+          "feature": "alpha",
+          "gte": 2
+        }
+      },
+      "yes_payoff": {
+        "when": {
+          "feature_equal": {
+            "a": "target",
+            "b": "outcome"
+          }
+        }
+      },
+      "sizing": {
+        "mode": "fixed_fraction",
+        "value": 0.05
+      }
+    },
+    "costs": {
+      "slippage_bps": 0,
+      "fee_bps": 0
+    },
+    "starting_capital": 10000
+  },
+  "rows": [
+    {
+      "mkt": "m/W0",
+      "dec_ts": 0,
+      "res_ts": 43200,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W1",
+      "dec_ts": 86400,
+      "res_ts": 129600,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W2",
+      "dec_ts": 172800,
+      "res_ts": 216000,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W3",
+      "dec_ts": 259200,
+      "res_ts": 302400,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W4",
+      "dec_ts": 345600,
+      "res_ts": 388800,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W5",
+      "dec_ts": 432000,
+      "res_ts": 475200,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W6",
+      "dec_ts": 518400,
+      "res_ts": 561600,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W7",
+      "dec_ts": 604800,
+      "res_ts": 648000,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W8",
+      "dec_ts": 691200,
+      "res_ts": 734400,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W9",
+      "dec_ts": 777600,
+      "res_ts": 820800,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W10",
+      "dec_ts": 864000,
+      "res_ts": 907200,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W11",
+      "dec_ts": 950400,
+      "res_ts": 993600,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W12",
+      "dec_ts": 1036800,
+      "res_ts": 1080000,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W13",
+      "dec_ts": 1123200,
+      "res_ts": 1166400,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W14",
+      "dec_ts": 1209600,
+      "res_ts": 1252800,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W15",
+      "dec_ts": 1296000,
+      "res_ts": 1339200,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W16",
+      "dec_ts": 1382400,
+      "res_ts": 1425600,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W17",
+      "dec_ts": 1468800,
+      "res_ts": 1512000,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W18",
+      "dec_ts": 1555200,
+      "res_ts": 1598400,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W19",
+      "dec_ts": 1641600,
+      "res_ts": 1684800,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W20",
+      "dec_ts": 1728000,
+      "res_ts": 1771200,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W21",
+      "dec_ts": 1814400,
+      "res_ts": 1857600,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W22",
+      "dec_ts": 1900800,
+      "res_ts": 1944000,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W23",
+      "dec_ts": 1987200,
+      "res_ts": 2030400,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W24",
+      "dec_ts": 2073600,
+      "res_ts": 2116800,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W25",
+      "dec_ts": 2160000,
+      "res_ts": 2203200,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W26",
+      "dec_ts": 2246400,
+      "res_ts": 2289600,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W27",
+      "dec_ts": 2332800,
+      "res_ts": 2376000,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W28",
+      "dec_ts": 2419200,
+      "res_ts": 2462400,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W29",
+      "dec_ts": 2505600,
+      "res_ts": 2548800,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W30",
+      "dec_ts": 2592000,
+      "res_ts": 2635200,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W31",
+      "dec_ts": 2678400,
+      "res_ts": 2721600,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W32",
+      "dec_ts": 2764800,
+      "res_ts": 2808000,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W33",
+      "dec_ts": 2851200,
+      "res_ts": 2894400,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W34",
+      "dec_ts": 2937600,
+      "res_ts": 2980800,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W35",
+      "dec_ts": 3024000,
+      "res_ts": 3067200,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W36",
+      "dec_ts": 3110400,
+      "res_ts": 3153600,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W37",
+      "dec_ts": 3196800,
+      "res_ts": 3240000,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W38",
+      "dec_ts": 3283200,
+      "res_ts": 3326400,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W39",
+      "dec_ts": 3369600,
+      "res_ts": 3412800,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W40",
+      "dec_ts": 3456000,
+      "res_ts": 3499200,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W41",
+      "dec_ts": 3542400,
+      "res_ts": 3585600,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W42",
+      "dec_ts": 3628800,
+      "res_ts": 3672000,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W43",
+      "dec_ts": 3715200,
+      "res_ts": 3758400,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W44",
+      "dec_ts": 3801600,
+      "res_ts": 3844800,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W45",
+      "dec_ts": 3888000,
+      "res_ts": 3931200,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W46",
+      "dec_ts": 3974400,
+      "res_ts": 4017600,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W47",
+      "dec_ts": 4060800,
+      "res_ts": 4104000,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W48",
+      "dec_ts": 4147200,
+      "res_ts": 4190400,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W49",
+      "dec_ts": 4233600,
+      "res_ts": 4276800,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W50",
+      "dec_ts": 4320000,
+      "res_ts": 4363200,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W51",
+      "dec_ts": 4406400,
+      "res_ts": 4449600,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W52",
+      "dec_ts": 4492800,
+      "res_ts": 4536000,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W53",
+      "dec_ts": 4579200,
+      "res_ts": 4622400,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W54",
+      "dec_ts": 4665600,
+      "res_ts": 4708800,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W55",
+      "dec_ts": 4752000,
+      "res_ts": 4795200,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W56",
+      "dec_ts": 4838400,
+      "res_ts": 4881600,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W57",
+      "dec_ts": 4924800,
+      "res_ts": 4968000,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W58",
+      "dec_ts": 5011200,
+      "res_ts": 5054400,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W59",
+      "dec_ts": 5097600,
+      "res_ts": 5140800,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W60",
+      "dec_ts": 5184000,
+      "res_ts": 5227200,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W61",
+      "dec_ts": 5270400,
+      "res_ts": 5313600,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W62",
+      "dec_ts": 5356800,
+      "res_ts": 5400000,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W63",
+      "dec_ts": 5443200,
+      "res_ts": 5486400,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W64",
+      "dec_ts": 5529600,
+      "res_ts": 5572800,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W65",
+      "dec_ts": 5616000,
+      "res_ts": 5659200,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W66",
+      "dec_ts": 5702400,
+      "res_ts": 5745600,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W67",
+      "dec_ts": 5788800,
+      "res_ts": 5832000,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W68",
+      "dec_ts": 5875200,
+      "res_ts": 5918400,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W69",
+      "dec_ts": 5961600,
+      "res_ts": 6004800,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W70",
+      "dec_ts": 6048000,
+      "res_ts": 6091200,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W71",
+      "dec_ts": 6134400,
+      "res_ts": 6177600,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W72",
+      "dec_ts": 6220800,
+      "res_ts": 6264000,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W73",
+      "dec_ts": 6307200,
+      "res_ts": 6350400,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W74",
+      "dec_ts": 6393600,
+      "res_ts": 6436800,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W75",
+      "dec_ts": 6480000,
+      "res_ts": 6523200,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W76",
+      "dec_ts": 6566400,
+      "res_ts": 6609600,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W77",
+      "dec_ts": 6652800,
+      "res_ts": 6696000,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W78",
+      "dec_ts": 6739200,
+      "res_ts": 6782400,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W79",
+      "dec_ts": 6825600,
+      "res_ts": 6868800,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W80",
+      "dec_ts": 6912000,
+      "res_ts": 6955200,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W81",
+      "dec_ts": 6998400,
+      "res_ts": 7041600,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W82",
+      "dec_ts": 7084800,
+      "res_ts": 7128000,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W83",
+      "dec_ts": 7171200,
+      "res_ts": 7214400,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W84",
+      "dec_ts": 7257600,
+      "res_ts": 7300800,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W85",
+      "dec_ts": 7344000,
+      "res_ts": 7387200,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W86",
+      "dec_ts": 7430400,
+      "res_ts": 7473600,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W87",
+      "dec_ts": 7516800,
+      "res_ts": 7560000,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W88",
+      "dec_ts": 7603200,
+      "res_ts": 7646400,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    },
+    {
+      "mkt": "m/W89",
+      "dec_ts": 7689600,
+      "res_ts": 7732800,
+      "price": 0.5,
+      "outcome": 1,
+      "alpha": 3,
+      "target": 1
+    }
+  ],
+  "fold_windows": [
+    [
+      0,
+      2592000
+    ],
+    [
+      2592000,
+      5184000
+    ],
+    [
+      5184000,
+      7776000
+    ]
+  ],
+  "folds": [
+    {
+      "fold_index": 0,
+      "test_window": [
+        0,
+        2592000
+      ],
+      "ts_result": {
+        "metrics": {
+          "total_return": 3.3219423751506634,
+          "cagr": 74227973.89051735,
+          "sharpe": 10178948453130456,
+          "sortino": 0,
+          "max_drawdown": 0,
+          "win_rate": 1,
+          "num_trades": 30,
+          "brier_vs_crowd": null,
+          "brier_strategy": null,
+          "brier_crowd": null,
+          "starting_capital": 10000,
+          "ending_capital": 43219.423751506634
+        },
+        "trades": [
+          {
+            "market_slug": "m/W0",
+            "outcome": "YES",
+            "entry_t": 0,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 43200,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1000,
+            "cost": 500,
+            "proceeds": 1000,
+            "pnl": 500,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W1",
+            "outcome": "YES",
+            "entry_t": 86400,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 129600,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1050,
+            "cost": 525,
+            "proceeds": 1050,
+            "pnl": 525,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W2",
+            "outcome": "YES",
+            "entry_t": 172800,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 216000,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1102.5,
+            "cost": 551.25,
+            "proceeds": 1102.5,
+            "pnl": 551.25,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W3",
+            "outcome": "YES",
+            "entry_t": 259200,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 302400,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1157.625,
+            "cost": 578.8125,
+            "proceeds": 1157.625,
+            "pnl": 578.8125,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W4",
+            "outcome": "YES",
+            "entry_t": 345600,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 388800,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1215.5062500000001,
+            "cost": 607.7531250000001,
+            "proceeds": 1215.5062500000001,
+            "pnl": 607.7531250000001,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W5",
+            "outcome": "YES",
+            "entry_t": 432000,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 475200,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1276.2815625000003,
+            "cost": 638.1407812500001,
+            "proceeds": 1276.2815625000003,
+            "pnl": 638.1407812500001,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W6",
+            "outcome": "YES",
+            "entry_t": 518400,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 561600,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1340.0956406250002,
+            "cost": 670.0478203125001,
+            "proceeds": 1340.0956406250002,
+            "pnl": 670.0478203125001,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W7",
+            "outcome": "YES",
+            "entry_t": 604800,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 648000,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1407.1004226562502,
+            "cost": 703.5502113281251,
+            "proceeds": 1407.1004226562502,
+            "pnl": 703.5502113281251,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W8",
+            "outcome": "YES",
+            "entry_t": 691200,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 734400,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1477.4554437890629,
+            "cost": 738.7277218945314,
+            "proceeds": 1477.4554437890629,
+            "pnl": 738.7277218945314,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W9",
+            "outcome": "YES",
+            "entry_t": 777600,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 820800,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1551.3282159785158,
+            "cost": 775.6641079892579,
+            "proceeds": 1551.3282159785158,
+            "pnl": 775.6641079892579,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W10",
+            "outcome": "YES",
+            "entry_t": 864000,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 907200,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1628.8946267774418,
+            "cost": 814.4473133887209,
+            "proceeds": 1628.8946267774418,
+            "pnl": 814.4473133887209,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W11",
+            "outcome": "YES",
+            "entry_t": 950400,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 993600,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1710.3393581163139,
+            "cost": 855.1696790581569,
+            "proceeds": 1710.3393581163139,
+            "pnl": 855.1696790581569,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W12",
+            "outcome": "YES",
+            "entry_t": 1036800,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 1080000,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1795.8563260221295,
+            "cost": 897.9281630110647,
+            "proceeds": 1795.8563260221295,
+            "pnl": 897.9281630110647,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W13",
+            "outcome": "YES",
+            "entry_t": 1123200,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 1166400,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1885.6491423232362,
+            "cost": 942.8245711616181,
+            "proceeds": 1885.6491423232362,
+            "pnl": 942.8245711616181,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W14",
+            "outcome": "YES",
+            "entry_t": 1209600,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 1252800,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1979.931599439398,
+            "cost": 989.965799719699,
+            "proceeds": 1979.931599439398,
+            "pnl": 989.965799719699,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W15",
+            "outcome": "YES",
+            "entry_t": 1296000,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 1339200,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2078.928179411368,
+            "cost": 1039.464089705684,
+            "proceeds": 2078.928179411368,
+            "pnl": 1039.464089705684,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W16",
+            "outcome": "YES",
+            "entry_t": 1382400,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 1425600,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2182.874588381936,
+            "cost": 1091.437294190968,
+            "proceeds": 2182.874588381936,
+            "pnl": 1091.437294190968,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W17",
+            "outcome": "YES",
+            "entry_t": 1468800,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 1512000,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2292.018317801033,
+            "cost": 1146.0091589005165,
+            "proceeds": 2292.018317801033,
+            "pnl": 1146.0091589005165,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W18",
+            "outcome": "YES",
+            "entry_t": 1555200,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 1598400,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2406.6192336910844,
+            "cost": 1203.3096168455422,
+            "proceeds": 2406.6192336910844,
+            "pnl": 1203.3096168455422,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W19",
+            "outcome": "YES",
+            "entry_t": 1641600,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 1684800,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2526.950195375639,
+            "cost": 1263.4750976878195,
+            "proceeds": 2526.950195375639,
+            "pnl": 1263.4750976878195,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W20",
+            "outcome": "YES",
+            "entry_t": 1728000,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 1771200,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2653.297705144421,
+            "cost": 1326.6488525722104,
+            "proceeds": 2653.297705144421,
+            "pnl": 1326.6488525722104,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W21",
+            "outcome": "YES",
+            "entry_t": 1814400,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 1857600,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2785.962590401642,
+            "cost": 1392.981295200821,
+            "proceeds": 2785.962590401642,
+            "pnl": 1392.981295200821,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W22",
+            "outcome": "YES",
+            "entry_t": 1900800,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 1944000,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2925.260719921724,
+            "cost": 1462.630359960862,
+            "proceeds": 2925.260719921724,
+            "pnl": 1462.630359960862,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W23",
+            "outcome": "YES",
+            "entry_t": 1987200,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 2030400,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 3071.5237559178104,
+            "cost": 1535.7618779589052,
+            "proceeds": 3071.5237559178104,
+            "pnl": 1535.7618779589052,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W24",
+            "outcome": "YES",
+            "entry_t": 2073600,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 2116800,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 3225.0999437137007,
+            "cost": 1612.5499718568503,
+            "proceeds": 3225.0999437137007,
+            "pnl": 1612.5499718568503,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W25",
+            "outcome": "YES",
+            "entry_t": 2160000,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 2203200,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 3386.354940899386,
+            "cost": 1693.177470449693,
+            "proceeds": 3386.354940899386,
+            "pnl": 1693.177470449693,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W26",
+            "outcome": "YES",
+            "entry_t": 2246400,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 2289600,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 3555.6726879443554,
+            "cost": 1777.8363439721777,
+            "proceeds": 3555.6726879443554,
+            "pnl": 1777.8363439721777,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W27",
+            "outcome": "YES",
+            "entry_t": 2332800,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 2376000,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 3733.4563223415726,
+            "cost": 1866.7281611707863,
+            "proceeds": 3733.4563223415726,
+            "pnl": 1866.7281611707863,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W28",
+            "outcome": "YES",
+            "entry_t": 2419200,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 2462400,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 3920.129138458651,
+            "cost": 1960.0645692293256,
+            "proceeds": 3920.129138458651,
+            "pnl": 1960.0645692293256,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W29",
+            "outcome": "YES",
+            "entry_t": 2505600,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 2548800,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 4116.135595381584,
+            "cost": 2058.067797690792,
+            "proceeds": 4116.135595381584,
+            "pnl": 2058.067797690792,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          }
+        ],
+        "equity_curve": [
+          {
+            "t": 43200,
+            "equity": 10500
+          },
+          {
+            "t": 129600,
+            "equity": 11025
+          },
+          {
+            "t": 216000,
+            "equity": 11576.25
+          },
+          {
+            "t": 302400,
+            "equity": 12155.0625
+          },
+          {
+            "t": 388800,
+            "equity": 12762.815625000001
+          },
+          {
+            "t": 475200,
+            "equity": 13400.956406250001
+          },
+          {
+            "t": 561600,
+            "equity": 14071.004226562502
+          },
+          {
+            "t": 648000,
+            "equity": 14774.554437890627
+          },
+          {
+            "t": 734400,
+            "equity": 15513.282159785158
+          },
+          {
+            "t": 820800,
+            "equity": 16288.946267774416
+          },
+          {
+            "t": 907200,
+            "equity": 17103.393581163138
+          },
+          {
+            "t": 993600,
+            "equity": 17958.563260221294
+          },
+          {
+            "t": 1080000,
+            "equity": 18856.49142323236
+          },
+          {
+            "t": 1166400,
+            "equity": 19799.31599439398
+          },
+          {
+            "t": 1252800,
+            "equity": 20789.28179411368
+          },
+          {
+            "t": 1339200,
+            "equity": 21828.74588381936
+          },
+          {
+            "t": 1425600,
+            "equity": 22920.183178010328
+          },
+          {
+            "t": 1512000,
+            "equity": 24066.192336910844
+          },
+          {
+            "t": 1598400,
+            "equity": 25269.501953756386
+          },
+          {
+            "t": 1684800,
+            "equity": 26532.977051444206
+          },
+          {
+            "t": 1771200,
+            "equity": 27859.62590401642
+          },
+          {
+            "t": 1857600,
+            "equity": 29252.60719921724
+          },
+          {
+            "t": 1944000,
+            "equity": 30715.237559178102
+          },
+          {
+            "t": 2030400,
+            "equity": 32250.999437137005
+          },
+          {
+            "t": 2116800,
+            "equity": 33863.54940899386
+          },
+          {
+            "t": 2203200,
+            "equity": 35556.72687944355
+          },
+          {
+            "t": 2289600,
+            "equity": 37334.563223415724
+          },
+          {
+            "t": 2376000,
+            "equity": 39201.29138458651
+          },
+          {
+            "t": 2462400,
+            "equity": 41161.35595381584
+          },
+          {
+            "t": 2548800,
+            "equity": 43219.423751506634
+          }
+        ]
+      }
+    },
+    {
+      "fold_index": 1,
+      "test_window": [
+        2592000,
+        5184000
+      ],
+      "ts_result": {
+        "metrics": {
+          "total_return": 3.3219423751506634,
+          "cagr": 74227973.89051735,
+          "sharpe": 10178948453130456,
+          "sortino": 0,
+          "max_drawdown": 0,
+          "win_rate": 1,
+          "num_trades": 30,
+          "brier_vs_crowd": null,
+          "brier_strategy": null,
+          "brier_crowd": null,
+          "starting_capital": 10000,
+          "ending_capital": 43219.423751506634
+        },
+        "trades": [
+          {
+            "market_slug": "m/W30",
+            "outcome": "YES",
+            "entry_t": 2592000,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 2635200,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1000,
+            "cost": 500,
+            "proceeds": 1000,
+            "pnl": 500,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W31",
+            "outcome": "YES",
+            "entry_t": 2678400,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 2721600,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1050,
+            "cost": 525,
+            "proceeds": 1050,
+            "pnl": 525,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W32",
+            "outcome": "YES",
+            "entry_t": 2764800,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 2808000,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1102.5,
+            "cost": 551.25,
+            "proceeds": 1102.5,
+            "pnl": 551.25,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W33",
+            "outcome": "YES",
+            "entry_t": 2851200,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 2894400,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1157.625,
+            "cost": 578.8125,
+            "proceeds": 1157.625,
+            "pnl": 578.8125,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W34",
+            "outcome": "YES",
+            "entry_t": 2937600,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 2980800,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1215.5062500000001,
+            "cost": 607.7531250000001,
+            "proceeds": 1215.5062500000001,
+            "pnl": 607.7531250000001,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W35",
+            "outcome": "YES",
+            "entry_t": 3024000,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 3067200,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1276.2815625000003,
+            "cost": 638.1407812500001,
+            "proceeds": 1276.2815625000003,
+            "pnl": 638.1407812500001,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W36",
+            "outcome": "YES",
+            "entry_t": 3110400,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 3153600,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1340.0956406250002,
+            "cost": 670.0478203125001,
+            "proceeds": 1340.0956406250002,
+            "pnl": 670.0478203125001,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W37",
+            "outcome": "YES",
+            "entry_t": 3196800,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 3240000,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1407.1004226562502,
+            "cost": 703.5502113281251,
+            "proceeds": 1407.1004226562502,
+            "pnl": 703.5502113281251,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W38",
+            "outcome": "YES",
+            "entry_t": 3283200,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 3326400,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1477.4554437890629,
+            "cost": 738.7277218945314,
+            "proceeds": 1477.4554437890629,
+            "pnl": 738.7277218945314,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W39",
+            "outcome": "YES",
+            "entry_t": 3369600,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 3412800,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1551.3282159785158,
+            "cost": 775.6641079892579,
+            "proceeds": 1551.3282159785158,
+            "pnl": 775.6641079892579,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W40",
+            "outcome": "YES",
+            "entry_t": 3456000,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 3499200,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1628.8946267774418,
+            "cost": 814.4473133887209,
+            "proceeds": 1628.8946267774418,
+            "pnl": 814.4473133887209,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W41",
+            "outcome": "YES",
+            "entry_t": 3542400,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 3585600,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1710.3393581163139,
+            "cost": 855.1696790581569,
+            "proceeds": 1710.3393581163139,
+            "pnl": 855.1696790581569,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W42",
+            "outcome": "YES",
+            "entry_t": 3628800,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 3672000,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1795.8563260221295,
+            "cost": 897.9281630110647,
+            "proceeds": 1795.8563260221295,
+            "pnl": 897.9281630110647,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W43",
+            "outcome": "YES",
+            "entry_t": 3715200,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 3758400,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1885.6491423232362,
+            "cost": 942.8245711616181,
+            "proceeds": 1885.6491423232362,
+            "pnl": 942.8245711616181,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W44",
+            "outcome": "YES",
+            "entry_t": 3801600,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 3844800,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1979.931599439398,
+            "cost": 989.965799719699,
+            "proceeds": 1979.931599439398,
+            "pnl": 989.965799719699,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W45",
+            "outcome": "YES",
+            "entry_t": 3888000,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 3931200,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2078.928179411368,
+            "cost": 1039.464089705684,
+            "proceeds": 2078.928179411368,
+            "pnl": 1039.464089705684,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W46",
+            "outcome": "YES",
+            "entry_t": 3974400,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 4017600,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2182.874588381936,
+            "cost": 1091.437294190968,
+            "proceeds": 2182.874588381936,
+            "pnl": 1091.437294190968,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W47",
+            "outcome": "YES",
+            "entry_t": 4060800,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 4104000,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2292.018317801033,
+            "cost": 1146.0091589005165,
+            "proceeds": 2292.018317801033,
+            "pnl": 1146.0091589005165,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W48",
+            "outcome": "YES",
+            "entry_t": 4147200,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 4190400,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2406.6192336910844,
+            "cost": 1203.3096168455422,
+            "proceeds": 2406.6192336910844,
+            "pnl": 1203.3096168455422,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W49",
+            "outcome": "YES",
+            "entry_t": 4233600,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 4276800,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2526.950195375639,
+            "cost": 1263.4750976878195,
+            "proceeds": 2526.950195375639,
+            "pnl": 1263.4750976878195,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W50",
+            "outcome": "YES",
+            "entry_t": 4320000,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 4363200,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2653.297705144421,
+            "cost": 1326.6488525722104,
+            "proceeds": 2653.297705144421,
+            "pnl": 1326.6488525722104,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W51",
+            "outcome": "YES",
+            "entry_t": 4406400,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 4449600,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2785.962590401642,
+            "cost": 1392.981295200821,
+            "proceeds": 2785.962590401642,
+            "pnl": 1392.981295200821,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W52",
+            "outcome": "YES",
+            "entry_t": 4492800,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 4536000,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2925.260719921724,
+            "cost": 1462.630359960862,
+            "proceeds": 2925.260719921724,
+            "pnl": 1462.630359960862,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W53",
+            "outcome": "YES",
+            "entry_t": 4579200,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 4622400,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 3071.5237559178104,
+            "cost": 1535.7618779589052,
+            "proceeds": 3071.5237559178104,
+            "pnl": 1535.7618779589052,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W54",
+            "outcome": "YES",
+            "entry_t": 4665600,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 4708800,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 3225.0999437137007,
+            "cost": 1612.5499718568503,
+            "proceeds": 3225.0999437137007,
+            "pnl": 1612.5499718568503,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W55",
+            "outcome": "YES",
+            "entry_t": 4752000,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 4795200,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 3386.354940899386,
+            "cost": 1693.177470449693,
+            "proceeds": 3386.354940899386,
+            "pnl": 1693.177470449693,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W56",
+            "outcome": "YES",
+            "entry_t": 4838400,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 4881600,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 3555.6726879443554,
+            "cost": 1777.8363439721777,
+            "proceeds": 3555.6726879443554,
+            "pnl": 1777.8363439721777,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W57",
+            "outcome": "YES",
+            "entry_t": 4924800,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 4968000,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 3733.4563223415726,
+            "cost": 1866.7281611707863,
+            "proceeds": 3733.4563223415726,
+            "pnl": 1866.7281611707863,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W58",
+            "outcome": "YES",
+            "entry_t": 5011200,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 5054400,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 3920.129138458651,
+            "cost": 1960.0645692293256,
+            "proceeds": 3920.129138458651,
+            "pnl": 1960.0645692293256,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W59",
+            "outcome": "YES",
+            "entry_t": 5097600,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 5140800,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 4116.135595381584,
+            "cost": 2058.067797690792,
+            "proceeds": 4116.135595381584,
+            "pnl": 2058.067797690792,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          }
+        ],
+        "equity_curve": [
+          {
+            "t": 2635200,
+            "equity": 10500
+          },
+          {
+            "t": 2721600,
+            "equity": 11025
+          },
+          {
+            "t": 2808000,
+            "equity": 11576.25
+          },
+          {
+            "t": 2894400,
+            "equity": 12155.0625
+          },
+          {
+            "t": 2980800,
+            "equity": 12762.815625000001
+          },
+          {
+            "t": 3067200,
+            "equity": 13400.956406250001
+          },
+          {
+            "t": 3153600,
+            "equity": 14071.004226562502
+          },
+          {
+            "t": 3240000,
+            "equity": 14774.554437890627
+          },
+          {
+            "t": 3326400,
+            "equity": 15513.282159785158
+          },
+          {
+            "t": 3412800,
+            "equity": 16288.946267774416
+          },
+          {
+            "t": 3499200,
+            "equity": 17103.393581163138
+          },
+          {
+            "t": 3585600,
+            "equity": 17958.563260221294
+          },
+          {
+            "t": 3672000,
+            "equity": 18856.49142323236
+          },
+          {
+            "t": 3758400,
+            "equity": 19799.31599439398
+          },
+          {
+            "t": 3844800,
+            "equity": 20789.28179411368
+          },
+          {
+            "t": 3931200,
+            "equity": 21828.74588381936
+          },
+          {
+            "t": 4017600,
+            "equity": 22920.183178010328
+          },
+          {
+            "t": 4104000,
+            "equity": 24066.192336910844
+          },
+          {
+            "t": 4190400,
+            "equity": 25269.501953756386
+          },
+          {
+            "t": 4276800,
+            "equity": 26532.977051444206
+          },
+          {
+            "t": 4363200,
+            "equity": 27859.62590401642
+          },
+          {
+            "t": 4449600,
+            "equity": 29252.60719921724
+          },
+          {
+            "t": 4536000,
+            "equity": 30715.237559178102
+          },
+          {
+            "t": 4622400,
+            "equity": 32250.999437137005
+          },
+          {
+            "t": 4708800,
+            "equity": 33863.54940899386
+          },
+          {
+            "t": 4795200,
+            "equity": 35556.72687944355
+          },
+          {
+            "t": 4881600,
+            "equity": 37334.563223415724
+          },
+          {
+            "t": 4968000,
+            "equity": 39201.29138458651
+          },
+          {
+            "t": 5054400,
+            "equity": 41161.35595381584
+          },
+          {
+            "t": 5140800,
+            "equity": 43219.423751506634
+          }
+        ]
+      }
+    },
+    {
+      "fold_index": 2,
+      "test_window": [
+        5184000,
+        7776000
+      ],
+      "ts_result": {
+        "metrics": {
+          "total_return": 3.3219423751506634,
+          "cagr": 74227973.89051735,
+          "sharpe": 10178948453130456,
+          "sortino": 0,
+          "max_drawdown": 0,
+          "win_rate": 1,
+          "num_trades": 30,
+          "brier_vs_crowd": null,
+          "brier_strategy": null,
+          "brier_crowd": null,
+          "starting_capital": 10000,
+          "ending_capital": 43219.423751506634
+        },
+        "trades": [
+          {
+            "market_slug": "m/W60",
+            "outcome": "YES",
+            "entry_t": 5184000,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 5227200,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1000,
+            "cost": 500,
+            "proceeds": 1000,
+            "pnl": 500,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W61",
+            "outcome": "YES",
+            "entry_t": 5270400,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 5313600,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1050,
+            "cost": 525,
+            "proceeds": 1050,
+            "pnl": 525,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W62",
+            "outcome": "YES",
+            "entry_t": 5356800,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 5400000,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1102.5,
+            "cost": 551.25,
+            "proceeds": 1102.5,
+            "pnl": 551.25,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W63",
+            "outcome": "YES",
+            "entry_t": 5443200,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 5486400,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1157.625,
+            "cost": 578.8125,
+            "proceeds": 1157.625,
+            "pnl": 578.8125,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W64",
+            "outcome": "YES",
+            "entry_t": 5529600,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 5572800,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1215.5062500000001,
+            "cost": 607.7531250000001,
+            "proceeds": 1215.5062500000001,
+            "pnl": 607.7531250000001,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W65",
+            "outcome": "YES",
+            "entry_t": 5616000,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 5659200,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1276.2815625000003,
+            "cost": 638.1407812500001,
+            "proceeds": 1276.2815625000003,
+            "pnl": 638.1407812500001,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W66",
+            "outcome": "YES",
+            "entry_t": 5702400,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 5745600,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1340.0956406250002,
+            "cost": 670.0478203125001,
+            "proceeds": 1340.0956406250002,
+            "pnl": 670.0478203125001,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W67",
+            "outcome": "YES",
+            "entry_t": 5788800,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 5832000,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1407.1004226562502,
+            "cost": 703.5502113281251,
+            "proceeds": 1407.1004226562502,
+            "pnl": 703.5502113281251,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W68",
+            "outcome": "YES",
+            "entry_t": 5875200,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 5918400,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1477.4554437890629,
+            "cost": 738.7277218945314,
+            "proceeds": 1477.4554437890629,
+            "pnl": 738.7277218945314,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W69",
+            "outcome": "YES",
+            "entry_t": 5961600,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 6004800,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1551.3282159785158,
+            "cost": 775.6641079892579,
+            "proceeds": 1551.3282159785158,
+            "pnl": 775.6641079892579,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W70",
+            "outcome": "YES",
+            "entry_t": 6048000,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 6091200,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1628.8946267774418,
+            "cost": 814.4473133887209,
+            "proceeds": 1628.8946267774418,
+            "pnl": 814.4473133887209,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W71",
+            "outcome": "YES",
+            "entry_t": 6134400,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 6177600,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1710.3393581163139,
+            "cost": 855.1696790581569,
+            "proceeds": 1710.3393581163139,
+            "pnl": 855.1696790581569,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W72",
+            "outcome": "YES",
+            "entry_t": 6220800,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 6264000,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1795.8563260221295,
+            "cost": 897.9281630110647,
+            "proceeds": 1795.8563260221295,
+            "pnl": 897.9281630110647,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W73",
+            "outcome": "YES",
+            "entry_t": 6307200,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 6350400,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1885.6491423232362,
+            "cost": 942.8245711616181,
+            "proceeds": 1885.6491423232362,
+            "pnl": 942.8245711616181,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W74",
+            "outcome": "YES",
+            "entry_t": 6393600,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 6436800,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 1979.931599439398,
+            "cost": 989.965799719699,
+            "proceeds": 1979.931599439398,
+            "pnl": 989.965799719699,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W75",
+            "outcome": "YES",
+            "entry_t": 6480000,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 6523200,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2078.928179411368,
+            "cost": 1039.464089705684,
+            "proceeds": 2078.928179411368,
+            "pnl": 1039.464089705684,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W76",
+            "outcome": "YES",
+            "entry_t": 6566400,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 6609600,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2182.874588381936,
+            "cost": 1091.437294190968,
+            "proceeds": 2182.874588381936,
+            "pnl": 1091.437294190968,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W77",
+            "outcome": "YES",
+            "entry_t": 6652800,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 6696000,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2292.018317801033,
+            "cost": 1146.0091589005165,
+            "proceeds": 2292.018317801033,
+            "pnl": 1146.0091589005165,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W78",
+            "outcome": "YES",
+            "entry_t": 6739200,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 6782400,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2406.6192336910844,
+            "cost": 1203.3096168455422,
+            "proceeds": 2406.6192336910844,
+            "pnl": 1203.3096168455422,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W79",
+            "outcome": "YES",
+            "entry_t": 6825600,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 6868800,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2526.950195375639,
+            "cost": 1263.4750976878195,
+            "proceeds": 2526.950195375639,
+            "pnl": 1263.4750976878195,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W80",
+            "outcome": "YES",
+            "entry_t": 6912000,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 6955200,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2653.297705144421,
+            "cost": 1326.6488525722104,
+            "proceeds": 2653.297705144421,
+            "pnl": 1326.6488525722104,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W81",
+            "outcome": "YES",
+            "entry_t": 6998400,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 7041600,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2785.962590401642,
+            "cost": 1392.981295200821,
+            "proceeds": 2785.962590401642,
+            "pnl": 1392.981295200821,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W82",
+            "outcome": "YES",
+            "entry_t": 7084800,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 7128000,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 2925.260719921724,
+            "cost": 1462.630359960862,
+            "proceeds": 2925.260719921724,
+            "pnl": 1462.630359960862,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W83",
+            "outcome": "YES",
+            "entry_t": 7171200,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 7214400,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 3071.5237559178104,
+            "cost": 1535.7618779589052,
+            "proceeds": 3071.5237559178104,
+            "pnl": 1535.7618779589052,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W84",
+            "outcome": "YES",
+            "entry_t": 7257600,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 7300800,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 3225.0999437137007,
+            "cost": 1612.5499718568503,
+            "proceeds": 3225.0999437137007,
+            "pnl": 1612.5499718568503,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W85",
+            "outcome": "YES",
+            "entry_t": 7344000,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 7387200,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 3386.354940899386,
+            "cost": 1693.177470449693,
+            "proceeds": 3386.354940899386,
+            "pnl": 1693.177470449693,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W86",
+            "outcome": "YES",
+            "entry_t": 7430400,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 7473600,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 3555.6726879443554,
+            "cost": 1777.8363439721777,
+            "proceeds": 3555.6726879443554,
+            "pnl": 1777.8363439721777,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W87",
+            "outcome": "YES",
+            "entry_t": 7516800,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 7560000,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 3733.4563223415726,
+            "cost": 1866.7281611707863,
+            "proceeds": 3733.4563223415726,
+            "pnl": 1866.7281611707863,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W88",
+            "outcome": "YES",
+            "entry_t": 7603200,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 7646400,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 3920.129138458651,
+            "cost": 1960.0645692293256,
+            "proceeds": 3920.129138458651,
+            "pnl": 1960.0645692293256,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          },
+          {
+            "market_slug": "m/W89",
+            "outcome": "YES",
+            "entry_t": 7689600,
+            "entry_price": 0.5,
+            "entry_price_quote": 0.5,
+            "exit_t": 7732800,
+            "exit_price": 1,
+            "exit_price_quote": 1,
+            "exit_reason": "hold_to_resolution",
+            "shares": 4116.135595381584,
+            "cost": 2058.067797690792,
+            "proceeds": 4116.135595381584,
+            "pnl": 2058.067797690792,
+            "return_pct": 1,
+            "days_held": 1,
+            "resolved_outcome": null
+          }
+        ],
+        "equity_curve": [
+          {
+            "t": 5227200,
+            "equity": 10500
+          },
+          {
+            "t": 5313600,
+            "equity": 11025
+          },
+          {
+            "t": 5400000,
+            "equity": 11576.25
+          },
+          {
+            "t": 5486400,
+            "equity": 12155.0625
+          },
+          {
+            "t": 5572800,
+            "equity": 12762.815625000001
+          },
+          {
+            "t": 5659200,
+            "equity": 13400.956406250001
+          },
+          {
+            "t": 5745600,
+            "equity": 14071.004226562502
+          },
+          {
+            "t": 5832000,
+            "equity": 14774.554437890627
+          },
+          {
+            "t": 5918400,
+            "equity": 15513.282159785158
+          },
+          {
+            "t": 6004800,
+            "equity": 16288.946267774416
+          },
+          {
+            "t": 6091200,
+            "equity": 17103.393581163138
+          },
+          {
+            "t": 6177600,
+            "equity": 17958.563260221294
+          },
+          {
+            "t": 6264000,
+            "equity": 18856.49142323236
+          },
+          {
+            "t": 6350400,
+            "equity": 19799.31599439398
+          },
+          {
+            "t": 6436800,
+            "equity": 20789.28179411368
+          },
+          {
+            "t": 6523200,
+            "equity": 21828.74588381936
+          },
+          {
+            "t": 6609600,
+            "equity": 22920.183178010328
+          },
+          {
+            "t": 6696000,
+            "equity": 24066.192336910844
+          },
+          {
+            "t": 6782400,
+            "equity": 25269.501953756386
+          },
+          {
+            "t": 6868800,
+            "equity": 26532.977051444206
+          },
+          {
+            "t": 6955200,
+            "equity": 27859.62590401642
+          },
+          {
+            "t": 7041600,
+            "equity": 29252.60719921724
+          },
+          {
+            "t": 7128000,
+            "equity": 30715.237559178102
+          },
+          {
+            "t": 7214400,
+            "equity": 32250.999437137005
+          },
+          {
+            "t": 7300800,
+            "equity": 33863.54940899386
+          },
+          {
+            "t": 7387200,
+            "equity": 35556.72687944355
+          },
+          {
+            "t": 7473600,
+            "equity": 37334.563223415724
+          },
+          {
+            "t": 7560000,
+            "equity": 39201.29138458651
+          },
+          {
+            "t": 7646400,
+            "equity": 41161.35595381584
+          },
+          {
+            "t": 7732800,
+            "equity": 43219.423751506634
+          }
+        ]
+      }
+    }
+  ]
+}
