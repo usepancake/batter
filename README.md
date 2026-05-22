@@ -11,24 +11,36 @@ License: Apache-2.0.
 
 ## Status
 
-**PR-0 — canonicalization substrate.** Ships:
+**PR-0 — canonicalization substrate** (committed at `292b03f`):
 
-- `pancake_engine.canonical.canonicalize(obj) -> bytes` — vendored ECMA-262 §6.1.6.1.13 NumberToString
-  port, key-sorted, NFC string normalization, NaN/Inf/lone-surrogate/duplicate-key/non-string-key
-  rejection. Byte-identical to V8 `JSON.stringify` on finite values.
-- `pancake_engine.hash.sha256_canonical(obj) -> str` — SHA-256 over canonical bytes.
-- `pancake_engine.types` — minimal pydantic v2 models for `EvidenceDataset` and `EvidenceSpec`
-  at the I/O boundary. Validators enforce `slippage_bps ≥ 0`, `fee_bps ≥ 0`, `starting_capital > 0`.
-- `pancake_engine.io.load` — strict JSON load with duplicate-key detection at parse time
-  (via `object_pairs_hook`).
-- CLI: `pancake-engine hash --dataset|--spec FILE`.
+- `canonicalize(obj) -> bytes` — vendored ECMA-262 NumberToString port
+- `sha256_canonical(obj) -> str` — SHA-256 over canonical bytes
+- Minimal pydantic v2 models with cost / capital non-negativity validators
+- Strict JSON load with duplicate-key detection at parse time
+- `pancake-engine hash --dataset|--spec`
+
+**PR-1 — event-time ledger runner**:
+
+- `run_backtest(spec, dataset, config) -> BacktestResult` — pure function, deterministic
+- Event-time ledger: no future cash leaks; same-timestamp `DECISION < RESOLUTION` ordering
+- `fixed_fraction × available_cash` sizing; `mark_at_cost` mark policy with fees realized at entry
+- `multiplicative_bps` slippage; binary $1/$0 frictionless settlement
+- Standard metrics (total_return, cagr, sharpe, sortino, max_drawdown, win_rate) + PM metrics
+  (Wilson 95% CI on win_rate, brier_crowd; brier_strategy null for rule-based specs)
+- Credibility warnings (`IMPLAUSIBLY_HIGH_SHARPE`, `LOW_SAMPLE_SIZE`, `MARK_AT_COST_DRAWDOWN_MUTED`,
+  `RUINED`, `NO_TRADES_GENERATED`, etc.)
+- `pancake-engine validate --spec --dataset` and `pancake-engine run --spec --dataset --out`
+- TS golden parity: 5 fixtures via `ts_runner_oracle.mjs` against real `runEvidenceBacktest`
+  from pancake-production. 3 match within `1e-9`; 2 documented divergence (D-1 cash leak,
+  D-11 fee realized at entry).
 
 **Not yet shipped** (later PRs):
 
-- Runner / event-time ledger / metrics — PR-1
 - Walk-forward — PR-2
-- Examples / notebooks — PR-2
+- Domain examples / notebooks — PR-2
 - ResultEnvelope adapter — PR-4+
+- Other sizing / mark / slippage modes, multi-outcome, `fair_probability`, CLV, benchmark,
+  cost-sensitivity, bootstrap CIs — PR-3+
 
 ## Quickstart
 
@@ -40,11 +52,14 @@ node tests/fixtures/canonical/v8_oracle.js   # regenerate the V8 oracle expected
 pytest -v
 ```
 
-Hash a dataset or spec from the CLI:
+Hash, validate, and run from the CLI:
 
 ```bash
-pancake-engine hash --dataset path/to/dataset.json
-pancake-engine hash --spec    path/to/spec.json
+pancake-engine hash     --dataset path/to/dataset.json
+pancake-engine hash     --spec    path/to/spec.json
+pancake-engine validate --spec path/to/spec.json --dataset path/to/dataset.json
+pancake-engine run      --spec path/to/spec.json --dataset path/to/dataset.json \
+                        --out result.json --observation-time 1700000000
 ```
 
 ## Canonical-form contract

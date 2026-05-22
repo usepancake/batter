@@ -1,0 +1,887 @@
+[
+  {
+    "name": "single_yes_win_clean",
+    "raw_spec": {
+      "spec_family": "pancake-evidence-spec",
+      "spec_version": "0.1",
+      "name": "ts-oracle-fixture",
+      "evidence_dataset_id": "ev_oracle",
+      "schema_requirements": {
+        "required_columns": [
+          {
+            "name": "mkt",
+            "type": "string",
+            "semantic_role": "market_link"
+          },
+          {
+            "name": "dec_ts",
+            "type": "int",
+            "semantic_role": "decision_time"
+          },
+          {
+            "name": "res_ts",
+            "type": "int",
+            "semantic_role": "resolution_time"
+          },
+          {
+            "name": "price",
+            "type": "number",
+            "semantic_role": "entry_price",
+            "range": [
+              0,
+              1
+            ]
+          },
+          {
+            "name": "outcome",
+            "type": "int",
+            "semantic_role": "resolved_outcome_numeric"
+          },
+          {
+            "name": "alpha",
+            "type": "number",
+            "semantic_role": "feature"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "semantic_role": "feature"
+          }
+        ]
+      },
+      "strategy": {
+        "side": "YES",
+        "entry": {
+          "when": {
+            "feature": "alpha",
+            "gte": 2
+          }
+        },
+        "yes_payoff": {
+          "when": {
+            "feature_equal": {
+              "a": "target",
+              "b": "outcome"
+            }
+          }
+        },
+        "sizing": {
+          "mode": "fixed_fraction",
+          "value": 0.1
+        }
+      },
+      "costs": {
+        "slippage_bps": 0,
+        "fee_bps": 0
+      },
+      "starting_capital": 1000
+    },
+    "rows": [
+      {
+        "mkt": "m/A",
+        "dec_ts": 100,
+        "res_ts": 200,
+        "price": 0.5,
+        "outcome": 1,
+        "alpha": 3,
+        "target": 1
+      }
+    ],
+    "observation_now_sec": 300,
+    "expected": "match",
+    "divergence_notes": null,
+    "ts_result": {
+      "compiled_spec_hash": "691ab241469a4dd975e902e5958c4465e70408df7ff870c675b2cb9fdc207159",
+      "metrics": {
+        "total_return": 0.10000000000000009,
+        "cagr": 1283305580313389.5,
+        "sharpe": 0,
+        "sortino": 0,
+        "max_drawdown": 0,
+        "win_rate": 1,
+        "num_trades": 1,
+        "brier_vs_crowd": null,
+        "brier_strategy": null,
+        "brier_crowd": null,
+        "starting_capital": 1000,
+        "ending_capital": 1100
+      },
+      "equity_curve": [
+        {
+          "t": 200,
+          "equity": 1100
+        }
+      ],
+      "drawdown_curve": [
+        {
+          "t": 200,
+          "dd": 0
+        }
+      ],
+      "monthly_returns": [
+        {
+          "year": 1970,
+          "month": 1,
+          "return_pct": 0
+        }
+      ],
+      "trades": [
+        {
+          "market_slug": "m/A",
+          "outcome": "YES",
+          "entry_t": 100,
+          "entry_price": 0.5,
+          "entry_price_quote": 0.5,
+          "exit_t": 200,
+          "exit_price": 1,
+          "exit_price_quote": 1,
+          "exit_reason": "hold_to_resolution",
+          "shares": 200,
+          "cost": 100,
+          "proceeds": 200,
+          "pnl": 100,
+          "return_pct": 1,
+          "days_held": 0,
+          "resolved_outcome": null
+        }
+      ],
+      "validation": {
+        "schema_match": "pass",
+        "lookahead_check": "pass",
+        "monotonicity_check": "pass",
+        "range_checks": "pass",
+        "future_rows_count": 0
+      },
+      "evidence_runner_version": "pancake-evidence-runner@0.1.0"
+    }
+  },
+  {
+    "name": "no_side_at_0_96",
+    "raw_spec": {
+      "spec_family": "pancake-evidence-spec",
+      "spec_version": "0.1",
+      "name": "ts-oracle-fixture",
+      "evidence_dataset_id": "ev_oracle",
+      "schema_requirements": {
+        "required_columns": [
+          {
+            "name": "mkt",
+            "type": "string",
+            "semantic_role": "market_link"
+          },
+          {
+            "name": "dec_ts",
+            "type": "int",
+            "semantic_role": "decision_time"
+          },
+          {
+            "name": "res_ts",
+            "type": "int",
+            "semantic_role": "resolution_time"
+          },
+          {
+            "name": "price",
+            "type": "number",
+            "semantic_role": "entry_price",
+            "range": [
+              0,
+              1
+            ]
+          },
+          {
+            "name": "outcome",
+            "type": "int",
+            "semantic_role": "resolved_outcome_numeric"
+          },
+          {
+            "name": "alpha",
+            "type": "number",
+            "semantic_role": "feature"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "semantic_role": "feature"
+          }
+        ]
+      },
+      "strategy": {
+        "side": "NO",
+        "entry": {
+          "when": {
+            "feature": "alpha",
+            "gte": 2
+          }
+        },
+        "yes_payoff": {
+          "when": {
+            "feature_equal": {
+              "a": "target",
+              "b": "outcome"
+            }
+          }
+        },
+        "sizing": {
+          "mode": "fixed_fraction",
+          "value": 0.1
+        }
+      },
+      "costs": {
+        "slippage_bps": 0,
+        "fee_bps": 0
+      },
+      "starting_capital": 1000
+    },
+    "rows": [
+      {
+        "mkt": "m/A",
+        "dec_ts": 100,
+        "res_ts": 200,
+        "price": 0.96,
+        "outcome": 0,
+        "alpha": 3,
+        "target": 1
+      }
+    ],
+    "observation_now_sec": 300,
+    "expected": "match",
+    "divergence_notes": null,
+    "ts_result": {
+      "compiled_spec_hash": "e540c956e8e43d21cef3d3641dd7c0c2ee7cf56eebef63c22b55b5ca0b5e8954",
+      "metrics": {
+        "total_return": 0.004166666666666652,
+        "cagr": 3.5616012092163283,
+        "sharpe": 0,
+        "sortino": 0,
+        "max_drawdown": 0,
+        "win_rate": 1,
+        "num_trades": 1,
+        "brier_vs_crowd": null,
+        "brier_strategy": null,
+        "brier_crowd": null,
+        "starting_capital": 1000,
+        "ending_capital": 1004.1666666666666
+      },
+      "equity_curve": [
+        {
+          "t": 200,
+          "equity": 1004.1666666666666
+        }
+      ],
+      "drawdown_curve": [
+        {
+          "t": 200,
+          "dd": 0
+        }
+      ],
+      "monthly_returns": [
+        {
+          "year": 1970,
+          "month": 1,
+          "return_pct": 0
+        }
+      ],
+      "trades": [
+        {
+          "market_slug": "m/A",
+          "outcome": "NO",
+          "entry_t": 100,
+          "entry_price": 0.96,
+          "entry_price_quote": 0.96,
+          "exit_t": 200,
+          "exit_price": 1,
+          "exit_price_quote": 1,
+          "exit_reason": "hold_to_resolution",
+          "shares": 104.16666666666667,
+          "cost": 100,
+          "proceeds": 104.16666666666667,
+          "pnl": 4.166666666666671,
+          "return_pct": 0.04166666666666671,
+          "days_held": 0,
+          "resolved_outcome": null
+        }
+      ],
+      "validation": {
+        "schema_match": "pass",
+        "lookahead_check": "pass",
+        "monotonicity_check": "pass",
+        "range_checks": "pass",
+        "future_rows_count": 0
+      },
+      "evidence_runner_version": "pancake-evidence-runner@0.1.0"
+    }
+  },
+  {
+    "name": "three_sequential_trades",
+    "raw_spec": {
+      "spec_family": "pancake-evidence-spec",
+      "spec_version": "0.1",
+      "name": "ts-oracle-fixture",
+      "evidence_dataset_id": "ev_oracle",
+      "schema_requirements": {
+        "required_columns": [
+          {
+            "name": "mkt",
+            "type": "string",
+            "semantic_role": "market_link"
+          },
+          {
+            "name": "dec_ts",
+            "type": "int",
+            "semantic_role": "decision_time"
+          },
+          {
+            "name": "res_ts",
+            "type": "int",
+            "semantic_role": "resolution_time"
+          },
+          {
+            "name": "price",
+            "type": "number",
+            "semantic_role": "entry_price",
+            "range": [
+              0,
+              1
+            ]
+          },
+          {
+            "name": "outcome",
+            "type": "int",
+            "semantic_role": "resolved_outcome_numeric"
+          },
+          {
+            "name": "alpha",
+            "type": "number",
+            "semantic_role": "feature"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "semantic_role": "feature"
+          }
+        ]
+      },
+      "strategy": {
+        "side": "YES",
+        "entry": {
+          "when": {
+            "feature": "alpha",
+            "gte": 2
+          }
+        },
+        "yes_payoff": {
+          "when": {
+            "feature_equal": {
+              "a": "target",
+              "b": "outcome"
+            }
+          }
+        },
+        "sizing": {
+          "mode": "fixed_fraction",
+          "value": 0.1
+        }
+      },
+      "costs": {
+        "slippage_bps": 0,
+        "fee_bps": 0
+      },
+      "starting_capital": 1000
+    },
+    "rows": [
+      {
+        "mkt": "m/A",
+        "dec_ts": 100,
+        "res_ts": 200,
+        "price": 0.5,
+        "outcome": 1,
+        "alpha": 3,
+        "target": 1
+      },
+      {
+        "mkt": "m/A",
+        "dec_ts": 300,
+        "res_ts": 400,
+        "price": 0.42,
+        "outcome": 1,
+        "alpha": 3,
+        "target": 1
+      },
+      {
+        "mkt": "m/B",
+        "dec_ts": 500,
+        "res_ts": 600,
+        "price": 0.25,
+        "outcome": 0,
+        "alpha": 2.5,
+        "target": 1
+      }
+    ],
+    "observation_now_sec": 800,
+    "expected": "match",
+    "divergence_notes": null,
+    "ts_result": {
+      "compiled_spec_hash": "691ab241469a4dd975e902e5958c4465e70408df7ff870c675b2cb9fdc207159",
+      "metrics": {
+        "total_return": 0.12671428571428578,
+        "cagr": 8166525007441023000,
+        "sharpe": 0,
+        "sortino": 0,
+        "max_drawdown": 0.09999999999999996,
+        "win_rate": 0.6666666666666666,
+        "num_trades": 3,
+        "brier_vs_crowd": null,
+        "brier_strategy": null,
+        "brier_crowd": null,
+        "starting_capital": 1000,
+        "ending_capital": 1126.7142857142858
+      },
+      "equity_curve": [
+        {
+          "t": 200,
+          "equity": 1100
+        },
+        {
+          "t": 400,
+          "equity": 1251.904761904762
+        },
+        {
+          "t": 600,
+          "equity": 1126.7142857142858
+        }
+      ],
+      "drawdown_curve": [
+        {
+          "t": 200,
+          "dd": 0
+        },
+        {
+          "t": 400,
+          "dd": 0
+        },
+        {
+          "t": 600,
+          "dd": 0.09999999999999996
+        }
+      ],
+      "monthly_returns": [
+        {
+          "year": 1970,
+          "month": 1,
+          "return_pct": 0
+        }
+      ],
+      "trades": [
+        {
+          "market_slug": "m/A",
+          "outcome": "YES",
+          "entry_t": 100,
+          "entry_price": 0.5,
+          "entry_price_quote": 0.5,
+          "exit_t": 200,
+          "exit_price": 1,
+          "exit_price_quote": 1,
+          "exit_reason": "hold_to_resolution",
+          "shares": 200,
+          "cost": 100,
+          "proceeds": 200,
+          "pnl": 100,
+          "return_pct": 1,
+          "days_held": 0,
+          "resolved_outcome": null
+        },
+        {
+          "market_slug": "m/A",
+          "outcome": "YES",
+          "entry_t": 300,
+          "entry_price": 0.42,
+          "entry_price_quote": 0.42,
+          "exit_t": 400,
+          "exit_price": 1,
+          "exit_price_quote": 1,
+          "exit_reason": "hold_to_resolution",
+          "shares": 261.9047619047619,
+          "cost": 110,
+          "proceeds": 261.9047619047619,
+          "pnl": 151.90476190476193,
+          "return_pct": 1.3809523809523812,
+          "days_held": 0,
+          "resolved_outcome": null
+        },
+        {
+          "market_slug": "m/B",
+          "outcome": "YES",
+          "entry_t": 500,
+          "entry_price": 0.25,
+          "entry_price_quote": 0.25,
+          "exit_t": 600,
+          "exit_price": 0,
+          "exit_price_quote": 0,
+          "exit_reason": "hold_to_resolution",
+          "shares": 500.7619047619048,
+          "cost": 125.1904761904762,
+          "proceeds": 0,
+          "pnl": -125.1904761904762,
+          "return_pct": -1,
+          "days_held": 0,
+          "resolved_outcome": null
+        }
+      ],
+      "validation": {
+        "schema_match": "pass",
+        "lookahead_check": "pass",
+        "monotonicity_check": "pass",
+        "range_checks": "pass",
+        "future_rows_count": 0
+      },
+      "evidence_runner_version": "pancake-evidence-runner@0.1.0"
+    }
+  },
+  {
+    "name": "cash_leak_overlapping",
+    "raw_spec": {
+      "spec_family": "pancake-evidence-spec",
+      "spec_version": "0.1",
+      "name": "ts-oracle-fixture",
+      "evidence_dataset_id": "ev_oracle",
+      "schema_requirements": {
+        "required_columns": [
+          {
+            "name": "mkt",
+            "type": "string",
+            "semantic_role": "market_link"
+          },
+          {
+            "name": "dec_ts",
+            "type": "int",
+            "semantic_role": "decision_time"
+          },
+          {
+            "name": "res_ts",
+            "type": "int",
+            "semantic_role": "resolution_time"
+          },
+          {
+            "name": "price",
+            "type": "number",
+            "semantic_role": "entry_price",
+            "range": [
+              0,
+              1
+            ]
+          },
+          {
+            "name": "outcome",
+            "type": "int",
+            "semantic_role": "resolved_outcome_numeric"
+          },
+          {
+            "name": "alpha",
+            "type": "number",
+            "semantic_role": "feature"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "semantic_role": "feature"
+          }
+        ]
+      },
+      "strategy": {
+        "side": "YES",
+        "entry": {
+          "when": {
+            "feature": "alpha",
+            "gte": 2
+          }
+        },
+        "yes_payoff": {
+          "when": {
+            "feature_equal": {
+              "a": "target",
+              "b": "outcome"
+            }
+          }
+        },
+        "sizing": {
+          "mode": "fixed_fraction",
+          "value": 0.9
+        }
+      },
+      "costs": {
+        "slippage_bps": 0,
+        "fee_bps": 0
+      },
+      "starting_capital": 1000
+    },
+    "rows": [
+      {
+        "mkt": "m/A",
+        "dec_ts": 100,
+        "res_ts": 1000,
+        "price": 0.5,
+        "outcome": 1,
+        "alpha": 3,
+        "target": 1
+      },
+      {
+        "mkt": "m/B",
+        "dec_ts": 200,
+        "res_ts": 2000,
+        "price": 0.5,
+        "outcome": 1,
+        "alpha": 3,
+        "target": 1
+      }
+    ],
+    "observation_now_sec": 3000,
+    "expected": "documented_divergence",
+    "divergence_notes": "D-1 cash-leak: TS settles A at T=1000 before processing B's T=200 decision, so B sees post-settle cash. Engine 0.3 enforces event-time ledger.",
+    "ts_result": {
+      "compiled_spec_hash": "a5f5e982615a6f04d612325dd979e61f935072d731cbca769123d94cbb97eafa",
+      "metrics": {
+        "total_return": 2.61,
+        "cagr": 3.0912113231507537e+203,
+        "sharpe": 0,
+        "sortino": 0,
+        "max_drawdown": 0,
+        "win_rate": 1,
+        "num_trades": 2,
+        "brier_vs_crowd": null,
+        "brier_strategy": null,
+        "brier_crowd": null,
+        "starting_capital": 1000,
+        "ending_capital": 3610
+      },
+      "equity_curve": [
+        {
+          "t": 1000,
+          "equity": 1900
+        },
+        {
+          "t": 2000,
+          "equity": 3610
+        }
+      ],
+      "drawdown_curve": [
+        {
+          "t": 1000,
+          "dd": 0
+        },
+        {
+          "t": 2000,
+          "dd": 0
+        }
+      ],
+      "monthly_returns": [
+        {
+          "year": 1970,
+          "month": 1,
+          "return_pct": 0
+        }
+      ],
+      "trades": [
+        {
+          "market_slug": "m/A",
+          "outcome": "YES",
+          "entry_t": 100,
+          "entry_price": 0.5,
+          "entry_price_quote": 0.5,
+          "exit_t": 1000,
+          "exit_price": 1,
+          "exit_price_quote": 1,
+          "exit_reason": "hold_to_resolution",
+          "shares": 1800,
+          "cost": 900,
+          "proceeds": 1800,
+          "pnl": 900,
+          "return_pct": 1,
+          "days_held": 0,
+          "resolved_outcome": null
+        },
+        {
+          "market_slug": "m/B",
+          "outcome": "YES",
+          "entry_t": 200,
+          "entry_price": 0.5,
+          "entry_price_quote": 0.5,
+          "exit_t": 2000,
+          "exit_price": 1,
+          "exit_price_quote": 1,
+          "exit_reason": "hold_to_resolution",
+          "shares": 3420,
+          "cost": 1710,
+          "proceeds": 3420,
+          "pnl": 1710,
+          "return_pct": 1,
+          "days_held": 0,
+          "resolved_outcome": null
+        }
+      ],
+      "validation": {
+        "schema_match": "pass",
+        "lookahead_check": "pass",
+        "monotonicity_check": "pass",
+        "range_checks": "pass",
+        "future_rows_count": 0
+      },
+      "evidence_runner_version": "pancake-evidence-runner@0.1.0"
+    }
+  },
+  {
+    "name": "fee_realized_at_entry",
+    "raw_spec": {
+      "spec_family": "pancake-evidence-spec",
+      "spec_version": "0.1",
+      "name": "ts-oracle-fixture",
+      "evidence_dataset_id": "ev_oracle",
+      "schema_requirements": {
+        "required_columns": [
+          {
+            "name": "mkt",
+            "type": "string",
+            "semantic_role": "market_link"
+          },
+          {
+            "name": "dec_ts",
+            "type": "int",
+            "semantic_role": "decision_time"
+          },
+          {
+            "name": "res_ts",
+            "type": "int",
+            "semantic_role": "resolution_time"
+          },
+          {
+            "name": "price",
+            "type": "number",
+            "semantic_role": "entry_price",
+            "range": [
+              0,
+              1
+            ]
+          },
+          {
+            "name": "outcome",
+            "type": "int",
+            "semantic_role": "resolved_outcome_numeric"
+          },
+          {
+            "name": "alpha",
+            "type": "number",
+            "semantic_role": "feature"
+          },
+          {
+            "name": "target",
+            "type": "int",
+            "semantic_role": "feature"
+          }
+        ]
+      },
+      "strategy": {
+        "side": "YES",
+        "entry": {
+          "when": {
+            "feature": "alpha",
+            "gte": 2
+          }
+        },
+        "yes_payoff": {
+          "when": {
+            "feature_equal": {
+              "a": "target",
+              "b": "outcome"
+            }
+          }
+        },
+        "sizing": {
+          "mode": "fixed_fraction",
+          "value": 0.1
+        }
+      },
+      "costs": {
+        "slippage_bps": 0,
+        "fee_bps": 100
+      },
+      "starting_capital": 1000
+    },
+    "rows": [
+      {
+        "mkt": "m/A",
+        "dec_ts": 100,
+        "res_ts": 200,
+        "price": 0.5,
+        "outcome": 1,
+        "alpha": 3,
+        "target": 1
+      }
+    ],
+    "observation_now_sec": 300,
+    "expected": "documented_divergence",
+    "divergence_notes": "D-11 fee realization: TS marks at cost; Engine 0.3 marks at shares × entry_fill_price (fee realized at entry).",
+    "ts_result": {
+      "compiled_spec_hash": "ee142abc928c3bc9cb66268a4909bb491b2098baf5ad15a567711d3384e8810a",
+      "metrics": {
+        "total_return": 0.09800000000000009,
+        "cagr": 660471590516430.9,
+        "sharpe": 0,
+        "sortino": 0,
+        "max_drawdown": 0,
+        "win_rate": 1,
+        "num_trades": 1,
+        "brier_vs_crowd": null,
+        "brier_strategy": null,
+        "brier_crowd": null,
+        "starting_capital": 1000,
+        "ending_capital": 1098
+      },
+      "equity_curve": [
+        {
+          "t": 200,
+          "equity": 1098
+        }
+      ],
+      "drawdown_curve": [
+        {
+          "t": 200,
+          "dd": 0
+        }
+      ],
+      "monthly_returns": [
+        {
+          "year": 1970,
+          "month": 1,
+          "return_pct": 0
+        }
+      ],
+      "trades": [
+        {
+          "market_slug": "m/A",
+          "outcome": "YES",
+          "entry_t": 100,
+          "entry_price": 0.5,
+          "entry_price_quote": 0.5,
+          "exit_t": 200,
+          "exit_price": 1,
+          "exit_price_quote": 1,
+          "exit_reason": "hold_to_resolution",
+          "shares": 198,
+          "cost": 100,
+          "proceeds": 198,
+          "pnl": 98,
+          "return_pct": 0.98,
+          "days_held": 0,
+          "resolved_outcome": null
+        }
+      ],
+      "validation": {
+        "schema_match": "pass",
+        "lookahead_check": "pass",
+        "monotonicity_check": "pass",
+        "range_checks": "pass",
+        "future_rows_count": 0
+      },
+      "evidence_runner_version": "pancake-evidence-runner@0.1.0"
+    }
+  }
+]
