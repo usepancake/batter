@@ -47,20 +47,29 @@ def cagr_piecewise(
     starting_capital: float,
     ending_equity: float,
     period_seconds: int,
-) -> tuple[float, bool]:
-    """Piecewise CAGR. Returns ``(cagr, ruined)``.
+) -> tuple[Optional[float], bool, bool]:
+    """Piecewise CAGR. Returns ``(cagr, ruined, overflowed)``.
 
     ``ruined=True`` indicates ``RUINED`` warning should be emitted.
+    ``overflowed=True`` indicates ``CAGR_EXTRAPOLATION_OVERFLOW`` warning should
+    be emitted and ``cagr`` is ``None``. Overflow happens when
+    ``(ending/starting)^(1/year_fraction)`` exceeds float64 max — e.g., a 20×
+    return in 1 day under the ``year_fraction = 1/365`` floor pushes the
+    extrapolation past ``1.8e308``. The original input is still recoverable
+    via ``total_return``, ``starting_capital``, ``ending_capital``.
     """
     if num_trades == 0:
-        return 0.0, False
+        return 0.0, False, False
     if starting_capital <= 0:
         # Validation should catch first; defensive.
-        return 0.0, False
+        return 0.0, False, False
     if ending_equity <= 0:
-        return -1.0, True
+        return -1.0, True, False
     years = max(period_seconds / SECONDS_PER_YEAR, MIN_YEAR_FRACTION)
-    return (ending_equity / starting_capital) ** (1.0 / years) - 1.0, False
+    try:
+        return (ending_equity / starting_capital) ** (1.0 / years) - 1.0, False, False
+    except OverflowError:
+        return None, False, True
 
 
 def sharpe_ratio(daily_returns: list[float]) -> Optional[float]:
@@ -114,11 +123,11 @@ def compute_standard(
     daily_rets: list[float],
     starting_capital: float,
     period_seconds: int,
-) -> tuple[MetricsStandard, bool]:
-    """Return ``(MetricsStandard, ruined_flag)``."""
+) -> tuple[MetricsStandard, bool, bool]:
+    """Return ``(MetricsStandard, ruined_flag, cagr_overflowed_flag)``."""
     ending_equity = equity_curve[-1].equity if equity_curve else starting_capital
     tr = total_return(starting_capital, ending_equity)
-    cg, ruined = cagr_piecewise(
+    cg, ruined, overflowed = cagr_piecewise(
         num_trades=len(trades),
         starting_capital=starting_capital,
         ending_equity=ending_equity,
@@ -141,7 +150,7 @@ def compute_standard(
         starting_capital=float(starting_capital),
         ending_capital=float(ending_equity),
     )
-    return standard, ruined
+    return standard, ruined, overflowed
 
 
 # -----------------------------------------------------------------------------

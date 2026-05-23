@@ -56,7 +56,7 @@ class MonthlyReturn:
 @dataclass(frozen=True)
 class MetricsStandard:
     total_return: float
-    cagr: float
+    cagr: Optional[float]   # None when CAGR_EXTRAPOLATION_OVERFLOW fires
     sharpe: Optional[float]
     sortino: Optional[float]
     max_drawdown: float

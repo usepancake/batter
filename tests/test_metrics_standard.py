@@ -25,6 +25,51 @@ def test_cagr_ruined_case() -> None:
     assert any(w.code == WarningCode.RUINED for w in result.warnings)
 
 
+def test_cagr_extrapolation_overflow_returns_none_no_crash() -> None:
+    """HIGH-1 (2026-05-23 math audit): a 20× return in 1 day used to crash with
+    OverflowError because (20)^365 exceeds float64 max. Engine now returns
+    cagr=None + CAGR_EXTRAPOLATION_OVERFLOW warning. total_return is unaffected
+    because it does not annualize."""
+    spec = make_spec(side="YES", sizing_value=1.0, starting_capital=1000.0)
+    dataset = make_dataset([
+        # 20× win: $1000 × (1/0.05) shares × $1 settle = $20,000 ending
+        row(mkt="m/A", dec_ts=0, res_ts=86_400, price=0.05, outcome=1, alpha=3.0, target=1),
+    ])
+    config = BacktestConfig(observation_time=86_400 * 2)
+
+    # MUST NOT raise (pre-patch raised OverflowError)
+    result = run_backtest(spec, dataset, config)
+
+    assert result.validation.ok
+    assert result.metrics.standard.cagr is None
+    assert any(w.code == WarningCode.CAGR_EXTRAPOLATION_OVERFLOW for w in result.warnings)
+    # Realized return still recoverable — only annualization overflowed
+    assert abs(result.metrics.standard.total_return - 19.0) < 1e-9
+    assert abs(result.metrics.standard.ending_capital - 20_000.0) < 1e-9
+    assert result.metrics.standard.num_trades == 1
+    # result_hash now computes successfully
+    assert result.result_hash != ""
+
+
+def test_cagr_normal_case_unchanged_by_overflow_patch() -> None:
+    """Modest gain over a longer window still produces a finite cagr and NO
+    CAGR_EXTRAPOLATION_OVERFLOW warning."""
+    spec = make_spec(side="YES", sizing_value=0.1, starting_capital=10_000.0)
+    dataset = make_dataset([
+        row(mkt="m/A", dec_ts=0, res_ts=30 * 86_400, price=0.5, outcome=1, alpha=3.0, target=1),
+    ])
+    config = BacktestConfig(observation_time=60 * 86_400)
+    result = run_backtest(spec, dataset, config)
+
+    assert result.metrics.standard.cagr is not None
+    assert isinstance(result.metrics.standard.cagr, float)
+    # 30-day modest gain (sizing 0.1 × $10k at price 0.5 → +$1000 → 10% total → finite cagr)
+    assert result.metrics.standard.cagr > 0
+    assert result.metrics.standard.cagr < 1e6   # not pathological
+    # No overflow warning
+    assert not any(w.code == WarningCode.CAGR_EXTRAPOLATION_OVERFLOW for w in result.warnings)
+
+
 def test_zero_trades_metrics_defaults() -> None:
     """Strategy that never fires → total_return=0, cagr=0, sharpe=None, sortino=None,
     max_drawdown=0, win_rate=None, NO_TRADES_GENERATED + NO_TRADES_NO_CI warnings."""

@@ -165,7 +165,7 @@ def run_backtest(
     monthly_returns_list = build_monthly_returns(equity_curve) if len(equity_curve) >= 2 else []
 
     period_seconds = max(equity_curve[-1].t - equity_curve[0].t, 1)
-    metrics_standard, ruined = compute_standard(
+    metrics_standard, ruined, cagr_overflowed = compute_standard(
         trades=ledger.trades,
         equity_curve=equity_curve,
         daily_rets=daily_rets,
@@ -187,6 +187,7 @@ def run_backtest(
         mark_policy=config.mark_policy,
         ruined=ruined,
         span_seconds=period_seconds,
+        cagr_overflowed=cagr_overflowed,
     ))
 
     # 8. Hashes

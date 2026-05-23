@@ -28,6 +28,7 @@ def emit_credibility_warnings(
     mark_policy: str,
     ruined: bool,
     span_seconds: int,
+    cagr_overflowed: bool = False,
 ) -> list[Warning]:
     """Return the list of credibility warnings for the given result."""
     out: list[Warning] = []
@@ -112,6 +113,20 @@ def emit_credibility_warnings(
             severity=Severity.WARN,
             message="Ending equity ≤ 0; cagr capped at -1.0.",
             context={"ending_capital": standard.ending_capital},
+        ))
+
+    if cagr_overflowed:
+        out.append(Warning(
+            code=WarningCode.CAGR_EXTRAPOLATION_OVERFLOW,
+            severity=Severity.WARN,
+            message=(
+                "CAGR extrapolation overflowed float64; cagr set to null. "
+                "Use total_return for the realized return; CAGR annualization is "
+                "unreliable over very short windows with extreme multipliers."
+            ),
+            context={"starting_capital": standard.starting_capital,
+                     "ending_capital": standard.ending_capital,
+                     "span_seconds": span_seconds},
         ))
 
     if n > 0 and span_seconds > 0:
