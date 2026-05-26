@@ -44,6 +44,7 @@ class WarningCode(str, Enum):
     FILL_PRICE_OUT_OF_RANGE = "FILL_PRICE_OUT_OF_RANGE"
     FUTURE_ROW_SKIPPED = "FUTURE_ROW_SKIPPED"
     UNRESOLVED_ROW_SKIPPED = "UNRESOLVED_ROW_SKIPPED"
+    EQUITY_OVERFLOW_BOUND = "EQUITY_OVERFLOW_BOUND"  # AF-3: equity hit float64 overflow; clamped to sys.float_info.max
 
     # --- Credibility ---
     LOW_SAMPLE_SIZE = "LOW_SAMPLE_SIZE"            # n < 30

@@ -14,6 +14,7 @@ duty cycle honestly.
 
 from __future__ import annotations
 
+import math
 from datetime import datetime, timezone
 
 from ..result import DrawdownPoint, EquityPoint, MonthlyReturn
@@ -76,7 +77,7 @@ def daily_returns_carry_forward(equity_curve: list[EquityPoint]) -> list[float]:
         if prev <= 0:
             continue
         r = daily[i] / prev - 1.0
-        if r == r and r not in (float("inf"), float("-inf")):  # finite check via NaN/Inf
+        if math.isfinite(r):  # AF-3: filters both NaN and ±Inf (e.g. when equity overflows float64)
             out.append(r)
     return out
 

@@ -10,6 +10,7 @@ documented in pancake-production/docs/research/pancake-engine-0.3-ts-divergences
 from __future__ import annotations
 
 import math
+import sys
 from itertools import groupby
 from typing import Any, Optional
 
@@ -145,13 +146,44 @@ def run_backtest(
     ledger = Ledger(starting_capital=compiled.starting_capital)
     equity_curve: list[EquityPoint] = []
 
+    # AF-3: track equity overflow so we can halt the walk and emit EQUITY_OVERFLOW_BOUND.
+    # float64 overflow → equity becomes inf; next step: inf - inf = nan propagates into
+    # trade fields (pnl, proceeds) which then reach sha256_canonical → E_NONFINITE.
+    # Fix: stop processing events the moment equity goes non-finite; clamp the last equity
+    # point to sys.float_info.max so all downstream floats stay canonical.
+    _FLOAT_MAX = sys.float_info.max
+    _equity_overflowed = False
+    _overflow_t: int = 0
+
     for t, group_iter in groupby(events, key=lambda e: e.time):
+        if _equity_overflowed:
+            # Consume the group iterator without processing (keep groupby state clean).
+            list(group_iter)
+            continue
         for event in group_iter:
             if event.kind == EventKind.DECISION:
                 _process_decision(event, ledger, compiled, warnings)
             else:  # RESOLUTION
                 _process_resolution(event, ledger, compiled, warnings)
-        equity_curve.append(EquityPoint(t=t, equity=ledger.equity()))
+        eq = ledger.equity()
+        if not math.isfinite(eq):
+            _equity_overflowed = True
+            _overflow_t = t
+            equity_curve.append(EquityPoint(t=t, equity=_FLOAT_MAX))
+        else:
+            equity_curve.append(EquityPoint(t=t, equity=eq))
+
+    if _equity_overflowed:
+        warnings.append(Warning(
+            code=WarningCode.EQUITY_OVERFLOW_BOUND,
+            severity=Severity.WARN,
+            message=(
+                f"Equity exceeded float64 range at t={_overflow_t}; "
+                f"halted further trade processing and clamped to sys.float_info.max ({_FLOAT_MAX:.3e}). "
+                "Total return and CAGR are unreliable for this run."
+            ),
+            context={"overflow_t": _overflow_t},
+        ))
 
     # Empty equity_curve → anchor one point at observation_time with starting_capital
     if not equity_curve:

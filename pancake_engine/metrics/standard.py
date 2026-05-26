@@ -97,7 +97,7 @@ def sortino_ratio(daily_returns: list[float]) -> Optional[float]:
     negs = [r for r in daily_returns if r < 0]
     if not negs:
         return None
-    n = len(daily_returns)
+    n = len(daily_returns)  # n = full sample size (true Sortino, Sortino & Price 1994); NOT len(negs) — D-13
     downside_var = sum(r * r for r in negs) / n
     ds = math.sqrt(downside_var)
     if ds == 0:
