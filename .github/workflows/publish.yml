@@ -1,0 +1,38 @@
+# PyPI publish disabled until Trusted Publishing is configured on pypi.org.
+# Flip `if: false` → `if: github.event.action == 'published'` to enable
+# after OIDC config on pypi.org (Project → Publishing → Trusted Publishers).
+# Requires: pypa/gh-action-pypi-publish@release/v1 and a PyPI OIDC environment.
+
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    # DISABLED: set to `if: github.event.action == 'published'` to enable after OIDC config
+    if: false
+    name: Build and publish batter to PyPI
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # required for OIDC Trusted Publishing
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Build wheel and sdist
+        run: uv build
+
+      - name: Publish to PyPI via Trusted Publishing (OIDC)
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # No API token needed — uses OIDC identity from GitHub Actions

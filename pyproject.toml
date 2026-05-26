@@ -3,19 +3,18 @@ requires = ["hatchling >= 1.18"]
 build-backend = "hatchling.build"
 
 [project]
-name = "pancake-engine-py"
+name = "batter"
 version = "0.4.0"
-description = "Pancake Engine 0.4 — deterministic Python research engine over EvidenceDataset. Correctness-first, not TS parity; known TS divergences are documented. Adds MC bootstrap CI + permutation test for credibility."
+description = "Deterministic Python research engine for prediction-market evidence-backed backtests"
 readme = "README.md"
-requires-python = ">= 3.11"
+requires-python = ">= 3.12"
 license = { text = "Apache-2.0" }
-authors = [{ name = "Michael Mustopo" }]
-keywords = ["pancake", "backtest", "evidence", "deterministic", "prediction-market"]
+authors = [{ name = "Michael Mustopo", email = "michael.mustopo@gmail.com" }]
+keywords = ["batter", "pancake", "backtest", "evidence", "deterministic", "prediction-market"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "License :: OSI Approved :: Apache Software License",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Topic :: Office/Business :: Financial :: Investment",
@@ -23,7 +22,12 @@ classifiers = [
 dependencies = [
   "pydantic >= 2.5, < 3",
   "numpy >= 1.26",
+  "scipy>=1.17.1",
 ]
+
+[project.urls]
+Repository = "https://github.com/usepancake/batter"
+Homepage = "https://usepancake.com"
 
 [project.optional-dependencies]
 dev = [
@@ -38,7 +42,7 @@ dev = [
 ]
 
 [project.scripts]
-pancake-engine = "pancake_engine.cli:main"
+batter = "pancake_engine.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["pancake_engine"]
@@ -49,12 +53,16 @@ addopts = ["-ra"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
 
+[tool.ruff.lint.per-file-ignores]
+# Test files often have long fixture-data lines that read better unwrapped
+"tests/**/*.py" = ["E501"]
+
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 strict = true
 files = ["pancake_engine"]

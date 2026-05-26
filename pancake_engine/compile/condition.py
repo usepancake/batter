@@ -15,12 +15,50 @@ to short-circuit to ``False`` (matching TS behavior at L451).
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
-__all__ = ["compile_condition", "Condition"]
+__all__ = ["compile_condition", "extract_referenced_columns", "Condition"]
 
 Row = dict[str, Any]
 Condition = Callable[[Row], bool]
+
+
+def extract_referenced_columns(node: dict[str, Any]) -> set[str]:
+    """Walk a condition AST and return all column names referenced by feature predicates.
+
+    Returns the union of:
+    - ``node["feature"]`` for every ``{"feature": col, ...}`` node
+    - ``node["feature_equal"]["a"]`` and ``["b"]`` for every ``{"feature_equal": ...}`` node
+
+    Does NOT include system-role columns (entry_price, resolution_time, etc.) because
+    those are only accessed directly by the runner, not through the condition AST.
+    """
+    cols: set[str] = set()
+    if not isinstance(node, dict):
+        return cols
+
+    if "all_of" in node:
+        for child in node["all_of"]:
+            cols |= extract_referenced_columns(child)
+    elif "any_of" in node:
+        for child in node["any_of"]:
+            cols |= extract_referenced_columns(child)
+    elif "not" in node:
+        cols |= extract_referenced_columns(node["not"])
+    elif "feature" in node:
+        col = node["feature"]
+        if isinstance(col, str):
+            cols.add(col)
+    elif "feature_equal" in node:
+        pair = node.get("feature_equal", {})
+        if isinstance(pair, dict):
+            if isinstance(pair.get("a"), str):
+                cols.add(pair["a"])
+            if isinstance(pair.get("b"), str):
+                cols.add(pair["b"])
+
+    return cols
 
 
 def compile_condition(node: dict[str, Any]) -> Condition:
@@ -74,7 +112,7 @@ def _make_feature_check(
         if not isinstance(v, (int, float)) or isinstance(v, bool):
             return False
         if eq is not None:
-            return v == eq
+            return bool(v == eq)
         if gte is not None and v < gte:
             return False
         if lte is not None and v > lte:

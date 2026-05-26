@@ -136,7 +136,7 @@ def cmd_walkforward(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="pancake-engine",
+        prog="batter",
         description=(
             "Pancake Engine 0.3 — correctness-first, not TS parity. "
             "Known TS divergences are documented in "
