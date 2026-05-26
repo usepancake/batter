@@ -3,13 +3,13 @@ requires = ["hatchling >= 1.18"]
 build-backend = "hatchling.build"
 
 [project]
-name = "pancake-engine-py"
+name = "pancake-math"
 version = "0.4.0"
-description = "Pancake Engine 0.4 — deterministic Python research engine over EvidenceDataset. Correctness-first, not TS parity; known TS divergences are documented. Adds MC bootstrap CI + permutation test for credibility."
+description = "Deterministic Python research engine for prediction-market evidence-backed backtests"
 readme = "README.md"
 requires-python = ">= 3.11"
 license = { text = "Apache-2.0" }
-authors = [{ name = "Michael Mustopo" }]
+authors = [{ name = "Michael Mustopo", email = "michael.mustopo@gmail.com" }]
 keywords = ["pancake", "backtest", "evidence", "deterministic", "prediction-market"]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -25,6 +25,10 @@ dependencies = [
   "numpy >= 1.26",
   "scipy>=1.17.1",
 ]
+
+[project.urls]
+Repository = "https://github.com/michaelmustopo/pancake-engine-py"
+Homepage = "https://usepancake.com"
 
 [project.optional-dependencies]
 dev = [
