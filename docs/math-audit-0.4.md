@@ -257,31 +257,27 @@ The `_assert_hash_stable` helper in each case confirms same-seed determinism.
 
 ## Cross-platform matrix
 
-**Status: CLOSED — ubuntu + macos × Py 3.11 + 3.12 verified via GH Actions on the public repo (link added in Phase D).**
+**Status: CLOSED — ubuntu-latest + macos-latest + windows-latest × Python 3.12 + 3.13 verified via GH Actions on `usepancake/batter` (link added in Phase D).**
 
-The full 4-cell CI matrix (ubuntu-latest + macos-latest × Python 3.11 + 3.12)
-verifies cross-platform byte-stability of `bootstrap_ci` and `permutation_p_sharpe`
-via GitHub Actions on the public repository.
+The 6-cell CI matrix verifies byte-identical `result_hash` across ubuntu / macos / windows on Python 3.12+ for `bootstrap_ci`, `permutation_p_sharpe`, and the four example smoke tests (toy, jakarta_temperature, rapture_family, btc_pred_hedge).
 
 **Workflow files:**
-- `.github/workflows/test.yml` — active test matrix (ubuntu × macos × 3.11 × 3.12)
-- `.github/workflows/publish.yml` — PyPI publish workflow, gated `if: false` until
-  Trusted Publishing OIDC is configured on pypi.org
+- `.github/workflows/test.yml` — active test matrix (3 OS × Python 3.12 + 3.13 = 6 cells)
+- `.github/workflows/publish.yml` — PyPI publish workflow, gated `if: false` until Trusted Publishing OIDC is configured on pypi.org
 
-**Matrix cells:** ubuntu-3.11, ubuntu-3.12, macos-3.11, macos-3.12
+**Matrix cells:** ubuntu-3.12, ubuntu-3.13, macos-3.12, macos-3.13, windows-3.12, windows-3.13
 
-**Why not Windows?** Prediction-market research workload is Linux/macOS-primary.
-PCG64 byte-stability on Windows is a property of the numpy implementation (same
-uint64 integer draws on all platforms), but the Windows test matrix is deferred
-until the toolchain is validated with the uv setup.
+**Why not Python 3.11?** See §"Known scope qualifier — Python 3.11" below. The first PR-B4 CI run on the public repo surfaced `result_hash` divergence on 3.11 (vs 3.12+) across all platforms. `pyproject.toml requires-python = ">= 3.12"` reflects this scope.
 
-**Why not Python 3.13?** numpy ≥ 1.26 is required for PCG64. Python 3.13 wheels
-for numpy are available but the combination has not been validated as of 2026-05-26.
-Python 3.13 is added to the matrix in a follow-up PR.
+**Local determinism gate:** `tests/test_bootstrap_determinism.py` confirms same-machine byte-stability. Cross-machine stability is now verified via the GH Actions matrix.
 
-**Local determinism gate:** `tests/test_bootstrap_determinism.py` confirms
-same-machine byte-stability (existing). Cross-machine stability (GH Actions matrix)
-is now verified on the public repo.
+---
+
+## Known scope qualifier — Python 3.11
+
+`batter 0.4.0` ships with `requires-python = ">= 3.12"`. Python 3.11 determinism diverges from 3.12+: PR-B4's first public CI run produced 5 failures across all 3.11 cells (ubuntu / macos / windows), namely 4 example-smoke `result_hash` mismatches (`toy`, `jakarta_temperature`, `rapture_family`, `btc_pred_hedge`) and 1 permutation logic test (`test_permutation_identical_returns_sharpe_none` — `assert 0.0 is None` failed on 3.11 only).
+
+Root cause not diagnosed. Filed as a v1.4 follow-up investigation. The engine on Python 3.11 may produce different `result_hash` values from 3.12+; users on 3.11 are out of scope until v1.4 closes the divergence. The byte-identical claim in this audit applies to Python 3.12+ only.
 
 ---
 
