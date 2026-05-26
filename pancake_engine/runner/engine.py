@@ -197,13 +197,14 @@ def run_backtest(
     monthly_returns_list = build_monthly_returns(equity_curve) if len(equity_curve) >= 2 else []
 
     period_seconds = max(equity_curve[-1].t - equity_curve[0].t, 1)
-    metrics_standard, ruined, cagr_overflowed = compute_standard(
+    metrics_standard, ruined, cagr_overflowed, bootstrap_warnings = compute_standard(
         trades=ledger.trades,
         equity_curve=equity_curve,
         daily_rets=daily_rets,
         starting_capital=float(compiled.starting_capital),
         period_seconds=period_seconds,
     )
+    warnings.extend(bootstrap_warnings)
     metrics_pm = compute_pm(
         trades=ledger.trades,
         sharpe_equity_curve=metrics_standard.sharpe,

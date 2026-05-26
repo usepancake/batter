@@ -22,10 +22,13 @@ Divergences from TS:
 from __future__ import annotations
 
 import math
-from typing import Optional
+from typing import Callable, Optional
 
 from ..result import EquityPoint, MetricsStandard
 from ..runner.trade import Trade
+from ..warnings import Warning
+from .bootstrap import bootstrap_ci
+from .permutation import permutation_p_sharpe
 
 __all__ = ["compute_standard", "SECONDS_PER_YEAR", "ANNUALIZATION_DAYS"]
 
@@ -123,8 +126,14 @@ def compute_standard(
     daily_rets: list[float],
     starting_capital: float,
     period_seconds: int,
-) -> tuple[MetricsStandard, bool, bool]:
-    """Return ``(MetricsStandard, ruined_flag, cagr_overflowed_flag)``."""
+) -> tuple[MetricsStandard, bool, bool, list[Warning]]:
+    """Return ``(MetricsStandard, ruined_flag, cagr_overflowed_flag, extra_warnings)``.
+
+    Engine 0.4 adds three new fields to MetricsStandard: ``cagr_ci``,
+    ``sharpe_ci``, ``sortino_ci`` (bootstrap CIs), and ``sharpe_p_value``
+    (sign-permutation test). Warnings emitted by bootstrap / permutation are
+    returned as ``extra_warnings`` for the caller to append to the warning list.
+    """
     ending_equity = equity_curve[-1].equity if equity_curve else starting_capital
     tr = total_return(starting_capital, ending_equity)
     cg, ruined, overflowed = cagr_piecewise(
@@ -139,6 +148,28 @@ def compute_standard(
     # max_drawdown is computed by build_drawdown_curve; passed via series module.
     # We compute it again here from equity_curve for the standard metric.
     max_dd = _max_drawdown(equity_curve)
+
+    # --- Engine 0.4: bootstrap CIs ---
+    extra_warnings: list[Warning] = []
+
+    (cagr_ci, cagr_ci_warns) = bootstrap_ci(daily_rets, _cagr_proxy_fn(  # type: ignore[assignment]
+        starting_capital=starting_capital,
+        ending_equity=ending_equity,
+        period_seconds=period_seconds,
+        num_trades=len(trades),
+    ))
+    extra_warnings.extend(cagr_ci_warns)
+
+    (sharpe_ci, sharpe_ci_warns) = bootstrap_ci(daily_rets, sharpe_ratio)  # type: ignore[assignment]
+    extra_warnings.extend(sharpe_ci_warns)
+
+    (sortino_ci, sortino_ci_warns) = bootstrap_ci(daily_rets, sortino_ratio)  # type: ignore[assignment]
+    extra_warnings.extend(sortino_ci_warns)
+
+    # --- Engine 0.4: permutation test ---
+    (sharpe_p, perm_warns) = permutation_p_sharpe(daily_rets)
+    extra_warnings.extend(perm_warns)
+
     standard = MetricsStandard(
         total_return=tr,
         cagr=cg,
@@ -149,8 +180,12 @@ def compute_standard(
         num_trades=len(trades),
         starting_capital=float(starting_capital),
         ending_capital=float(ending_equity),
+        cagr_ci=cagr_ci,
+        sharpe_ci=sharpe_ci,
+        sortino_ci=sortino_ci,
+        sharpe_p_value=sharpe_p,
     )
-    return standard, ruined, overflowed
+    return standard, ruined, overflowed, extra_warnings
 
 
 # -----------------------------------------------------------------------------
@@ -168,6 +203,52 @@ def _stdev_sample(xs: list[float], mean: float) -> float:
         return 0.0
     var = sum((x - mean) ** 2 for x in xs) / (len(xs) - 1)
     return math.sqrt(var)
+
+
+def _cagr_proxy_fn(
+    *,
+    starting_capital: float,
+    ending_equity: float,
+    period_seconds: int,
+    num_trades: int,
+) -> Callable[[list[float]], Optional[float]]:
+    """Return a metric_fn suitable for bootstrap_ci that approximates CAGR from
+    resampled daily returns.
+
+    We cannot resample raw equity snapshots (the bootstrap resamples from
+    daily_rets), so we use the geometric compounding of the resampled returns:
+
+        ending_equity_boot = starting_capital × Π(1 + r_i)
+
+    This gives a bootstrap distribution of plausible ending equities, which we
+    then feed through cagr_piecewise. The ``period_seconds`` and ``num_trades``
+    are held fixed (treating the trading activity as given; only return magnitude
+    is randomised).
+    """
+    def _fn(rets: list[float]) -> Optional[float]:
+        # Geometric compounding of resampled daily returns.
+        # Guard against OverflowError and non-finite values from extreme return series
+        # (e.g. AF-3 scenarios with 100k compounding wins at very low prices).
+        try:
+            prod = 1.0
+            for r in rets:
+                prod *= 1.0 + r
+                if not math.isfinite(prod):
+                    return None
+            boot_ending = starting_capital * prod
+            if not math.isfinite(boot_ending) or boot_ending < 0:
+                return None
+            cg, _, _ = cagr_piecewise(
+                num_trades=num_trades,
+                starting_capital=starting_capital,
+                ending_equity=boot_ending,
+                period_seconds=period_seconds,
+            )
+            return cg
+        except (OverflowError, ZeroDivisionError):
+            return None
+
+    return _fn
 
 
 def _max_drawdown(equity_curve: list[EquityPoint]) -> float:

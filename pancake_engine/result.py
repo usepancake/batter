@@ -64,6 +64,12 @@ class MetricsStandard:
     num_trades: int
     starting_capital: float
     ending_capital: float
+    # Engine 0.4: bootstrap CI + permutation test (additive; default to safe sentinels
+    # for backward-compat with 0.3 callers and old fixtures that predate 0.4).
+    cagr_ci: tuple[Optional[float], Optional[float]] = (None, None)
+    sharpe_ci: tuple[Optional[float], Optional[float]] = (None, None)
+    sortino_ci: tuple[Optional[float], Optional[float]] = (None, None)
+    sharpe_p_value: Optional[float] = None
 
 
 @dataclass(frozen=True)

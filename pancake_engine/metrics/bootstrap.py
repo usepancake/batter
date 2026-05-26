@@ -31,6 +31,7 @@ the conservative side to flag only obvious noise cases.
 
 from __future__ import annotations
 
+import math
 from typing import Callable, Optional
 
 import numpy as np
@@ -117,7 +118,9 @@ def bootstrap_ci(
     for idxs in indices:
         resample = arr[idxs].tolist()
         val = metric_fn(resample)
-        if val is not None:
+        # Discard None and non-finite values (can arise with extreme return series
+        # such as AF-3 overflow cases where geometric compounding overflows float64).
+        if val is not None and _is_finite(val):
             boot_stats.append(val)
 
     if not boot_stats:
@@ -144,7 +147,9 @@ def bootstrap_ci(
     point_estimate = metric_fn(daily_returns)
     if (
         point_estimate is not None
+        and _is_finite(point_estimate)
         and point_estimate != 0.0
+        and _is_finite(ci_high - ci_low)
         and (ci_high - ci_low) / abs(point_estimate) > 5.0
     ):
         warnings.append(Warning(
@@ -163,4 +168,28 @@ def bootstrap_ci(
             },
         ))
 
+    # Guard: if percentile computation itself produced non-finite values
+    # (extremely unlikely given we already filtered boot_stats, but defensive).
+    if not _is_finite(ci_low) or not _is_finite(ci_high):
+        warnings.append(Warning(
+            code=WarningCode.BOOTSTRAP_INSUFFICIENT,
+            severity=Severity.WARN,
+            message=(
+                "bootstrap_ci: percentile computation produced non-finite CI; "
+                "returning (None, None)."
+            ),
+            context={"n": len(daily_returns), "reason": "nonfinite_percentile"},
+        ))
+        return (None, None), warnings  # type: ignore[return-value]
+
     return (ci_low, ci_high), warnings  # type: ignore[return-value]
+
+
+# ---------------------------------------------------------------------------
+# helpers
+# ---------------------------------------------------------------------------
+
+
+def _is_finite(x: float) -> bool:
+    """Return True iff x is a finite float (not NaN, not ±Infinity)."""
+    return math.isfinite(x)
