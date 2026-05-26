@@ -47,8 +47,10 @@ class WarningCode(str, Enum):
     EQUITY_OVERFLOW_BOUND = "EQUITY_OVERFLOW_BOUND"  # AF-3: equity hit float64 overflow; clamped to sys.float_info.max
 
     # --- Credibility ---
-    LOW_SAMPLE_SIZE = "LOW_SAMPLE_SIZE"            # n < 30
-    MICRO_SAMPLE_SIZE = "MICRO_SAMPLE_SIZE"        # n < 10 (severity=error, run still completes)
+    BOOTSTRAP_INSUFFICIENT = "BOOTSTRAP_INSUFFICIENT"  # N<2 or zero-variance → CI undefined
+    CI_TOO_WIDE = "CI_TOO_WIDE"                         # relative CI width > 5× point estimate
+    LOW_SAMPLE_SIZE = "LOW_SAMPLE_SIZE"                 # n < 30
+    MICRO_SAMPLE_SIZE = "MICRO_SAMPLE_SIZE"             # n < 10 (severity=error, run still completes)
     IMPLAUSIBLY_HIGH_SHARPE = "IMPLAUSIBLY_HIGH_SHARPE"
     IMPLAUSIBLY_HIGH_RETURN = "IMPLAUSIBLY_HIGH_RETURN"
     DEGENERATE_HIT_RATE = "DEGENERATE_HIT_RATE"
@@ -61,6 +63,7 @@ class WarningCode(str, Enum):
     NO_TRADES_GENERATED = "NO_TRADES_GENERATED"
     NO_TRADES_NO_CI = "NO_TRADES_NO_CI"
     BRIER_NOT_APPLICABLE = "BRIER_NOT_APPLICABLE"
+    PERMUTATION_P_HIGH = "PERMUTATION_P_HIGH"           # Sharpe p-value > 0.10 (signal weak vs random)
 
     # --- Operational ---
     OBSERVATION_TIME_DERIVED = "OBSERVATION_TIME_DERIVED"
