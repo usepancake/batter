@@ -1,6 +1,6 @@
 # 0.4.0 bootstrap CI + permutation test — formulas, sources, fixtures
 
-Engine version: `0.4.0-rc1`
+Engine version: `0.4.0`
 Date: 2026-05-26
 Author: Engine 0.4 implementation (Pancake Engine)
 
@@ -329,7 +329,7 @@ output was not affected by this Python-only warning addition.
 ## Brutal verification pass — every formula audited against published source
 
 Date: 2026-05-26  
-Engine version: `0.4.0-rc1`  
+Engine version: `0.4.0`  
 Status: 12/12 formulas independently verified against published sources.
 
 ### A1. total_return
@@ -853,7 +853,7 @@ same OS/arch for integer draws (used exclusively here via `rng.integers`).
 ## Verification verdict
 
 12/12 formulas independently verified against published sources at 2026-05-26.
-Engine 0.4.0-rc1 math is independently reproducible from first principles.
+Engine 0.4.0 math is independently reproducible from first principles.
 
 | # | Formula | Source | Method | Result |
 |---|---|---|---|---|
