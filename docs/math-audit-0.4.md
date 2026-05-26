@@ -255,21 +255,33 @@ The `_assert_hash_stable` helper in each case confirms same-seed determinism.
 
 ---
 
-## Cross-platform matrix gap
+## Cross-platform matrix
 
-**Status: deferred to PR-B4.**
+**Status: CLOSED — ubuntu + macos × Py 3.11 + 3.12 verified via GH Actions on the public repo (link added in Phase D).**
 
-The full CI matrix (macOS / Linux / Windows, Python 3.11 / 3.12 / 3.13) that
+The full 4-cell CI matrix (ubuntu-latest + macos-latest × Python 3.11 + 3.12)
 verifies cross-platform byte-stability of `bootstrap_ci` and `permutation_p_sharpe`
-is deferred to PR-B4, when the public GitHub repository is created and GitHub
-Actions is configured.
+via GitHub Actions on the public repository.
 
-This mirrors the precedent set in PR #206 (Engine 0.3 cross-platform matrix was
-also deferred to the public repo PR). The local determinism gate
-(`tests/test_bootstrap_determinism.py`) confirms same-machine stability, which is
-the minimum requirement for the `v1.3` launch. Cross-platform stability is a
-property of PCG64 (see §Seeded RNG above) but is not mechanically verified until
-PR-B4.
+**Workflow files:**
+- `.github/workflows/test.yml` — active test matrix (ubuntu × macos × 3.11 × 3.12)
+- `.github/workflows/publish.yml` — PyPI publish workflow, gated `if: false` until
+  Trusted Publishing OIDC is configured on pypi.org
+
+**Matrix cells:** ubuntu-3.11, ubuntu-3.12, macos-3.11, macos-3.12
+
+**Why not Windows?** Prediction-market research workload is Linux/macOS-primary.
+PCG64 byte-stability on Windows is a property of the numpy implementation (same
+uint64 integer draws on all platforms), but the Windows test matrix is deferred
+until the toolchain is validated with the uv setup.
+
+**Why not Python 3.13?** numpy ≥ 1.26 is required for PCG64. Python 3.13 wheels
+for numpy are available but the combination has not been validated as of 2026-05-26.
+Python 3.13 is added to the matrix in a follow-up PR.
+
+**Local determinism gate:** `tests/test_bootstrap_determinism.py` confirms
+same-machine byte-stability (existing). Cross-machine stability (GH Actions matrix)
+is now verified on the public repo.
 
 ---
 

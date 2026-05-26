@@ -1,0 +1,60 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cross-platform matrix: ubuntu + macos × Python 3.11 + 3.12.
+# Windows excluded from this matrix (prediction-market research workload is
+# Linux/macOS-primary; Windows path-separator issues in the test suite are a
+# separate concern). Full 4-cell matrix verifies PCG64 byte-stability across
+# OS boundaries for bootstrap_ci and permutation_p_sharpe.
+
+jobs:
+  test:
+    name: py${{ matrix.python-version }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run tests
+        run: uv run pytest -v
+
+      - name: mypy — type-check new files (bootstrap + permutation + warnings)
+        run: |
+          uv run mypy \
+            pancake_engine/metrics/bootstrap.py \
+            pancake_engine/metrics/permutation.py \
+            pancake_engine/warnings.py \
+            pancake_engine/compile/condition.py \
+            --ignore-missing-imports
+
+      - name: ruff — lint new files
+        run: |
+          uv run ruff check \
+            pancake_engine/metrics/bootstrap.py \
+            pancake_engine/metrics/permutation.py \
+            pancake_engine/warnings.py \
+            pancake_engine/compile/condition.py \
+            tests/test_math_brutal_verification.py \
+            tests/test_agent_supplied_feature_warning.py
