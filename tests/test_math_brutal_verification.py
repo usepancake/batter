@@ -23,7 +23,6 @@ from __future__ import annotations
 import math
 
 import numpy as np
-import pytest
 
 # --------------------------------------------------------------------------
 # A1 + A2 — total_return + CAGR vs Bacon 2008
@@ -174,8 +173,8 @@ def test_a4_sortino_full_n_denominator() -> None:
 
 def test_a5_max_drawdown_8point_curve() -> None:
     """A5: max_drawdown = max((peak-eq)/peak). Magdon-Ismail & Atiya 2004 Risk eq.1."""
-    from pancake_engine.result import EquityPoint
     from pancake_engine.metrics.standard import _max_drawdown  # type: ignore[attr-defined]
+    from pancake_engine.result import EquityPoint
 
     equity = [1000, 1100, 1050, 1200, 1150, 900, 950, 800]
     curve = [EquityPoint(t=i, equity=float(e)) for i, e in enumerate(equity)]
@@ -189,8 +188,8 @@ def test_a5_max_drawdown_8point_curve() -> None:
 
 def test_a5_max_drawdown_monotone_up() -> None:
     """A5 edge: monotonically increasing equity → max_drawdown = 0.0."""
-    from pancake_engine.result import EquityPoint
     from pancake_engine.metrics.standard import _max_drawdown  # type: ignore[attr-defined]
+    from pancake_engine.result import EquityPoint
 
     curve = [EquityPoint(t=i, equity=float(1000 + i * 10)) for i in range(5)]
     assert _max_drawdown(curve) == 0.0
@@ -292,7 +291,11 @@ def test_a8_brier_crowd_5_trades() -> None:
     entry_price_quote values and verify the brier formula directly.
     """
     from pancake_engine import BacktestConfig, run_backtest
-    from pancake_engine.metrics.pm import brier_crowd_score, implied_prob_at_entry, realized_outcome_for_trade
+    from pancake_engine.metrics.pm import (
+        brier_crowd_score,
+        implied_prob_at_entry,
+        realized_outcome_for_trade,
+    )
 
     from ._runner_helpers import make_dataset, make_spec, row
 
@@ -314,7 +317,7 @@ def test_a8_brier_crowd_5_trades() -> None:
     # Verify individual terms match hand-calc
     expected_terms = [(0.6, 1), (0.4, 0), (0.7, 1), (0.5, 0), (0.8, 1)]
     trades_sorted = sorted(result.trades, key=lambda t: t.entry_t)
-    for trade, (exp_p, exp_o) in zip(trades_sorted, expected_terms):
+    for trade, (exp_p, exp_o) in zip(trades_sorted, expected_terms, strict=True):
         p = implied_prob_at_entry(trade)
         o = realized_outcome_for_trade(trade)
         assert abs(p - exp_p) < 1e-6, f"implied_prob={p} != expected {exp_p}"
@@ -438,8 +441,8 @@ def test_a11_daily_return_carry_forward_3day() -> None:
     daily_ret[0] = 1100/1000 - 1 = 0.100000
     daily_ret[1] = 1050/1100 - 1 = -0.045455
     """
-    from pancake_engine.result import EquityPoint
     from pancake_engine.metrics.series import daily_returns_carry_forward
+    from pancake_engine.result import EquityPoint
 
     curve = [
         EquityPoint(t=0,       equity=1000.0),
@@ -454,8 +457,8 @@ def test_a11_daily_return_carry_forward_3day() -> None:
 
 def test_a11_daily_return_carry_forward_sparse_days() -> None:
     """A11: missing days are filled by carry-forward (D-14 divergence from TS)."""
-    from pancake_engine.result import EquityPoint
     from pancake_engine.metrics.series import daily_returns_carry_forward
+    from pancake_engine.result import EquityPoint
 
     # Day 0: equity 1000, Day 3: equity 1060 (2 calendar days skipped)
     curve = [
