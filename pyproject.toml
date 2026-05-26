@@ -3,19 +3,18 @@ requires = ["hatchling >= 1.18"]
 build-backend = "hatchling.build"
 
 [project]
-name = "pancake-math"
+name = "batter"
 version = "0.4.0"
 description = "Deterministic Python research engine for prediction-market evidence-backed backtests"
 readme = "README.md"
-requires-python = ">= 3.11"
+requires-python = ">= 3.12"
 license = { text = "Apache-2.0" }
 authors = [{ name = "Michael Mustopo", email = "michael.mustopo@gmail.com" }]
-keywords = ["pancake", "backtest", "evidence", "deterministic", "prediction-market"]
+keywords = ["batter", "pancake", "backtest", "evidence", "deterministic", "prediction-market"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "License :: OSI Approved :: Apache Software License",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Topic :: Office/Business :: Financial :: Investment",
@@ -27,7 +26,7 @@ dependencies = [
 ]
 
 [project.urls]
-Repository = "https://github.com/michaelmustopo/pancake-engine-py"
+Repository = "https://github.com/usepancake/batter"
 Homepage = "https://usepancake.com"
 
 [project.optional-dependencies]
@@ -54,12 +53,12 @@ addopts = ["-ra"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 strict = true
 files = ["pancake_engine"]
