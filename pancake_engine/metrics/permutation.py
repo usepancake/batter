@@ -30,7 +30,6 @@ docstring for rationale.
 from __future__ import annotations
 
 import math
-from typing import Optional
 
 import numpy as np
 
@@ -50,7 +49,7 @@ def permutation_p_sharpe(
     daily_returns: list[float],
     n_permutations: int = 10_000,
     seed: int = 0,
-) -> tuple[Optional[float], list[Warning]]:
+) -> tuple[float | None, list[Warning]]:
     """Sign-permutation p-value for Sharpe ratio under the null Sharpe = 0.
 
     Args:
@@ -124,7 +123,11 @@ def permutation_p_sharpe(
                 "Observed Sharpe ratio is not statistically distinguishable from "
                 "noise at the 10% level."
             ),
-            context={"p_value": p_value, "observed_sharpe": observed_sharpe, "n": len(daily_returns)},
+            context={
+                "p_value": p_value,
+                "observed_sharpe": observed_sharpe,
+                "n": len(daily_returns),
+            },
         ))
 
     return p_value, warnings
@@ -135,7 +138,7 @@ def permutation_p_sharpe(
 # ---------------------------------------------------------------------------
 
 
-def _sharpe(daily_returns: list[float]) -> Optional[float]:
+def _sharpe(daily_returns: list[float]) -> float | None:
     """Annualized Sharpe with rf=0, Bessel-corrected std. Returns None if n<2 or std=0."""
     if len(daily_returns) < 2:
         return None

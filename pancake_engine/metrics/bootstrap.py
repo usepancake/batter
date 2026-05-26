@@ -32,7 +32,7 @@ the conservative side to flag only obvious noise cases.
 from __future__ import annotations
 
 import math
-from typing import Callable, Optional
+from collections.abc import Callable
 
 import numpy as np
 
@@ -40,14 +40,17 @@ from ..warnings import Severity, Warning, WarningCode
 
 __all__ = ["bootstrap_ci"]
 
+# Type alias for a (ci_low, ci_high) tuple
+CITuple = tuple[float | None, float | None]
+
 
 def bootstrap_ci(
     daily_returns: list[float],
-    metric_fn: Callable[[list[float]], Optional[float]],
+    metric_fn: Callable[[list[float]], float | None],
     n_resamples: int = 10_000,
     ci_level: float = 0.95,
     seed: int = 0,
-) -> tuple[Optional[float], Optional[float]]:
+) -> tuple[CITuple, list[Warning]]:
     """Compute a percentile bootstrap CI for any scalar metric over ``daily_returns``.
 
     Args:
@@ -93,7 +96,7 @@ def bootstrap_ci(
             ),
             context={"n": len(daily_returns), "reason": "N<2"},
         ))
-        return (None, None), warnings  # type: ignore[return-value]
+        return (None, None), warnings
 
     # Guard: zero variance (all values identical)
     arr = np.asarray(daily_returns, dtype=np.float64)
@@ -107,7 +110,7 @@ def bootstrap_ci(
             ),
             context={"n": len(daily_returns), "reason": "zero_variance"},
         ))
-        return (None, None), warnings  # type: ignore[return-value]
+        return (None, None), warnings
 
     rng = np.random.default_rng(seed)
     n = len(arr)
@@ -133,7 +136,7 @@ def bootstrap_ci(
             ),
             context={"n": len(daily_returns), "reason": "all_none"},
         ))
-        return (None, None), warnings  # type: ignore[return-value]
+        return (None, None), warnings
 
     alpha = 1.0 - ci_level
     low_pct = (alpha / 2.0) * 100.0
@@ -180,9 +183,9 @@ def bootstrap_ci(
             ),
             context={"n": len(daily_returns), "reason": "nonfinite_percentile"},
         ))
-        return (None, None), warnings  # type: ignore[return-value]
+        return (None, None), warnings
 
-    return (ci_low, ci_high), warnings  # type: ignore[return-value]
+    return (ci_low, ci_high), warnings
 
 
 # ---------------------------------------------------------------------------

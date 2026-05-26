@@ -16,7 +16,7 @@ Hash field policy (architecture §Idempotency / result-hash contract):
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 from .hash import sha256_canonical
 from .validate.verdict import ValidationVerdict
@@ -56,20 +56,20 @@ class MonthlyReturn:
 @dataclass(frozen=True)
 class MetricsStandard:
     total_return: float
-    cagr: Optional[float]   # None when CAGR_EXTRAPOLATION_OVERFLOW fires
-    sharpe: Optional[float]
-    sortino: Optional[float]
+    cagr: float | None   # None when CAGR_EXTRAPOLATION_OVERFLOW fires
+    sharpe: float | None
+    sortino: float | None
     max_drawdown: float
-    win_rate: Optional[float]
+    win_rate: float | None
     num_trades: int
     starting_capital: float
     ending_capital: float
     # Engine 0.4: bootstrap CI + permutation test (additive; default to safe sentinels
     # for backward-compat with 0.3 callers and old fixtures that predate 0.4).
-    cagr_ci: tuple[Optional[float], Optional[float]] = (None, None)
-    sharpe_ci: tuple[Optional[float], Optional[float]] = (None, None)
-    sortino_ci: tuple[Optional[float], Optional[float]] = (None, None)
-    sharpe_p_value: Optional[float] = None
+    cagr_ci: tuple[float | None, float | None] = (None, None)
+    sharpe_ci: tuple[float | None, float | None] = (None, None)
+    sortino_ci: tuple[float | None, float | None] = (None, None)
+    sharpe_p_value: float | None = None
 
 
 @dataclass(frozen=True)
@@ -80,16 +80,16 @@ class MetricsPM:
     this struct holds the strategy-level aggregates.
     """
 
-    win_rate_ci95_low: Optional[float]
-    win_rate_ci95_high: Optional[float]
-    mean_return_pct: Optional[float]
-    std_return_pct: Optional[float]
-    sharpe_trade_level: Optional[float]
-    sharpe_equity_curve: Optional[float]
-    brier_strategy: Optional[float]    # null in PR-1 (rule-based spec)
-    brier_crowd: Optional[float]
-    brier_skill_score: Optional[float]
-    mean_edge: Optional[float]          # null in PR-1 (no fair_probability column)
+    win_rate_ci95_low: float | None
+    win_rate_ci95_high: float | None
+    mean_return_pct: float | None
+    std_return_pct: float | None
+    sharpe_trade_level: float | None
+    sharpe_equity_curve: float | None
+    brier_strategy: float | None    # null in PR-1 (rule-based spec)
+    brier_crowd: float | None
+    brier_skill_score: float | None
+    mean_edge: float | None          # null in PR-1 (no fair_probability column)
 
 
 @dataclass(frozen=True)

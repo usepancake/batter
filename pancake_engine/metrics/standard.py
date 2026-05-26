@@ -22,7 +22,7 @@ Divergences from TS:
 from __future__ import annotations
 
 import math
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from ..result import EquityPoint, MetricsStandard
 from ..runner.trade import Trade
@@ -50,7 +50,7 @@ def cagr_piecewise(
     starting_capital: float,
     ending_equity: float,
     period_seconds: int,
-) -> tuple[Optional[float], bool, bool]:
+) -> tuple[float | None, bool, bool]:
     """Piecewise CAGR. Returns ``(cagr, ruined, overflowed)``.
 
     ``ruined=True`` indicates ``RUINED`` warning should be emitted.
@@ -75,7 +75,7 @@ def cagr_piecewise(
         return None, False, True
 
 
-def sharpe_ratio(daily_returns: list[float]) -> Optional[float]:
+def sharpe_ratio(daily_returns: list[float]) -> float | None:
     """Annualized Sharpe with rf=0. ``None`` if n<2 or std=0."""
     if len(daily_returns) < 2:
         return None
@@ -86,7 +86,7 @@ def sharpe_ratio(daily_returns: list[float]) -> Optional[float]:
     return (mean / std) * math.sqrt(ANNUALIZATION_DAYS)
 
 
-def sortino_ratio(daily_returns: list[float]) -> Optional[float]:
+def sortino_ratio(daily_returns: list[float]) -> float | None:
     """Annualized Sortino with rf=0 and target=0.
 
     Denominator: ``sqrt(Σ_{r<0} r² / N)`` — divides by the full sample size
@@ -100,7 +100,8 @@ def sortino_ratio(daily_returns: list[float]) -> Optional[float]:
     negs = [r for r in daily_returns if r < 0]
     if not negs:
         return None
-    n = len(daily_returns)  # n = full sample size (true Sortino, Sortino & Price 1994); NOT len(negs) — D-13
+    # n = full sample size (true Sortino, Sortino & Price 1994); NOT len(negs) — D-13
+    n = len(daily_returns)
     downside_var = sum(r * r for r in negs) / n
     ds = math.sqrt(downside_var)
     if ds == 0:
@@ -109,7 +110,7 @@ def sortino_ratio(daily_returns: list[float]) -> Optional[float]:
     return (mean / ds) * math.sqrt(ANNUALIZATION_DAYS)
 
 
-def win_rate_strict(trades: list[Trade]) -> Optional[float]:
+def win_rate_strict(trades: list[Trade]) -> float | None:
     """Strict ``pnl > 0`` win-rate.
 
     Returns ``None`` if no trades (TS returns ``0`` — divergence documented).
@@ -152,7 +153,7 @@ def compute_standard(
     # --- Engine 0.4: bootstrap CIs ---
     extra_warnings: list[Warning] = []
 
-    (cagr_ci, cagr_ci_warns) = bootstrap_ci(daily_rets, _cagr_proxy_fn(  # type: ignore[assignment]
+    cagr_ci, cagr_ci_warns = bootstrap_ci(daily_rets, _cagr_proxy_fn(
         starting_capital=starting_capital,
         ending_equity=ending_equity,
         period_seconds=period_seconds,
@@ -160,10 +161,10 @@ def compute_standard(
     ))
     extra_warnings.extend(cagr_ci_warns)
 
-    (sharpe_ci, sharpe_ci_warns) = bootstrap_ci(daily_rets, sharpe_ratio)  # type: ignore[assignment]
+    sharpe_ci, sharpe_ci_warns = bootstrap_ci(daily_rets, sharpe_ratio)
     extra_warnings.extend(sharpe_ci_warns)
 
-    (sortino_ci, sortino_ci_warns) = bootstrap_ci(daily_rets, sortino_ratio)  # type: ignore[assignment]
+    sortino_ci, sortino_ci_warns = bootstrap_ci(daily_rets, sortino_ratio)
     extra_warnings.extend(sortino_ci_warns)
 
     # --- Engine 0.4: permutation test ---
@@ -211,7 +212,7 @@ def _cagr_proxy_fn(
     ending_equity: float,
     period_seconds: int,
     num_trades: int,
-) -> Callable[[list[float]], Optional[float]]:
+) -> Callable[[list[float]], float | None]:
     """Return a metric_fn suitable for bootstrap_ci that approximates CAGR from
     resampled daily returns.
 
@@ -225,7 +226,7 @@ def _cagr_proxy_fn(
     are held fixed (treating the trading activity as given; only return magnitude
     is randomised).
     """
-    def _fn(rets: list[float]) -> Optional[float]:
+    def _fn(rets: list[float]) -> float | None:
         # Geometric compounding of resampled daily returns.
         # Guard against OverflowError and non-finite values from extreme return series
         # (e.g. AF-3 scenarios with 100k compounding wins at very low prices).
