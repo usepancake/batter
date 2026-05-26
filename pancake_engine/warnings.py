@@ -63,7 +63,7 @@ class WarningCode(str, Enum):
     NO_TRADES_GENERATED = "NO_TRADES_GENERATED"
     NO_TRADES_NO_CI = "NO_TRADES_NO_CI"
     BRIER_NOT_APPLICABLE = "BRIER_NOT_APPLICABLE"
-    PERMUTATION_P_HIGH = "PERMUTATION_P_HIGH"           # Sharpe p-value > 0.10 (signal weak vs random)
+    PERMUTATION_P_HIGH = "PERMUTATION_P_HIGH"    # Sharpe p-value > 0.10 (weak vs random)
 
     # --- Operational ---
     OBSERVATION_TIME_DERIVED = "OBSERVATION_TIME_DERIVED"
