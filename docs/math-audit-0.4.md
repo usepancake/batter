@@ -279,7 +279,21 @@ The 6-cell CI matrix verifies byte-identical `result_hash` across ubuntu / macos
 
 `batter 0.4.0` ships with `requires-python = ">= 3.12"`. Python 3.11 determinism diverges from 3.12+: PR-B4's first public CI run produced 5 failures across all 3.11 cells (ubuntu / macos / windows), namely 4 example-smoke `result_hash` mismatches (`toy`, `jakarta_temperature`, `rapture_family`, `btc_pred_hedge`) and 1 permutation logic test (`test_permutation_identical_returns_sharpe_none` — `assert 0.0 is None` failed on 3.11 only).
 
-Root cause not diagnosed. Filed as a v1.4 follow-up investigation. The engine on Python 3.11 may produce different `result_hash` values from 3.12+; users on 3.11 are out of scope until v1.4 closes the divergence. The byte-identical claim in this audit applies to Python 3.12+ only.
+**Root cause (diagnosed in Phase B, 2026-05-27 — see `docs/py311-investigation-2026-05-27.md`):**
+
+Python 3.12 introduced an optimized `sum()` implementation for homogeneous float lists (compensated/Neumaier accumulation vs sequential IEEE 754 on 3.11). The bootstrap CI computation calls `_stdev_sample`, which uses:
+
+```python
+var = sum((x - mean) ** 2 for x in xs) / (len(xs) - 1)
+```
+
+On Python 3.11, sequential `sum()` introduces a 1-ULP error in the trailing bit of the variance, which propagates through `math.sqrt()` and the 10,000-resample bootstrap loop. This shifts the 2.5th/97.5th percentile values by 1 ULP and changes `result_hash` (which includes the CI values via canonical serialization using `repr(float)`).
+
+Additionally, `sum([0.01] * 20)` evaluates to `0.20000000000000004` on Python 3.11 (vs `0.2` on 3.12), making `mean != 0.01` for the all-identical returns case. This causes `_sharpe([0.01]*20)` to return `8.9e+16` instead of `None` on 3.11, breaking `test_permutation_identical_returns_sharpe_none`.
+
+**Why not fixable by code change:** `math.fsum` and numpy-based variance each produce a third distinct result (neither matching 3.11 nor 3.12). There is no implementation in Python 3.11 that produces byte-identical output to Python 3.12's optimized `sum()`. The difference is inherent to the Python version's C-level float stack management.
+
+**Decision:** Python 3.11 is permanently out of scope for batter 0.4.x. The byte-identical determinism claim in this audit applies to Python 3.12+ only. See `docs/py311-investigation-2026-05-27.md` for the full bisection transcript.
 
 ---
 
