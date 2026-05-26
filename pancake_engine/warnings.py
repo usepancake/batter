@@ -46,6 +46,9 @@ class WarningCode(str, Enum):
     UNRESOLVED_ROW_SKIPPED = "UNRESOLVED_ROW_SKIPPED"
     EQUITY_OVERFLOW_BOUND = "EQUITY_OVERFLOW_BOUND"  # AF-3: equity hit float64 overflow; clamped to sys.float_info.max
 
+    # --- Verification boundary (E3b parity with TS runner) ---
+    AGENT_SUPPLIED_FEATURE_UNVERIFIED = "AGENT_SUPPLIED_FEATURE_UNVERIFIED"  # feature columns in predicates; derivation unverified
+
     # --- Credibility ---
     BOOTSTRAP_INSUFFICIENT = "BOOTSTRAP_INSUFFICIENT"  # N<2 or zero-variance → CI undefined
     CI_TOO_WIDE = "CI_TOO_WIDE"                         # relative CI width > 5× point estimate

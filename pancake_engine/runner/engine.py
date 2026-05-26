@@ -16,6 +16,7 @@ from typing import Any, Optional
 
 from ..__version__ import ENGINE, ENGINE_MODE, ENGINE_VERSION
 from ..compile import CompiledSpec, compile_spec
+from ..compile.condition import extract_referenced_columns
 from ..config import BacktestConfig
 from ..hash import sha256_canonical
 from ..metrics import (
@@ -222,6 +223,34 @@ def run_backtest(
         span_seconds=period_seconds,
         cagr_overflowed=cagr_overflowed,
     ))
+
+    # 7b. Verification-boundary: AGENT_SUPPLIED_FEATURE_UNVERIFIED (E3b parity with TS runner)
+    # Collect columns referenced in entry / yes_payoff predicates that carry semantic_role=feature.
+    # These are agent-supplied (derived by the user before handing data to Pancake); Pancake
+    # cannot verify their provenance, look-ahead cleanliness, or derivation correctness.
+    entry_when = spec.strategy.entry.get("when", {})
+    yes_payoff_when = spec.strategy.yes_payoff.get("when", {})
+    all_referenced = (
+        extract_referenced_columns(entry_when if isinstance(entry_when, dict) else {})
+        | extract_referenced_columns(yes_payoff_when if isinstance(yes_payoff_when, dict) else {})
+    )
+    # Filter to columns that are declared as semantic_role=feature in schema_requirements.
+    feature_role_cols = {
+        req.name
+        for req in spec.schema_requirements.required_columns
+        if req.semantic_role == "feature"
+    }
+    referenced_feature_columns = sorted(all_referenced & feature_role_cols)
+    if referenced_feature_columns:
+        warnings.append(Warning(
+            code=WarningCode.AGENT_SUPPLIED_FEATURE_UNVERIFIED,
+            severity=Severity.INFO,
+            message=(
+                f"{len(referenced_feature_columns)} agent-supplied feature column(s) referenced in "
+                "entry/yes_payoff predicates; Pancake did not verify their derivation"
+            ),
+            context={"feature_columns": referenced_feature_columns},
+        ))
 
     # 8. Hashes
     schema_sha256 = sha256_canonical(_dataset_schema_dict(dataset))
