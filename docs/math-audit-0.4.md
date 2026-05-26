@@ -218,7 +218,7 @@ PCG64 is preferred because:
 
 ---
 
-## Fixture re-lock (0.3.0-rc1 → 0.4.0-rc1)
+## Fixture re-lock (0.3.0-rc1 → 0.4.0-rc1 → 0.4.0)
 
 ### What changed
 
@@ -226,6 +226,8 @@ The new fields `cagr_ci`, `sharpe_ci`, `sortino_ci`, `sharpe_p_value` are
 included in `asdict(metrics.standard)`, which is part of `compute_result_hash`.
 Additionally, `ENGINE_VERSION` changed from `"0.3.0"` to `"0.4.0-rc1"`, which is
 also in `result_hash`. Both changes are deliberate and expected.
+
+**0.4.0 identity-stamp re-lock**: `ENGINE` identity stamp renamed `pancake-engine-py` → `batter` to match the public package name. Math formulas unchanged; only the identity stamp differs in fixture hashes. All 10 math acceptance cases + 4 example fixtures re-locked; no math-metric drift verified by per-fixture diff (only the `result_hash` field shifted in each `expected_result.json`).
 
 **No math-hash drift outside bootstrap fields.** The existing metrics
 (cagr, sharpe, sortino, total_return, max_drawdown, win_rate, equity_curve,

@@ -12,6 +12,6 @@ breaking change to the receipt contract.
 """
 
 __version__ = "0.4.0"
-ENGINE = "pancake-engine-py"
+ENGINE = "batter"
 ENGINE_VERSION = "0.4.0"
 ENGINE_MODE = "event_time_v1"

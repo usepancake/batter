@@ -111,7 +111,7 @@ def test_cli_run_writes_result(tmp_path: Path) -> None:
     assert proc.returncode == 0, proc.stderr
     assert out_path.exists()
     result = json.loads(out_path.read_text(encoding="utf-8"))
-    assert result["engine"] == "pancake-engine-py"
+    assert result["engine"] == "batter"
     assert result["engine_version"] == "0.4.0"
     assert result["engine_mode"] == "event_time_v1"
     assert result["hashes"]["result_hash"] != ""
