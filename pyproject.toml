@@ -42,7 +42,7 @@ dev = [
 ]
 
 [project.scripts]
-pancake-engine = "pancake_engine.cli:main"
+batter = "pancake_engine.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["pancake_engine"]
