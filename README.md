@@ -34,7 +34,7 @@ print(result.bootstrap_ci)  # 95% CI on cagr / sharpe / sortino (0.4+)
 
 The same `(spec, dataset, config)` produces the same `result_hash` across ubuntu / macos / windows on Python 3.12+. Verification method, fixture set, and numeric bounds are documented in [docs/math-audit-0.4.md §"Verification verdict"](docs/math-audit-0.4.md#verification-verdict).
 
-Python 3.11 is out of scope for the byte-identity claim — see [docs/math-audit-0.4.md §"Known scope qualifier — Python 3.11"](docs/math-audit-0.4.md#known-scope-qualifier--python-311). Filed as a v1.4 follow-up.
+**Supported Python versions: 3.12 and 3.13.** Python 3.11 is permanently out of scope — `sum()` semantics changed in 3.12 (compensated float accumulation), causing the bootstrap CI values to differ by 1 ULP and producing a different `result_hash`. No code change can reconcile this without reverse-engineering 3.12's exact internal accumulation path. See [docs/py311-investigation-2026-05-27.md](docs/py311-investigation-2026-05-27.md) for the full root-cause analysis and [docs/math-audit-0.4.md §"Known scope qualifier — Python 3.11"](docs/math-audit-0.4.md#known-scope-qualifier--python-311) for the audit entry.
 
 ## Cross-platform
 
