@@ -111,7 +111,7 @@ def _make_feature_check(
         if not isinstance(v, (int, float)) or isinstance(v, bool):
             return False
         if eq is not None:
-            return v == eq
+            return bool(v == eq)
         if gte is not None and v < gte:
             return False
         if lte is not None and v > lte:
