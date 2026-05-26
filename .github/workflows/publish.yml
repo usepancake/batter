@@ -13,7 +13,7 @@ jobs:
   publish:
     # DISABLED: set to `if: github.event.action == 'published'` to enable after OIDC config
     if: false
-    name: Build and publish pancake-math to PyPI
+    name: Build and publish batter to PyPI
     runs-on: ubuntu-latest
     permissions:
       id-token: write   # required for OIDC Trusted Publishing
