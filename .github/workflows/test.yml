@@ -41,6 +41,7 @@ jobs:
         run: uv run pytest -v
 
       - name: mypy — type-check new files (bootstrap + permutation + warnings)
+        shell: bash
         run: |
           uv run mypy \
             pancake_engine/metrics/bootstrap.py \
@@ -52,6 +53,7 @@ jobs:
       - name: ruff — lint truly-new files (bootstrap + permutation + new tests)
         # warnings.py + condition.py were only modified additively (1-line each);
         # their pre-existing E501/UP042 baseline is out of scope for 0.4 release.
+        shell: bash
         run: |
           uv run ruff check \
             pancake_engine/metrics/bootstrap.py \
