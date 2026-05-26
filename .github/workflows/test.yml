@@ -5,11 +5,11 @@ on:
     branches: [main]
   pull_request:
 
-# Cross-platform matrix: ubuntu + macos × Python 3.11 + 3.12.
-# Windows excluded from this matrix (prediction-market research workload is
-# Linux/macOS-primary; Windows path-separator issues in the test suite are a
-# separate concern). Full 4-cell matrix verifies PCG64 byte-stability across
-# OS boundaries for bootstrap_ci and permutation_p_sharpe.
+# Cross-platform matrix: ubuntu + macos + windows × Python 3.12 + 3.13.
+# Python 3.11 dropped after PR-B4 CI surfaced result_hash divergence on 3.11
+# vs 3.12+ across all platforms (filed as v1.4 follow-up). pyproject.toml
+# requires-python = ">= 3.12". Six cells verify PCG64 byte-stability for
+# bootstrap_ci and permutation_p_sharpe across OS boundaries.
 
 jobs:
   test:
@@ -18,8 +18,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: ["3.11", "3.12"]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v4
