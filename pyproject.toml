@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pancake-engine-py"
-version = "0.3.0"
-description = "Pancake Engine 0.3 — deterministic Python research engine over EvidenceDataset. Correctness-first, not TS parity; known TS divergences are documented."
+version = "0.4.0"
+description = "Pancake Engine 0.4 — deterministic Python research engine over EvidenceDataset. Correctness-first, not TS parity; known TS divergences are documented. Adds MC bootstrap CI + permutation test for credibility."
 readme = "README.md"
 requires-python = ">= 3.11"
 license = { text = "Apache-2.0" }
@@ -22,6 +22,7 @@ classifiers = [
 ]
 dependencies = [
   "pydantic >= 2.5, < 3",
+  "numpy >= 1.26",
 ]
 
 [project.optional-dependencies]
