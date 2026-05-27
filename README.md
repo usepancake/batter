@@ -1,10 +1,20 @@
 # batter
 
 [![Test](https://github.com/usepancake/batter/actions/workflows/test.yml/badge.svg)](https://github.com/usepancake/batter/actions/workflows/test.yml)
+[![PyPI version](https://img.shields.io/pypi/v/batter.svg)](https://pypi.org/project/batter/)
+[![Python versions](https://img.shields.io/pypi/pyversions/batter.svg)](https://pypi.org/project/batter/)
+
+Built for [Pancake](https://usepancake.com) — receipts at `https://usepancake.com/r/<receipt-id>` use this engine to verify strategy math.
 
 `batter` is a deterministic Python research engine for prediction-market evidence-backed backtests. Given a backtest spec and an `EvidenceDataset`, it produces a canonical `result_hash` — identical bytes across ubuntu / macos / windows on Python 3.12+ — enabling reproducible research and auditability of strategy claims. Engine 0.4 adds Monte Carlo bootstrap confidence intervals and a sign-permutation Sharpe test so credibility signals travel with every result.
 
 The PyPI package is `batter`; the Python module is `pancake_engine` (sklearn-style rename: `pip install batter` then `import pancake_engine`).
+
+## What is this for?
+
+[Pancake](https://usepancake.com/engine) is a prediction-market research platform. `batter` is the math layer, extracted as a standalone package so the formulas can be verified independently of the platform.
+
+When a strategy backtest runs on Pancake, it runs through `batter`. The platform stores the `result_hash`; anyone can reproduce that hash locally by running the same spec and dataset through `pip install batter`. This is the platform connection: batter has origin in Pancake but is genuinely independently usable by anyone doing prediction-market research.
 
 ## Install
 
@@ -38,6 +48,32 @@ The same `(spec, dataset, config)` produces the same `result_hash` across ubuntu
 
 CI enforces a 6-cell matrix (ubuntu-latest + macos-latest + windows-latest) × (Python 3.12 + 3.13). See the badge above.
 
+## Cite batter
+
+If you use batter in academic or independent research, please cite:
+
+```bibtex
+@software{mustopo2026batter,
+  author       = {Mustopo, Michael},
+  title        = {batter: Deterministic Python research engine for
+                  prediction-market evidence-backed backtests},
+  year         = {2026},
+  version      = {0.4.2},
+  url          = {https://usepancake.com/engine},
+  repository   = {https://github.com/usepancake/batter},
+  license      = {Apache-2.0},
+  note         = {The math layer of usepancake.com. Produces canonical
+                  SHA-256 result hashes reproducible across Ubuntu,
+                  macOS, and Windows on Python 3.12+.}
+}
+```
+
 ## License
 
 Apache-2.0 — Copyright 2026 Michael Mustopo
+
+## See also
+
+- [usepancake.com](https://usepancake.com) — the prediction-market research platform
+- [usepancake.com/engine](https://usepancake.com/engine) — batter's platform page (methodology, JSON-LD, citation)
+- [usepancake.com/methodology](https://usepancake.com/methodology) — platform methodology
