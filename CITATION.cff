@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use batter in academic or independent research, please cite it as below."
+type: software
+title: "batter: Deterministic Python research engine for prediction-market evidence-backed backtests"
+authors:
+  - family-names: Mustopo
+    given-names: Michael
+version: 0.4.2
+date-released: "2026-05-27"
+year: 2026
+url: "https://usepancake.com/engine"
+repository-code: "https://github.com/usepancake/batter"
+license: Apache-2.0
+abstract: "The math layer of usepancake.com. Produces canonical SHA-256 result hashes reproducible across Ubuntu, macOS, and Windows on Python 3.12+."
