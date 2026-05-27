@@ -9,10 +9,8 @@ The PyPI package is `batter`; the Python module is `pancake_engine` (sklearn-sty
 ## Install
 
 ```bash
-pip install git+https://github.com/usepancake/batter.git@0.4.0
+pip install batter
 ```
-
-> PyPI publish via `pip install batter` lands shortly.
 
 ## Quickstart
 

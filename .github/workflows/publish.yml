@@ -1,8 +1,3 @@
-# PyPI publish disabled until Trusted Publishing is configured on pypi.org.
-# Flip `if: false` → `if: github.event.action == 'published'` to enable
-# after OIDC config on pypi.org (Project → Publishing → Trusted Publishers).
-# Requires: pypa/gh-action-pypi-publish@release/v1 and a PyPI OIDC environment.
-
 name: Publish to PyPI
 
 on:
@@ -11,8 +6,7 @@ on:
 
 jobs:
   publish:
-    # DISABLED: set to `if: github.event.action == 'published'` to enable after OIDC config
-    if: false
+    if: github.event.action == 'published'
     name: Build and publish batter to PyPI
     runs-on: ubuntu-latest
     permissions:
