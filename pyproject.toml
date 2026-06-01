@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pancake-engine-py"
-version = "0.3.0"
+version = "0.3.1"
 description = "Pancake Engine 0.3 — deterministic Python research engine over EvidenceDataset. Correctness-first, not TS parity; known TS divergences are documented."
 readme = "README.md"
 requires-python = ">= 3.11"
