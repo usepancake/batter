@@ -20,9 +20,23 @@ breaking change to the receipt contract.
   - First release published to PyPI via Trusted Publishing (OIDC).
   - Engine code byte-identical to 0.4.1; result_hash unchanged.
   - Install: `pip install batter` (previously git-only via release tarball).
+
+0.4.3 (paper /tick):
+  - Adds the single-bar paper `tick()` + `SimFillRouter` (ADR-0035, amended by
+    pancake-production 0035-amendment-engine-confirmation.md). Additive surface;
+    `run_backtest` and its `result_hash` are byte-unchanged.
 """
 
-__version__ = "0.4.2"
+__version__ = "0.4.3"
 ENGINE = "batter"
 ENGINE_VERSION = "0.4.0"
 ENGINE_MODE = "event_time_v1"
+
+# Verification grade the engine self-identifies with (rule 159 / ADR-0035 §2.2).
+# This is a CONTRACT TOKEN tied to the engine *generation* (the 0.3 execution
+# trust-layer per ADR-0031), intentionally DECOUPLED from ``ENGINE_VERSION``
+# (0.4.0 is a metrics-credibility revision of the same trust-layer, not a new
+# generation). It must stay in the dispatcher's ``PaperVerificationGrade`` union
+# (``engine-0.3-canonical | ts-shim-degraded``); changing it is a deliberate
+# cross-repo contract change.
+ENGINE_VERIFICATION_GRADE = "engine-0.3-canonical"
