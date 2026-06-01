@@ -40,7 +40,7 @@ jobs:
       - name: Run tests
         run: uv run pytest -v
 
-      - name: mypy — type-check new files (bootstrap + permutation + warnings)
+      - name: mypy — type-check new files (bootstrap + permutation + warnings + tick)
         shell: bash
         run: |
           uv run mypy \
@@ -48,9 +48,11 @@ jobs:
             pancake_engine/metrics/permutation.py \
             pancake_engine/warnings.py \
             pancake_engine/compile/condition.py \
+            pancake_engine/runner/fill.py \
+            pancake_engine/runner/tick.py \
             --ignore-missing-imports
 
-      - name: ruff — lint truly-new files (bootstrap + permutation + new tests)
+      - name: ruff — lint truly-new files (bootstrap + permutation + tick + new tests)
         # warnings.py + condition.py were only modified additively (1-line each);
         # their pre-existing E501/UP042 baseline is out of scope for 0.4 release.
         shell: bash
@@ -58,5 +60,9 @@ jobs:
           uv run ruff check \
             pancake_engine/metrics/bootstrap.py \
             pancake_engine/metrics/permutation.py \
+            pancake_engine/runner/fill.py \
+            pancake_engine/runner/tick.py \
             tests/test_math_brutal_verification.py \
-            tests/test_agent_supplied_feature_warning.py
+            tests/test_agent_supplied_feature_warning.py \
+            tests/test_tick.py \
+            tests/test_tick_fill.py
