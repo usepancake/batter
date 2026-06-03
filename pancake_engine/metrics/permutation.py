@@ -71,8 +71,10 @@ def permutation_p_sharpe(
           random). This is calibrated as the standard "weak evidence" threshold.
         - If the observed Sharpe is ``None`` (n<2 or std=0), ``p_value=None``
           is returned (cannot test a non-finite statistic).
-        - The minimum achievable p-value is ``1 / n_permutations`` (one permutation
-          exactly matched or exceeded |observed Sharpe|).
+        - The minimum achievable p-value is ``1 / (n_permutations + 1)``. The
+          observed statistic is itself a valid permutation under the null and is
+          always counted (Phipson & Smyth 2010, "Permutation P-values Should
+          Never Be Zero") — a finite permutation test never returns exactly 0.
 
     Hand-calc fixture (documented in docs/math-audit-0.4.md §permutation):
         daily_returns = [0.01] * 10
@@ -112,7 +114,11 @@ def permutation_p_sharpe(
         if perm_sharpe is not None and abs(perm_sharpe) >= obs_abs:
             count_ge += 1
 
-    p_value = count_ge / n_permutations
+    # Phipson & Smyth (2010), "Permutation P-values Should Never Be Zero": the
+    # observed statistic is itself a valid permutation under the null, so it is
+    # always counted — (count + 1) / (P + 1). This floors p at 1/(P+1) > 0; a
+    # finite permutation test cannot demonstrate p = 0.
+    p_value = (count_ge + 1) / (n_permutations + 1)
 
     if p_value > 0.10:
         warnings.append(Warning(

@@ -127,7 +127,10 @@ Null hypothesis: the observed Sharpe ratio is indistinguishable from noise (Shar
 2. For each of P = 10 000 permutations:
    a. Draw a sign vector `s_i ∈ {-1, +1}` uniformly at random.
    b. Compute the permuted Sharpe: `S_perm = _sharpe(s ⊙ r)`.
-3. p-value = `count(|S_perm| ≥ |S_obs|) / P`.
+3. p-value = `(count(|S_perm| ≥ |S_obs|) + 1) / (P + 1)` — the observed statistic
+   is itself a valid permutation and is always counted (Phipson & Smyth 2010,
+   "Permutation P-values Should Never Be Zero"), so p is floored at `1/(P+1)` and
+   is never exactly 0.
 
 ### Code path
 
@@ -164,9 +167,10 @@ Expected: p = 1.0. ✓
 ```python
 returns = [0.05 + (i%3)*0.001 for i in range(20)]  # N=20, strong upward drift
 observed_sharpe ≈ 979.68
-p_value = 0.0000  # no permutation produces |S| ≥ 979.68
+p_value = 0.0001  # count_ge = 0 → (0+1)/(10000+1) = 1/10001 ≈ 9.999e-05
 ```
-Expected: p ≈ 0.0 (minimum is 1/10_000 = 0.0001). ✓
+Expected: p = 1/(10_000+1) ≈ 9.999e-05 — the floor; never exactly 0
+(Phipson & Smyth 2010). ✓
 
 **Fixture E — all-identical returns (Sharpe undefined):**
 ```python
