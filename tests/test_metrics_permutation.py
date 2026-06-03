@@ -77,6 +77,29 @@ def test_permutation_strong_signal_low_p() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Never-zero floor (Phipson & Smyth 2010)
+# ---------------------------------------------------------------------------
+
+
+def test_permutation_never_returns_zero() -> None:
+    """A finite permutation test can never demonstrate p = 0 — the observed
+    statistic is itself a valid permutation and is always counted, flooring p
+    at 1/(P+1) (Phipson & Smyth 2010). Regression guard for the old count/P bug
+    that returned exactly 0.0 for a very strong signal."""
+    # Consistently positive, low-variance → very high observed |Sharpe|; sign
+    # flips essentially never reach it → count_ge == 0 under the old formula.
+    returns = [0.03, 0.04, 0.05, 0.045, 0.038, 0.052, 0.041, 0.049,
+               0.036, 0.047, 0.043, 0.051, 0.039, 0.046, 0.044]
+    P = 10_000
+    p_val, _ = permutation_p_sharpe(returns, n_permutations=P, seed=0)
+    assert p_val is not None
+    assert p_val > 0.0, "permutation p-value must never be exactly 0"
+    assert p_val >= 1.0 / (P + 1) - 1e-12
+    # seed=0 yields count_ge == 0 here → p equals the floor exactly.
+    assert p_val == pytest.approx(1.0 / (P + 1), abs=1e-12)
+
+
+# ---------------------------------------------------------------------------
 # Pure noise → high p-value
 # ---------------------------------------------------------------------------
 
