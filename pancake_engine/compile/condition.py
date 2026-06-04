@@ -61,6 +61,9 @@ def extract_referenced_columns(node: dict[str, Any]) -> set[str]:
     return cols
 
 
+_FEATURE_NODE_KEYS = frozenset({"feature", "gte", "lte", "eq"})
+
+
 def compile_condition(node: dict[str, Any]) -> Condition:
     """Compile a condition AST node into a callable ``(row) -> bool``."""
     if not isinstance(node, dict):
@@ -85,9 +88,24 @@ def compile_condition(node: dict[str, Any]) -> Condition:
         col = node["feature"]
         if not isinstance(col, str):
             raise ValueError(f"E_EVIDENCE_SPEC_INVALID: feature must be a string column name, got {col!r}")
+        # Reject typo'd / unknown operator keys ("gt", "GTE", "lt", ...). Without
+        # this, an unrecognised key is silently ignored and the node degenerates
+        # to an always-true numeric-existence check — a strategy that "enters on
+        # everything" with no error. See audit 2026-06-04 finding #1.
+        unknown = set(node.keys()) - _FEATURE_NODE_KEYS
+        if unknown:
+            raise ValueError(
+                f"E_EVIDENCE_SPEC_INVALID: unknown operator key(s) in feature node: "
+                f"{sorted(unknown)!r}; valid operators are gte, lte, eq"
+            )
         gte = node.get("gte")
         lte = node.get("lte")
         eq = node.get("eq")
+        if gte is None and lte is None and eq is None:
+            raise ValueError(
+                "E_EVIDENCE_SPEC_INVALID: feature node requires at least one of gte/lte/eq "
+                "(a bare feature reference matches every numeric row)"
+            )
         return _make_feature_check(col, gte=gte, lte=lte, eq=eq)
 
     if "feature_equal" in node:
@@ -97,7 +115,14 @@ def compile_condition(node: dict[str, Any]) -> Condition:
                 f"E_EVIDENCE_SPEC_INVALID: feature_equal requires {{'a': str, 'b': str}}, got {pair!r}"
             )
         a, b = pair["a"], pair["b"]
-        return lambda row: row.get(a) == row.get(b)
+        if not isinstance(a, str) or not isinstance(b, str):
+            raise ValueError(
+                f"E_EVIDENCE_SPEC_INVALID: feature_equal 'a' and 'b' must be string column names, "
+                f"got a={a!r}, b={b!r}"
+            )
+        # Require both sides present: two absent columns must NOT match
+        # (None == None → True would be a spurious always-enter). Audit #3.
+        return lambda row: (av := row.get(a)) is not None and av == row.get(b)
 
     raise ValueError(f"E_EVIDENCE_SPEC_INVALID: unknown condition node keys: {sorted(node.keys())!r}")
 

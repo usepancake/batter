@@ -43,6 +43,10 @@ __all__ = ["bootstrap_ci"]
 # Type alias for a (ci_low, ci_high) tuple
 CITuple = tuple[float | None, float | None]
 
+# Upper bound on n_resamples: a pathological caller (public API) could otherwise
+# allocate an enormous (n_resamples × n) index matrix. Audit 2026-06-04 #7.
+_MAX_RESAMPLES = 1_000_000
+
 
 def bootstrap_ci(
     daily_returns: list[float],
@@ -84,6 +88,12 @@ def bootstrap_ci(
           if all resamples return ``None`` the result is ``(None, None)``.
     """
     warnings: list[Warning] = []
+
+    if not 1 <= n_resamples <= _MAX_RESAMPLES:
+        raise ValueError(
+            f"E_EVIDENCE_SPEC_INVALID: n_resamples must be in "
+            f"[1, {_MAX_RESAMPLES}], got {n_resamples}"
+        )
 
     # Guard: N < 2
     if len(daily_returns) < 2:
@@ -144,6 +154,22 @@ def bootstrap_ci(
     boot_arr = np.asarray(boot_stats, dtype=np.float64)
     ci_low = float(np.percentile(boot_arr, low_pct))
     ci_high = float(np.percentile(boot_arr, high_pct))
+
+    # Degenerate CI: all (finite) resamples produced the same metric value, so
+    # ci_low == ci_high. A zero-width interval is not a meaningful confidence
+    # statement (it reads as infinite precision) — surface it as insufficient
+    # rather than emit a misleading (v, v). Audit 2026-06-04 finding #6.
+    if ci_low == ci_high:
+        warnings.append(Warning(
+            code=WarningCode.BOOTSTRAP_INSUFFICIENT,
+            severity=Severity.WARN,
+            message=(
+                f"bootstrap_ci: zero-width CI ({ci_low}); all resamples produced an "
+                "identical metric value. CI is degenerate; returning (None, None)."
+            ),
+            context={"n": len(daily_returns), "reason": "zero_width_ci"},
+        ))
+        return (None, None), warnings
 
     # CI_TOO_WIDE check (threshold = 5× |point estimate|).
     # Compute the point estimate using the full sample via metric_fn.

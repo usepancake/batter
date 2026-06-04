@@ -39,11 +39,28 @@ breaking change to the receipt contract.
     transparently (per-receipt old_hash -> new_hash correction record), never
     silently version-pinned. The moat is "correct + checkable", not "immutable".
     (policy B, Michael 2026-06-04)
+
+0.6.0 (statistics-correctness + hardening — DELIBERATE result_hash break):
+  - Permutation p-value is now (count+1)/(n+1) (Phipson & Smyth 2010) and can no
+    longer be exactly 0; changes sharpe_p_value (→ result_hash) for any backtest
+    with >=10 daily returns.
+  - Bootstrap returns (None, None) + BOOTSTRAP_INSUFFICIENT for a degenerate
+    zero-width CI instead of a misleading (v, v).
+  - Stricter spec compile: typo'd/unknown operator keys and bare feature nodes are
+    rejected (were silently always-true); feature_equal requires string columns and
+    both sides present.
+  - n_resamples / n_permutations capped at 1e6 (public-API DoS guard).
+  - Python >=3.12 enforced at import (3.11 sum() float drift silently changes hashes).
+  - Also folds in the additive crypto-OHLCV spec family (does not change
+    evidence-spec hashes).
+  - ENGINE_VERSION 0.5.0 -> 0.6.0 is part of result_hash, so EVERY hash changes;
+    published receipts are re-run transparently (per-receipt old_hash -> new_hash
+    correction record), never silently version-pinned. (policy B; audit 2026-06-04)
 """
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 ENGINE = "batter"
-ENGINE_VERSION = "0.5.0"
+ENGINE_VERSION = "0.6.0"
 ENGINE_MODE = "event_time_v1"
 
 # Verification grade the engine self-identifies with (rule 159 / ADR-0035 §2.2).

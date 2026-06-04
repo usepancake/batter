@@ -44,6 +44,15 @@ __all__ = ["permutation_p_sharpe"]
 # to estimate a continuous p-value.
 _MIN_N = 10
 
+# Upper bound on n_permutations: a pathological caller (public API) could
+# otherwise exhaust CPU/memory. Audit 2026-06-04 finding #7.
+_MAX_PERMUTATIONS = 1_000_000
+
+# Annualization factor for the inner-loop Sharpe. Kept local (NOT imported from
+# standard.py) to avoid a circular import; a parity test asserts it equals
+# standard.ANNUALIZATION_DAYS so the two cannot silently diverge.
+_ANNUALIZATION_DAYS = 252
+
 
 def permutation_p_sharpe(
     daily_returns: list[float],
@@ -71,8 +80,9 @@ def permutation_p_sharpe(
           random). This is calibrated as the standard "weak evidence" threshold.
         - If the observed Sharpe is ``None`` (n<2 or std=0), ``p_value=None``
           is returned (cannot test a non-finite statistic).
-        - The minimum achievable p-value is ``1 / n_permutations`` (one permutation
-          exactly matched or exceeded |observed Sharpe|).
+        - The minimum achievable p-value is ``1 / (n_permutations + 1)`` and is
+          never exactly 0: the observed statistic is itself counted as one draw
+          under the null (Phipson & Smyth 2010), so ``p = (count + 1) / (n + 1)``.
 
     Hand-calc fixture (documented in docs/math-audit-0.4.md §permutation):
         daily_returns = [0.01] * 10
@@ -80,6 +90,12 @@ def permutation_p_sharpe(
         → p_value = None (no test, not PERMUTATION_P_HIGH)
     """
     warnings: list[Warning] = []
+
+    if not 1 <= n_permutations <= _MAX_PERMUTATIONS:
+        raise ValueError(
+            f"E_EVIDENCE_SPEC_INVALID: n_permutations must be in "
+            f"[1, {_MAX_PERMUTATIONS}], got {n_permutations}"
+        )
 
     if len(daily_returns) < _MIN_N:
         warnings.append(Warning(
@@ -112,7 +128,10 @@ def permutation_p_sharpe(
         if perm_sharpe is not None and abs(perm_sharpe) >= obs_abs:
             count_ge += 1
 
-    p_value = count_ge / n_permutations
+    # (count + 1) / (n + 1): the observed statistic is itself one realization
+    # under the null, so a Monte-Carlo p-value is never exactly 0
+    # (Phipson & Smyth 2010). Audit 2026-06-04 finding #2.
+    p_value = (count_ge + 1) / (n_permutations + 1)
 
     if p_value > 0.10:
         warnings.append(Warning(
@@ -148,4 +167,4 @@ def _sharpe(daily_returns: list[float]) -> float | None:
     std = math.sqrt(var)
     if std == 0.0:
         return None
-    return (mean / std) * math.sqrt(252)
+    return (mean / std) * math.sqrt(_ANNUALIZATION_DAYS)

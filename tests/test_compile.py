@@ -102,3 +102,35 @@ def test_unknown_node_keys_raises() -> None:
 def test_feature_string_name_required() -> None:
     with pytest.raises(ValueError, match="E_EVIDENCE_SPEC_INVALID"):
         compile_condition({"feature": 1, "gte": 0})
+
+
+def test_feature_unknown_operator_key_raises() -> None:
+    # Audit #1: a typo'd operator ('gt' for 'gte', uppercase 'GTE', ...) must NOT
+    # be silently ignored — that degenerates to an always-true condition.
+    for bad in (
+        {"feature": "alpha", "gt": 0.7},
+        {"feature": "alpha", "GTE": 0.7},
+        {"feature": "alpha", "lt": 0.4},
+    ):
+        with pytest.raises(ValueError, match="unknown operator key"):
+            compile_condition(bad)
+
+
+def test_feature_no_operator_raises() -> None:
+    # Audit #1: a bare feature reference matches every numeric row — reject it.
+    with pytest.raises(ValueError, match="at least one of gte/lte/eq"):
+        compile_condition({"feature": "alpha"})
+
+
+def test_feature_equal_requires_string_keys() -> None:
+    # Audit #3: non-string column refs silently misbehave — reject them.
+    with pytest.raises(ValueError, match="must be string column names"):
+        compile_condition({"feature_equal": {"a": 123, "b": "outcome"}})
+
+
+def test_feature_equal_both_absent_is_false() -> None:
+    # Audit #3: two absent columns must NOT match (None == None spurious enter).
+    c = compile_condition({"feature_equal": {"a": "x", "b": "y"}})
+    assert c({}) is False
+    assert c({"x": 1}) is False           # only one side present
+    assert c({"x": 1, "y": 1}) is True    # both present + equal

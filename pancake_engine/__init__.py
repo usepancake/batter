@@ -1,11 +1,19 @@
-"""Pancake Engine 0.3 — deterministic Python research engine over EvidenceDataset.
+"""batter — a deterministic backtest/verification engine for trading strategies.
 
-Engine 0.3 is correctness-first, not TS parity. Known TS divergences are documented
-in pancake-production/docs/research/pancake-engine-0.3-ts-divergences.md.
-
-PR-0 shipped the canonicalization substrate.
-PR-1 ships the event-time ledger runner, validation, metrics, warnings, and CLI.
+Correctness-first and reproducible: identical inputs + the same engine version
+produce a byte-identical ``result_hash`` on any machine. Divergences from the
+reference TypeScript implementation are documented in ``docs/math-audit-0.4.md``.
 """
+
+import sys as _sys
+
+if _sys.version_info < (3, 12):  # pragma: no cover
+    raise RuntimeError(
+        "batter requires Python >= 3.12 "
+        f"(got {_sys.version_info.major}.{_sys.version_info.minor}). On Python 3.11 "
+        "float accumulation in sum() differs, which silently changes result_hash. "
+        "See docs/py311-investigation-2026-05-27.md."
+    )
 
 from .__version__ import (
     ENGINE,

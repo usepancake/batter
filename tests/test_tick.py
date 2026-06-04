@@ -86,6 +86,44 @@ def test_resolved_instrument_not_entered() -> None:
     assert resp.events == []
 
 
+def test_entry_fires_on_gte_price_condition() -> None:
+    # DF-1 regression: `gte` (price_above) entries must fire identically to `lte`.
+    # The engine evaluates the compiled condition against bar.close (mapped onto
+    # the entry_price column); a bar whose close satisfies `price gte 0.7` opens.
+    resp = tick(_req(
+        bars=[MarketBar(instrument_id="X", observed_at=990, close=0.8)],
+        entry_when={"feature": "price", "gte": 0.7},
+    ))
+    assert set(resp.new_positions) == {"X"}
+    assert _kinds(resp) == ["order_placed", "order_filled", "position_opened"]
+
+
+def test_entry_fires_on_band_condition() -> None:
+    # DF-1 regression: a band (all_of[gte, lte]) entry fires when close is in range.
+    resp = tick(_req(
+        bars=[MarketBar(instrument_id="X", observed_at=990, close=0.90)],
+        entry_when={"all_of": [
+            {"feature": "price", "gte": 0.85},
+            {"feature": "price", "lte": 0.97},
+        ]},
+    ))
+    assert set(resp.new_positions) == {"X"}
+    assert _kinds(resp) == ["order_placed", "order_filled", "position_opened"]
+
+
+def test_no_entry_when_band_upper_bound_exceeded() -> None:
+    # Negative control: close above the band's upper bound must NOT enter.
+    resp = tick(_req(
+        bars=[MarketBar(instrument_id="X", observed_at=990, close=0.99)],
+        entry_when={"all_of": [
+            {"feature": "price", "gte": 0.85},
+            {"feature": "price", "lte": 0.97},
+        ]},
+    ))
+    assert resp.new_positions == {}
+    assert resp.events == []
+
+
 # --- hold / mark-to-market -------------------------------------------------
 
 
