@@ -61,13 +61,13 @@ def daily_returns_carry_forward(equity_curve: list[EquityPoint]) -> list[float]:
         while curve_idx + 1 < len(sorted_curve) and sorted_curve[curve_idx + 1].t <= day + SECONDS_PER_DAY - 1:
             curve_idx += 1
             current_equity = sorted_curve[curve_idx].equity
-        # Special-case first day: use the first equity point if it's within this day
-        if day == start_day:
-            current_equity = sorted_curve[0].equity
-            # advance past any same-day duplicates picking the last one
-            while curve_idx + 1 < len(sorted_curve) and sorted_curve[curve_idx + 1].t <= day + SECONDS_PER_DAY - 1:
-                curve_idx += 1
-                current_equity = sorted_curve[curve_idx].equity
+        # NOTE: the loop above already carries forward to the LAST same-day
+        # equity for every day, including start_day. A former start_day
+        # special-case reset current_equity back to the FIRST point here,
+        # corrupting the day-0 close for intraday inputs (it fired on every
+        # start day at crypto 1-min cadence). Removed 2026-06-04 after the math
+        # audit; one-point-per-UTC-day results are byte-identical (regression
+        # guard in tests/test_daily_returns_same_day.py).
         daily.append(current_equity)
         day += SECONDS_PER_DAY
 
