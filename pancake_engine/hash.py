@@ -1,7 +1,7 @@
 """SHA-256 over canonical bytes for cross-runtime stable hashing.
 
 Engine 0.3 is correctness-first, not TS parity. Known TS divergences are
-documented in pancake-production/docs/research/pancake-engine-0.3-ts-divergences.md.
+documented in docs/math-audit-0.4.md.
 """
 
 from __future__ import annotations

@@ -267,6 +267,9 @@ def test_no_next_check_at_field() -> None:
     # The amended §2.2 response has NO next_check_at (dispatcher owns scheduling).
     resp = tick(_req(bars=[]))
     assert "next_check_at" not in resp.model_dump()
+    # The actual field is `suggested_next_check`; assert it directly so the test
+    # has teeth (the line above is vacuous — `next_check_at` never existed).
+    assert resp.suggested_next_check is None
 
 
 def test_determinism() -> None:

@@ -1,7 +1,7 @@
 """Engine-native result types and the ``result_hash`` contract.
 
 Engine 0.3 is correctness-first, not TS parity. Known TS divergences are
-documented in pancake-production/docs/research/pancake-engine-0.3-ts-divergences.md.
+documented in docs/math-audit-0.4.md.
 
 Hash field policy (architecture §Idempotency / result-hash contract):
 

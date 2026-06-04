@@ -1,7 +1,7 @@
 """Canonical serialization for Pancake Engine 0.3.
 
 Engine 0.3 is correctness-first, not TS parity. Known TS divergences are
-documented in pancake-production/docs/research/pancake-engine-0.3-ts-divergences.md.
+documented in docs/math-audit-0.4.md.
 
 This module implements byte-identical canonical serialization compatible with
 ECMA-262 §6.1.6.1.13 NumberToString and V8's ``JSON.stringify`` number output.

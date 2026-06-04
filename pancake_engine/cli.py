@@ -3,7 +3,7 @@
 PR-1 subcommands: ``hash`` (PR-0), ``validate``, ``run``.
 
 Engine 0.3 is correctness-first, not TS parity. Known TS divergences are documented
-in pancake-production/docs/research/pancake-engine-0.3-ts-divergences.md.
+in docs/math-audit-0.4.md.
 """
 
 from __future__ import annotations
@@ -140,7 +140,7 @@ def build_parser() -> argparse.ArgumentParser:
         description=(
             "Pancake Engine 0.3 — correctness-first, not TS parity. "
             "Known TS divergences are documented in "
-            "pancake-production/docs/research/pancake-engine-0.3-ts-divergences.md."
+            "docs/math-audit-0.4.md."
         ),
     )
     parser.add_argument("--version", action="version", version=f"{ENGINE} {ENGINE_VERSION}")

@@ -135,8 +135,19 @@ def validate_dataset(dataset: EvidenceDataset, spec: EvidenceSpec) -> tuple[Vali
                     row_index=i, column=req.name,
                 )
                 continue
-            if req.range is not None and isinstance(val, (int, float)) and not isinstance(val, bool):
-                low, high = req.range
+            # Range check: prefer the spec-requirement range; fall back to the
+            # dataset column's OWN declared range when the spec omits it. The TS
+            # runner enforces the dataset-declared range too — this restores
+            # parity and closes the "spec omits range, dataset declares [0,1],
+            # value 1.5 slips through" gap. Audit 2026-06-04 #4.
+            declared_col = dataset_cols.get(req.name)
+            effective_range = (
+                req.range
+                if req.range is not None
+                else (declared_col.range if declared_col is not None else None)
+            )
+            if effective_range is not None and isinstance(val, (int, float)) and not isinstance(val, bool):
+                low, high = effective_range
                 if val < low or val > high:
                     v.add_error(
                         "E_EVIDENCE_RANGE",

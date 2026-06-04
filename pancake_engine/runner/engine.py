@@ -4,7 +4,7 @@ Pure function ``(spec, dataset, config) -> BacktestResult``. No clock reads,
 no I/O, no network. Same inputs → same ``result_hash``.
 
 Engine 0.3 is correctness-first, not TS parity. Known TS divergences are
-documented in pancake-production/docs/research/pancake-engine-0.3-ts-divergences.md.
+documented in docs/math-audit-0.4.md.
 """
 
 from __future__ import annotations

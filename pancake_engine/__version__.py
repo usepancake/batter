@@ -22,8 +22,8 @@ breaking change to the receipt contract.
   - Install: `pip install batter` (previously git-only via release tarball).
 
 0.4.3 (paper /tick):
-  - Adds the single-bar paper `tick()` + `SimFillRouter` (ADR-0035, amended by
-    pancake-production 0035-amendment-engine-confirmation.md). Additive surface;
+  - Adds the single-bar paper `tick()` + `SimFillRouter` (ADR-0035 +
+    engine-confirmation addendum). Additive surface;
     `run_backtest` and its `result_hash` are byte-unchanged.
 
 0.5.0 (daily-returns correction — DELIBERATE result_hash break):

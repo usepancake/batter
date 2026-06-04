@@ -58,7 +58,7 @@ If you use batter in academic or independent research, please cite:
   title        = {batter: Deterministic Python research engine for
                   prediction-market evidence-backed backtests},
   year         = {2026},
-  version      = {0.4.2},
+  version      = {0.6.0},
   url          = {https://usepancake.com/engine},
   repository   = {https://github.com/usepancake/batter},
   license      = {Apache-2.0},

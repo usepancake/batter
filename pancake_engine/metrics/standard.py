@@ -1,7 +1,7 @@
 """Standard metric block: total_return, cagr, sharpe, sortino, max_drawdown, win_rate.
 
-Engine 0.3 is correctness-first, not TS parity. Locked constants pulled from
-``pancake-production/lib/backtest/metrics.ts``:
+Correctness-first. Locked constants match the reference TypeScript
+implementation (divergences documented in docs/math-audit-0.4.md):
 
 - ``SECONDS_PER_YEAR = 365.25 * 86400`` (Julian year)
 - ``ANNUALIZATION_DAYS = 252`` (trading-day convention even for prediction markets)
