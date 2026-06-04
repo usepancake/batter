@@ -21,6 +21,7 @@ from .compile import (
     compile_crypto_ohlcv_spec,
     compile_operand,
 )
+from .indicators import compute_indicator, ema, rsi, sma
 from .types import (
     Condition,
     CryptoOhlcvSpec,
@@ -47,4 +48,8 @@ __all__ = [
     "compile_condition",
     "compile_crypto_ohlcv_spec",
     "compile_operand",
+    "compute_indicator",
+    "ema",
+    "rsi",
+    "sma",
 ]
