@@ -8,12 +8,19 @@ receipt on the same 0.5.0 engine.
 Locked design picks (ADR-0043 §2.3): fill = next-bar-open · v1 source =
 price_bars 1-min · DSL = minimal (SMA/EMA/RSI + cross/threshold + fixed-fraction).
 
-P1 ships the I/O contract only (this package's `types`). The compiler (P2) and
-runner (P3) consume these models; neither exists yet.
+P1 ships the I/O contract (`types`). P2 adds the compiler (`compile`): a frozen
+`CompiledCryptoOhlcvSpec` with a `compiled_spec_hash` + compiled entry/exit
+conditions. The runner (P3) consumes the compiled form; it does not exist yet.
 """
 
 from __future__ import annotations
 
+from .compile import (
+    CompiledCryptoOhlcvSpec,
+    compile_condition,
+    compile_crypto_ohlcv_spec,
+    compile_operand,
+)
 from .types import (
     Condition,
     CryptoOhlcvSpec,
@@ -27,6 +34,7 @@ from .types import (
 )
 
 __all__ = [
+    "CompiledCryptoOhlcvSpec",
     "Condition",
     "CryptoOhlcvSpec",
     "CryptoOhlcvStrategy",
@@ -36,4 +44,7 @@ __all__ = [
     "OhlcvDataset",
     "OhlcvSizing",
     "Operand",
+    "compile_condition",
+    "compile_crypto_ohlcv_spec",
+    "compile_operand",
 ]
