@@ -15,6 +15,7 @@ event (fee realized at entry; B-1 of math bash).
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 
 from .position import Position
@@ -73,11 +74,11 @@ class Ledger:
 
     @property
     def open_cost(self) -> float:
-        return sum(p.cost for p in self.open_positions.values())
+        return math.fsum(p.cost for p in self.open_positions.values())
 
     def mark_value(self) -> float:
         """``mark_at_cost``: mark per share = entry_fill_price → mark_value = Σ shares × entry_price."""
-        return sum(p.shares * p.entry_price for p in self.open_positions.values())
+        return math.fsum(p.shares * p.entry_price for p in self.open_positions.values())
 
     def equity(self) -> float:
         return self.cash + self.mark_value()

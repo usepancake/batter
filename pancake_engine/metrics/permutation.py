@@ -162,8 +162,8 @@ def _sharpe(daily_returns: list[float]) -> float | None:
     if len(daily_returns) < 2:
         return None
     n = len(daily_returns)
-    mean = sum(daily_returns) / n
-    var = sum((r - mean) ** 2 for r in daily_returns) / (n - 1)
+    mean = math.fsum(daily_returns) / n
+    var = math.fsum((r - mean) ** 2 for r in daily_returns) / (n - 1)
     std = math.sqrt(var)
     if std == 0.0:
         return None

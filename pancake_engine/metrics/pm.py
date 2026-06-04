@@ -105,9 +105,9 @@ def compute_pm(
     ci_low, ci_high = wilson_ci95(wins, len(trades))
 
     returns = [t.return_pct for t in trades]
-    mean_r = sum(returns) / len(returns)
+    mean_r = math.fsum(returns) / len(returns)
     if len(returns) >= 2:
-        var = sum((r - mean_r) ** 2 for r in returns) / (len(returns) - 1)
+        var = math.fsum((r - mean_r) ** 2 for r in returns) / (len(returns) - 1)
         std_r: Optional[float] = math.sqrt(var)
     else:
         std_r = None

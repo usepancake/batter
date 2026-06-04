@@ -64,6 +64,19 @@ def test_bootstrap_n_resamples_capped() -> None:
 # --- determinism guard (Python 3.12 float accumulation) --------------------
 
 
+def test_metric_mean_uses_fsum() -> None:
+    # Durable-hash guard (3a): the float-sum hashed path uses math.fsum
+    # (correctly-rounded, identical on 3.11/3.12/3.13+), not builtin sum()
+    # (whose accumulation drifts between interpreter versions). Catches a
+    # regression back to builtin sum.
+    import math
+
+    from pancake_engine.metrics.standard import _mean
+
+    xs = [0.1] * 10 + [0.2] * 10 + [0.3] * 10
+    assert _mean(xs) == math.fsum(xs) / len(xs)
+
+
 def test_sum_float_accumulation_is_312_stable() -> None:
     # Python 3.12 sums homogeneous floats with compensated accumulation
     # (== 0.2 exactly); 3.11 gives 0.20000000000000004, which would change

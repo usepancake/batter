@@ -102,7 +102,7 @@ def sortino_ratio(daily_returns: list[float]) -> float | None:
         return None
     # n = full sample size (true Sortino, Sortino & Price 1994); NOT len(negs) — D-13
     n = len(daily_returns)
-    downside_var = sum(r * r for r in negs) / n
+    downside_var = math.fsum(r * r for r in negs) / n
     ds = math.sqrt(downside_var)
     if ds == 0:
         return None
@@ -195,14 +195,17 @@ def compute_standard(
 
 
 def _mean(xs: list[float]) -> float:
-    return sum(xs) / len(xs)
+    # math.fsum (correctly-rounded) instead of builtin sum: removes the Python
+    # 3.11-vs-3.12 sum() accumulation drift from the hashed path so result_hash
+    # is stable across ALL interpreters, not just >=3.12. Audit 2026-06-04 (3a).
+    return math.fsum(xs) / len(xs)
 
 
 def _stdev_sample(xs: list[float], mean: float) -> float:
     """Sample stdev with Bessel correction (n-1). Matches TS."""
     if len(xs) < 2:
         return 0.0
-    var = sum((x - mean) ** 2 for x in xs) / (len(xs) - 1)
+    var = math.fsum((x - mean) ** 2 for x in xs) / (len(xs) - 1)
     return math.sqrt(var)
 
 
