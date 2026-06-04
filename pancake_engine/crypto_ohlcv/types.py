@@ -25,6 +25,7 @@ __all__ = [
 ]
 
 _ERR = "E_CRYPTO_OHLCV_SPEC_INVALID"
+BPS_DIVISOR = 10_000  # 100% in basis points; costs >= this break the fill/cash model
 
 
 # ---------------------------------------------------------------------------
@@ -56,8 +57,7 @@ class OhlcvBar(BaseModel):
         lo, hi = self.low, self.high
         if not (lo <= self.open <= hi and lo <= self.close <= hi):
             raise ValueError(
-                f"{_ERR}: bar OHLC invariant violated "
-                f"(o={self.open} h={hi} l={lo} c={self.close})"
+                f"{_ERR}: bar OHLC invariant violated (o={self.open} h={hi} l={lo} c={self.close})"
             )
         return self
 
@@ -78,8 +78,7 @@ class OhlcvDataset(BaseModel):
         for b in self.bars:
             if prev is not None and not (b.t > prev):
                 raise ValueError(
-                    f"{_ERR}: bars must be strictly increasing in t "
-                    f"(got {b.t} after {prev})"
+                    f"{_ERR}: bars must be strictly increasing in t (got {b.t} after {prev})"
                 )
             prev = b.t
         return self
@@ -163,21 +162,31 @@ class OhlcvCosts(BaseModel):
 
     @field_validator("slippage_bps")
     @classmethod
-    def _slip_non_negative(cls, v: float) -> float:
+    def _slip_in_range(cls, v: float) -> float:
         if v < 0:
             raise ValueError(
                 f"{_ERR}: slippage_bps must be >= 0 (got {v}); "
                 "negative slippage represents favorable fills (free money)"
             )
+        if v >= BPS_DIVISOR:
+            raise ValueError(
+                f"{_ERR}: slippage_bps must be < {BPS_DIVISOR} (got {v}); "
+                ">= 100% slippage is not a real market and breaks the fill model"
+            )
         return v
 
     @field_validator("fee_bps")
     @classmethod
-    def _fee_non_negative(cls, v: float) -> float:
+    def _fee_in_range(cls, v: float) -> float:
         if v < 0:
             raise ValueError(
                 f"{_ERR}: fee_bps must be >= 0 (got {v}); "
                 "negative fees represent rebates (free money)"
+            )
+        if v >= BPS_DIVISOR:
+            raise ValueError(
+                f"{_ERR}: fee_bps must be < {BPS_DIVISOR} (got {v}); "
+                ">= 100% fee exceeds the notional and breaks cash conservation"
             )
         return v
 

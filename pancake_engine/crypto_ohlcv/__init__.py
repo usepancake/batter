@@ -22,6 +22,8 @@ from .compile import (
     compile_operand,
 )
 from .indicators import compute_indicator, ema, rsi, sma
+from .result import CryptoOhlcvResult, OhlcvTrade
+from .run import run_crypto_ohlcv
 from .types import (
     Condition,
     CryptoOhlcvSpec,
@@ -37,6 +39,7 @@ from .types import (
 __all__ = [
     "CompiledCryptoOhlcvSpec",
     "Condition",
+    "CryptoOhlcvResult",
     "CryptoOhlcvSpec",
     "CryptoOhlcvStrategy",
     "Indicator",
@@ -44,6 +47,7 @@ __all__ = [
     "OhlcvCosts",
     "OhlcvDataset",
     "OhlcvSizing",
+    "OhlcvTrade",
     "Operand",
     "compile_condition",
     "compile_crypto_ohlcv_spec",
@@ -51,5 +55,6 @@ __all__ = [
     "compute_indicator",
     "ema",
     "rsi",
+    "run_crypto_ohlcv",
     "sma",
 ]

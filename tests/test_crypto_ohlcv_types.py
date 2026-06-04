@@ -61,6 +61,16 @@ def test_negative_costs_rejected(field, bad):
         CryptoOhlcvSpec(**d)
 
 
+@pytest.mark.parametrize("field", ["slippage_bps", "fee_bps"])
+def test_excessive_costs_rejected(field):
+    # >= 100% (10000 bps) breaks the fill/cash model; the bound makes it
+    # unrepresentable so the runner can never destroy capital on a bad spec.
+    d = valid_spec_dict()
+    d["costs"][field] = 10_000
+    with pytest.raises(ValidationError, match="must be <"):
+        CryptoOhlcvSpec(**d)
+
+
 def test_non_positive_capital_rejected():
     d = valid_spec_dict()
     d["starting_capital"] = 0
