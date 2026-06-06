@@ -156,6 +156,26 @@ def validate_dataset(dataset: EvidenceDataset, spec: EvidenceSpec) -> tuple[Vali
                         row_index=i, column=req.name,
                     )
 
+            # entry_price is a probability — enforce [0, 1] even when neither the
+            # spec requirement nor the dataset column declares a range. Without
+            # this, an out-of-range entry_price (e.g. 1.7) was silently skipped at
+            # run time with an ENTRY_PRICE_OUT_OF_RANGE warning instead of failing
+            # pre-flight, so the MCP surface reported it as an opaque engine error
+            # (MCP error-recovery eval, 2026-06-06).
+            if (
+                req.semantic_role == "entry_price"
+                and effective_range is None
+                and isinstance(val, (int, float))
+                and not isinstance(val, bool)
+                and (val < 0.0 or val > 1.0)
+            ):
+                v.add_error(
+                    "E_EVIDENCE_RANGE",
+                    f"row {i}: column {req.name!r} value {val} is an entry_price "
+                    f"outside [0, 1] (prices are probabilities)",
+                    row_index=i, column=req.name,
+                )
+
         # Lookahead invariant: decision_time < resolution_time strictly
         if "decision_time" in lookup and "resolution_time" in lookup:
             dec = row.get(lookup["decision_time"])
