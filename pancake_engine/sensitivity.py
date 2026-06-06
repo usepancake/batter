@@ -19,8 +19,6 @@ import numpy as np
 
 from .__version__ import ENGINE, ENGINE_VERSION
 from .config import BacktestConfig
-from .metrics.standard import _max_drawdown
-from .result import EquityPoint
 from .runner.engine import run_backtest
 from .types import EvidenceDataset, EvidenceSpec
 
@@ -37,12 +35,10 @@ class SensitivityResult:
     sizing_fractions: list[float]
     base_entry_idx: int
     base_sizing_idx: int
-    # Monte-Carlo worst-drawdown percentiles (fraction; 0.10 = 10%).
-    mc_drawdown_p5: float
-    mc_drawdown_p25: float
-    mc_drawdown_p50: float
-    mc_drawdown_p75: float
-    mc_drawdown_p95: float
+    # Monte-Carlo running-drawdown fan: one point per resample step (t = trades
+    # elapsed, 0..base_num_trades), each carrying the p5/p25/p50/p75/p95 of the
+    # worst-drawdown-so-far across the reshuffles (fraction; 0.10 = 10%).
+    mc_drawdown_points: list[dict[str, float]]
     mc_n: int
     mc_seed: int
     base_num_trades: int
@@ -56,13 +52,7 @@ class SensitivityResult:
             "sizing_fractions": self.sizing_fractions,
             "base_entry_idx": self.base_entry_idx,
             "base_sizing_idx": self.base_sizing_idx,
-            "mc_drawdown": {
-                "p5": self.mc_drawdown_p5,
-                "p25": self.mc_drawdown_p25,
-                "p50": self.mc_drawdown_p50,
-                "p75": self.mc_drawdown_p75,
-                "p95": self.mc_drawdown_p95,
-            },
+            "mc_drawdown_points": self.mc_drawdown_points,
             "mc_n": self.mc_n,
             "mc_seed": self.mc_seed,
             "base_num_trades": self.base_num_trades,
@@ -178,20 +168,42 @@ def run_sensitivity_analysis(
     if base_result is None:  # base indices fell outside the grid (clamped) — run it directly
         base_result = run_backtest(spec, dataset, config)
 
+    # Monte-Carlo running-drawdown fan. Per reshuffle, walk the equity in the
+    # shuffled trade order and record the worst-drawdown-so-far at each step
+    # (same definition as metrics.standard._max_drawdown). Percentile across
+    # reshuffles per step → the fan the frontend mc_drawdown block renders.
     starting = base_result.metrics.standard.starting_capital
     pnls = [t.pnl for t in base_result.trades]
-    rng = np.random.default_rng(mc_seed)
-    draws: list[float] = []
-    for _ in range(n_mc if pnls else 0):
-        eq = starting
-        curve = [EquityPoint(t=0, equity=eq)]
-        for i, idx in enumerate(rng.permutation(len(pnls))):
-            eq += pnls[idx]
-            curve.append(EquityPoint(t=i + 1, equity=eq))
-        draws.append(_max_drawdown(curve))
-    p5, p25, p50, p75, p95 = (
-        float(x) for x in np.percentile(np.array(draws or [0.0]), [5, 25, 50, 75, 95])
-    )
+    n_steps = len(pnls) + 1  # step 0 = starting capital, no drawdown
+    mc_drawdown_points: list[dict[str, float]] = []
+    if pnls:
+        rng = np.random.default_rng(mc_seed)
+        dd = np.empty((n_mc, n_steps), dtype=float)
+        for r in range(n_mc):
+            eq = starting
+            peak = eq
+            worst = 0.0
+            dd[r, 0] = 0.0
+            for i, idx in enumerate(rng.permutation(len(pnls))):
+                eq += pnls[idx]
+                if eq > peak:
+                    peak = eq
+                step_dd = (peak - eq) / peak if peak > 0 else 0.0
+                if step_dd > worst:
+                    worst = step_dd
+                dd[r, i + 1] = worst
+        pct = np.percentile(dd, [5, 25, 50, 75, 95], axis=0)  # (5, n_steps)
+        mc_drawdown_points = [
+            {
+                "t": float(s),
+                "p5": float(pct[0, s]),
+                "p25": float(pct[1, s]),
+                "p50": float(pct[2, s]),
+                "p75": float(pct[3, s]),
+                "p95": float(pct[4, s]),
+            }
+            for s in range(n_steps)
+        ]
 
     return SensitivityResult(
         engine=ENGINE,
@@ -201,11 +213,7 @@ def run_sensitivity_analysis(
         sizing_fractions=sizing_fractions,
         base_entry_idx=base_entry_idx,
         base_sizing_idx=base_sizing_idx,
-        mc_drawdown_p5=p5,
-        mc_drawdown_p25=p25,
-        mc_drawdown_p50=p50,
-        mc_drawdown_p75=p75,
-        mc_drawdown_p95=p95,
+        mc_drawdown_points=mc_drawdown_points,
         mc_n=n_mc,
         mc_seed=mc_seed,
         base_num_trades=base_result.metrics.standard.num_trades,
