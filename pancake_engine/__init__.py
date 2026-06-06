@@ -51,6 +51,7 @@ from .runner import (
     run_backtest,
     tick,
 )
+from .sensitivity import SensitivityResult, run_sensitivity_analysis
 from .types import EvidenceDataset, EvidenceSpec
 from .validate import ValidationVerdict
 from .walkforward import (
@@ -91,6 +92,8 @@ __all__ = [
     "WarningCode",
     "ValidationVerdict",
     "run_backtest",
+    "run_sensitivity_analysis",
+    "SensitivityResult",
     "WalkforwardConfig",
     "WalkforwardResult",
     "Fold",
