@@ -54,10 +54,18 @@ def run_backtest(
     spec: EvidenceSpec,
     dataset: EvidenceDataset,
     config: Optional[BacktestConfig] = None,
+    *,
+    with_inference: bool = True,
 ) -> BacktestResult:
     """Run an EvidenceSpec against an EvidenceDataset.
 
     Pure function. Determinism is a function of inputs alone.
+
+    ``with_inference=False`` skips the bootstrap CIs + permutation test (the
+    expensive metrics inference), leaving those fields at their empty sentinels.
+    Used by the parameter sweep (ADR-0046), where each cell only needs Sharpe;
+    it is an EXECUTION argument, not part of ``config``/``config_hash``, so the
+    default (True) leaves ``result_hash`` byte-identical for every receipt.
     """
     config = config or BacktestConfig()
 
@@ -204,6 +212,7 @@ def run_backtest(
         daily_rets=daily_rets,
         starting_capital=float(compiled.starting_capital),
         period_seconds=period_seconds,
+        with_inference=with_inference,
     )
     warnings.extend(bootstrap_warnings)
     metrics_pm = compute_pm(

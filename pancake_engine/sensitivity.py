@@ -159,14 +159,23 @@ def run_sensitivity_analysis(
             new_strategy = spec.strategy.model_copy(
                 update={"entry": new_entry, "sizing": new_sizing}
             )
-            res = run_backtest(spec.model_copy(update={"strategy": new_strategy}), dataset, config)
+            # with_inference=False: the sweep only reads .sharpe; skipping the
+            # per-cell bootstrap CIs + permutation test is the ~50× speedup that
+            # keeps the whole sweep inside the request budget (ADR-0046).
+            res = run_backtest(
+                spec.model_copy(update={"strategy": new_strategy}),
+                dataset,
+                config,
+                with_inference=False,
+            )
             row.append(res.metrics.standard.sharpe)
             if ei == base_entry_idx and si == base_sizing_idx:
                 base_result = res
         sharpe_grid.append(row)
 
     if base_result is None:  # base indices fell outside the grid (clamped) — run it directly
-        base_result = run_backtest(spec, dataset, config)
+        # Only the base cell's trades/equity feed the MC fan; its CIs are unused.
+        base_result = run_backtest(spec, dataset, config, with_inference=False)
 
     # Monte-Carlo running-drawdown fan. Per reshuffle, walk the equity in the
     # shuffled trade order and record the worst-drawdown-so-far at each step

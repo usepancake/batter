@@ -64,9 +64,18 @@ breaking change to the receipt contract.
     result_hash are byte-unchanged, so ENGINE_VERSION stays 0.6.0 (NO receipt
     break, no correction records). Package __version__ bumps to 0.7.0 as the PyPI
     release vehicle for the new surface (same pattern as 0.4.1/0.4.2/0.4.3).
+
+0.7.1 (sweep perf — ADDITIVE, result_hash UNCHANGED):
+  - run_backtest gains a `with_inference: bool = True` EXECUTION arg (not a
+    BacktestConfig field, so config_hash/result_hash are untouched). When False
+    it skips the bootstrap CIs + permutation test. run_sensitivity_analysis sets
+    it False for every cell — the sweep only needs Sharpe, so the per-cell
+    inference was ~50× wasted work that blew the request budget. Cuts the sweep
+    from minutes to seconds. Default True → every receipt path is byte-identical;
+    ENGINE_VERSION stays 0.6.0.
 """
 
-__version__ = "0.7.0"
+__version__ = "0.7.1"
 ENGINE = "batter"
 # Deliberately NOT bumped: 0.7.0 is additive (sensitivity); run_backtest math and
 # result_hash are unchanged. ENGINE_VERSION is part of result_hash — bumping it

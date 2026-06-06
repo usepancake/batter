@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pancake_engine import run_sensitivity_analysis
+from pancake_engine import run_backtest, run_sensitivity_analysis
 from pancake_engine.sensitivity import _centered_grid, _find_gte, _set_gte
 
 from ._runner_helpers import make_dataset, make_spec, row
@@ -21,6 +21,36 @@ def _spec_and_dataset():
         row(mkt="m/F", dec_ts=2600, res_ts=3000, price=0.70, outcome=0, alpha=3.2, target=0),
     ])
     return spec, dataset
+
+
+def test_with_inference_flag_skips_ci_and_permutation(monkeypatch):
+    """0.7.1 sweep perf: with_inference=False must NOT call the expensive
+    inference (bootstrap CIs + permutation), but still returns Sharpe + total
+    return unchanged; the default keeps inference so receipts are byte-identical.
+    Spied at the call level so the proof doesn't depend on the data being
+    non-degenerate."""
+    import pancake_engine.metrics.standard as std
+
+    calls = {"bootstrap": 0, "perm": 0}
+    real_boot, real_perm = std.bootstrap_ci, std.permutation_p_sharpe
+    monkeypatch.setattr(std, "bootstrap_ci", lambda *a, **k: (calls.__setitem__("bootstrap", calls["bootstrap"] + 1), real_boot(*a, **k))[1])
+    monkeypatch.setattr(std, "permutation_p_sharpe", lambda *a, **k: (calls.__setitem__("perm", calls["perm"] + 1), real_perm(*a, **k))[1])
+
+    spec, dataset = _spec_and_dataset()
+
+    fast = run_backtest(spec, dataset, with_inference=False).metrics.standard
+    assert calls == {"bootstrap": 0, "perm": 0}  # inference skipped entirely
+    assert fast.sharpe_ci == (None, None)
+    assert fast.cagr_ci == (None, None)
+    assert fast.sortino_ci == (None, None)
+    assert fast.sharpe_p_value is None
+
+    full = run_backtest(spec, dataset).metrics.standard  # default True
+    assert calls["bootstrap"] >= 1 and calls["perm"] >= 1  # inference ran
+
+    # The cheap metric the sweep actually reads is identical either way.
+    assert fast.sharpe == full.sharpe
+    assert fast.total_return == full.total_return
 
 
 def test_grid_shape_and_base_indices():
