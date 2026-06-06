@@ -38,16 +38,20 @@ def test_grid_shape_and_base_indices():
     assert abs(res.sizing_fractions[res.base_sizing_idx] - 0.1) < 0.05
 
 
-def test_mc_percentiles_monotonic():
+def test_mc_drawdown_fan():
     spec, dataset = _spec_and_dataset()
     res = run_sensitivity_analysis(spec, dataset, n_mc=500, mc_seed=0)
-    assert (
-        res.mc_drawdown_p5
-        <= res.mc_drawdown_p25
-        <= res.mc_drawdown_p50
-        <= res.mc_drawdown_p75
-        <= res.mc_drawdown_p95
-    )
+    # one point per resample step (t = 0..base_num_trades)
+    assert len(res.mc_drawdown_points) == res.base_num_trades + 1
+    for pt in res.mc_drawdown_points:
+        # percentiles ordered within each step
+        assert pt["p5"] <= pt["p25"] <= pt["p50"] <= pt["p75"] <= pt["p95"]
+        assert pt["p5"] >= 0.0  # drawdown is a non-negative fraction
+    # step 0 = starting capital → no drawdown yet
+    assert res.mc_drawdown_points[0]["p95"] == 0.0
+    # running-max drawdown only grows along the path (median is non-decreasing)
+    medians = [pt["p50"] for pt in res.mc_drawdown_points]
+    assert all(medians[i] <= medians[i + 1] + 1e-9 for i in range(len(medians) - 1))
     assert res.mc_n == 500
     assert res.base_num_trades >= 1
 
