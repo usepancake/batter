@@ -127,6 +127,7 @@ def compute_standard(
     daily_rets: list[float],
     starting_capital: float,
     period_seconds: int,
+    with_inference: bool = True,
 ) -> tuple[MetricsStandard, bool, bool, list[Warning]]:
     """Return ``(MetricsStandard, ruined_flag, cagr_overflowed_flag, extra_warnings)``.
 
@@ -134,6 +135,14 @@ def compute_standard(
     ``sharpe_ci``, ``sortino_ci`` (bootstrap CIs), and ``sharpe_p_value``
     (sign-permutation test). Warnings emitted by bootstrap / permutation are
     returned as ``extra_warnings`` for the caller to append to the warning list.
+
+    ``with_inference=False`` skips the bootstrap CIs + permutation test — the
+    expensive part — leaving those four fields ``None``. Used by the parameter
+    sweep (ADR-0046), where each of the 49 cells only needs ``sharpe`` and the
+    CIs/p-value are never read; running full inference per cell is ~50× wasted
+    work that blows the request budget. NOT a contract/hash change: it is an
+    execution argument, not a ``BacktestConfig`` field, and the default (True)
+    leaves every receipt path byte-identical.
     """
     ending_equity = equity_curve[-1].equity if equity_curve else starting_capital
     tr = total_return(starting_capital, ending_equity)
@@ -150,26 +159,30 @@ def compute_standard(
     # We compute it again here from equity_curve for the standard metric.
     max_dd = _max_drawdown(equity_curve)
 
-    # --- Engine 0.4: bootstrap CIs ---
+    # --- Engine 0.4: bootstrap CIs + permutation (the expensive inference) ---
     extra_warnings: list[Warning] = []
+    cagr_ci: tuple[float | None, float | None] = (None, None)
+    sharpe_ci: tuple[float | None, float | None] = (None, None)
+    sortino_ci: tuple[float | None, float | None] = (None, None)
+    sharpe_p: float | None = None
 
-    cagr_ci, cagr_ci_warns = bootstrap_ci(daily_rets, _cagr_proxy_fn(
-        starting_capital=starting_capital,
-        ending_equity=ending_equity,
-        period_seconds=period_seconds,
-        num_trades=len(trades),
-    ))
-    extra_warnings.extend(cagr_ci_warns)
+    if with_inference:
+        cagr_ci, cagr_ci_warns = bootstrap_ci(daily_rets, _cagr_proxy_fn(
+            starting_capital=starting_capital,
+            ending_equity=ending_equity,
+            period_seconds=period_seconds,
+            num_trades=len(trades),
+        ))
+        extra_warnings.extend(cagr_ci_warns)
 
-    sharpe_ci, sharpe_ci_warns = bootstrap_ci(daily_rets, sharpe_ratio)
-    extra_warnings.extend(sharpe_ci_warns)
+        sharpe_ci, sharpe_ci_warns = bootstrap_ci(daily_rets, sharpe_ratio)
+        extra_warnings.extend(sharpe_ci_warns)
 
-    sortino_ci, sortino_ci_warns = bootstrap_ci(daily_rets, sortino_ratio)
-    extra_warnings.extend(sortino_ci_warns)
+        sortino_ci, sortino_ci_warns = bootstrap_ci(daily_rets, sortino_ratio)
+        extra_warnings.extend(sortino_ci_warns)
 
-    # --- Engine 0.4: permutation test ---
-    (sharpe_p, perm_warns) = permutation_p_sharpe(daily_rets)
-    extra_warnings.extend(perm_warns)
+        (sharpe_p, perm_warns) = permutation_p_sharpe(daily_rets)
+        extra_warnings.extend(perm_warns)
 
     standard = MetricsStandard(
         total_return=tr,
