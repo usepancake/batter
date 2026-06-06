@@ -73,9 +73,18 @@ breaking change to the receipt contract.
     inference was ~50× wasted work that blew the request budget. Cuts the sweep
     from minutes to seconds. Default True → every receipt path is byte-identical;
     ENGINE_VERSION stays 0.6.0.
+
+0.7.2 (validation hardening — ADDITIVE, result_hash UNCHANGED):
+  - validate_dataset now enforces entry_price ∈ [0, 1] even when neither the spec
+    requirement nor the dataset column declares a range. Previously an
+    out-of-range entry_price with no declared range was silently skipped at run
+    time with an ENTRY_PRICE_OUT_OF_RANGE warning instead of failing pre-flight,
+    so the MCP surface reported it as an opaque engine error (error-recovery eval
+    2026-06-06). Stricter rejection only — valid datasets are byte-unchanged, so
+    ENGINE_VERSION stays 0.6.0.
 """
 
-__version__ = "0.7.1"
+__version__ = "0.7.2"
 ENGINE = "batter"
 # Deliberately NOT bumped: 0.7.0 is additive (sensitivity); run_backtest math and
 # result_hash are unchanged. ENGINE_VERSION is part of result_hash — bumping it

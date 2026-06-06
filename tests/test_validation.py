@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from pancake_engine.types import EvidenceCosts, EvidenceSpec
+from pancake_engine.types import EvidenceCosts, EvidenceDataset, EvidenceSpec
 from pancake_engine.validate import validate_dataset, validate_spec
 
 from ._runner_helpers import SCHEMA_COLUMNS, make_dataset, make_spec, row
@@ -66,6 +66,55 @@ def test_validation_range_violation() -> None:
     assert not verdict.ok
     codes = {e.code for e in verdict.errors}
     assert "E_EVIDENCE_RANGE" in codes
+
+
+def _entry_price_case_no_declared_range(price: float) -> tuple[EvidenceDataset, EvidenceSpec]:
+    """A spec + dataset whose entry_price column declares NO range. entry_price is
+    a probability, so an out-of-[0,1] value must still fail pre-flight — the gap
+    the MCP error-recovery eval surfaced (previously skipped at run time with an
+    ENTRY_PRICE_OUT_OF_RANGE warning instead of erroring)."""
+    cols = [{k: v for k, v in c.items() if k != "range"} for c in SCHEMA_COLUMNS]
+    spec = EvidenceSpec.model_validate({
+        "spec_family": "pancake-evidence-spec",
+        "spec_version": "0.1",
+        "name": "test-spec",
+        "evidence_dataset_id": "ev_runner_test",
+        "schema_requirements": {"required_columns": cols},
+        "strategy": {
+            "side": "YES",
+            "entry": {"when": {"feature": "alpha", "gte": 2.0}},
+            "yes_payoff": {"when": {"feature_equal": {"a": "target", "b": "outcome"}}},
+            "sizing": {"mode": "fixed_fraction", "value": 0.1},
+        },
+        "costs": {"slippage_bps": 0.0, "fee_bps": 0.0},
+        "starting_capital": 1000.0,
+    })
+    dataset = EvidenceDataset.model_validate({
+        "id": "ds_test",
+        "schema": {"columns": cols},
+        "schema_sha256": "0" * 64,
+        "storage_mode": "inline",
+        "rows_inline": [row(mkt="m/A", dec_ts=100, res_ts=200, price=price, outcome=1)],
+        "rows_sha256": "0" * 64,
+        "row_count": 1,
+    })
+    return dataset, spec
+
+
+@pytest.mark.parametrize("price", [1.7, -0.2])
+def test_validation_entry_price_out_of_range_without_declared_range(price: float) -> None:
+    dataset, spec = _entry_price_case_no_declared_range(price)
+    verdict, _ = validate_dataset(dataset, spec)
+    assert not verdict.ok
+    assert "E_EVIDENCE_RANGE" in {e.code for e in verdict.errors}
+
+
+def test_validation_entry_price_in_range_without_declared_range_ok() -> None:
+    # Guard against false positives: a valid entry_price (0.5) with no declared
+    # range must NOT trip the new invariant.
+    dataset, spec = _entry_price_case_no_declared_range(0.5)
+    verdict, _ = validate_dataset(dataset, spec)
+    assert verdict.ok
 
 
 def test_validation_lookahead_violation() -> None:
