@@ -56,10 +56,21 @@ breaking change to the receipt contract.
   - ENGINE_VERSION 0.5.0 -> 0.6.0 is part of result_hash, so EVERY hash changes;
     published receipts are re-run transparently (per-receipt old_hash -> new_hash
     correction record), never silently version-pinned. (policy B; audit 2026-06-04)
+
+0.7.0 (robustness panel — ADDITIVE, result_hash UNCHANGED):
+  - Adds run_sensitivity_analysis: a 7x7 entry-threshold x sizing-fraction Sharpe
+    sweep + per-step Monte-Carlo drawdown fan (ADR-0046, usepancake/batter#12+#13),
+    exposed at POST /sensitivity. Purely additive — run_backtest and its
+    result_hash are byte-unchanged, so ENGINE_VERSION stays 0.6.0 (NO receipt
+    break, no correction records). Package __version__ bumps to 0.7.0 as the PyPI
+    release vehicle for the new surface (same pattern as 0.4.1/0.4.2/0.4.3).
 """
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 ENGINE = "batter"
+# Deliberately NOT bumped: 0.7.0 is additive (sensitivity); run_backtest math and
+# result_hash are unchanged. ENGINE_VERSION is part of result_hash — bumping it
+# would force a needless correction record on every existing receipt.
 ENGINE_VERSION = "0.6.0"
 ENGINE_MODE = "event_time_v1"
 
