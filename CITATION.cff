@@ -3,8 +3,7 @@ message: "If you use batter in academic or independent research, please cite it 
 type: software
 title: "batter: Deterministic Python research engine for prediction-market evidence-backed backtests"
 authors:
-  - family-names: Mustopo
-    given-names: Michael
+  - name: "Nusantara Ventures LLC"
 version: 0.5.0
 date-released: "2026-06-04"
 year: 2026

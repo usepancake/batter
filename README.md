@@ -53,8 +53,8 @@ CI enforces a 6-cell matrix (ubuntu-latest + macos-latest + windows-latest) × (
 If you use batter in academic or independent research, please cite:
 
 ```bibtex
-@software{mustopo2026batter,
-  author       = {Mustopo, Michael},
+@software{batter2026,
+  author       = {{Nusantara Ventures LLC}},
   title        = {batter: Deterministic Python research engine for
                   prediction-market evidence-backed backtests},
   year         = {2026},
@@ -70,7 +70,7 @@ If you use batter in academic or independent research, please cite:
 
 ## License
 
-Apache-2.0 — Copyright 2026 Michael Mustopo
+Apache-2.0 — Copyright 2026 Nusantara Ventures LLC
 
 ## See also
 

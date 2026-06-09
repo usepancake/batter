@@ -9,7 +9,7 @@ description = "Deterministic Python research engine for prediction-market eviden
 readme = "README.md"
 requires-python = ">= 3.12"
 license = { text = "Apache-2.0" }
-authors = [{ name = "Michael Mustopo", email = "michael.mustopo@gmail.com" }]
+authors = [{ name = "Nusantara Ventures LLC" }]
 keywords = ["batter", "pancake", "backtest", "evidence", "deterministic", "prediction-market"]
 classifiers = [
   "Development Status :: 3 - Alpha",
