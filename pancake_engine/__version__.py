@@ -112,13 +112,30 @@ breaking change to the receipt contract.
   - ENGINE_VERSION 0.8.0 -> 0.8.1: psr moves at the ULP level, so hashes change.
     0.8.0 was never deployed to Fly and minted zero receipts; 0.8.0 receipts
     cannot exist consistently (platform-ambiguous), so the break is free.
+
+0.9.0 (proof-layer release — DELIBERATE result_hash break):
+  - MetricsPM gains ``calibration_ece: float | None`` (Expected Calibration Error
+    over 10 fixed bins on the traded-side (implied_prob_at_entry,
+    realized_outcome_for_trade) pairs; None when num_trades < 10). This field is
+    HASHED → every receipt hash changes. Pure arithmetic (fsum) — deterministic
+    on all platforms without libm.
+  - Additive, non-hashed: ``BacktestResult.calibration_bins`` (reliability curve
+    per-bin shape; same < 10 threshold; only computed when with_inference=True).
+  - Additional surfaces also landing in 0.9.0 on the same break: crypto-OHLCV
+    receipts on the DatasetContract Seam (next_bar_open@1 fill reference); fill-
+    model registry (static_bps@1 default, book_replay@1, next_bar_open@1);
+    paper guards + exit-on-tick semantics; verify CLI; PBO/CPCV walk-forward;
+    ledger seam (deflated block); macro contract dataclass; sensitivity heatmap
+    grids. All hash changes are governed by policy B (per-receipt rerun).
+  - ENGINE_VERSION 0.8.1 -> 0.9.0; every existing hash changes; published
+    receipts are re-run transparently (per-receipt old_hash -> new_hash correction
+    record), never silently version-pinned. (policy B; 2026-06-10)
 """
 
-__version__ = "0.8.1"
+__version__ = "0.9.0"
 ENGINE = "batter"
-# 0.8.0 is a DELIBERATE result_hash break: MetricsStandard gains psr +
-# min_track_record_length and the CIs become block-bootstrap — all part of the hash.
-ENGINE_VERSION = "0.8.1"
+# 0.9.0 is a DELIBERATE result_hash break: MetricsPM gains calibration_ece (hashed).
+ENGINE_VERSION = "0.9.0"
 ENGINE_MODE = "event_time_v1"
 
 # Verification grade the engine self-identifies with (rule 159 / ADR-0035 §2.2).
