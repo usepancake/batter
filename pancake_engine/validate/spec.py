@@ -13,6 +13,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..compile.condition import extract_referenced_columns
+from ..fills.registry import resolve as _resolve_fill_model
 from ..types import EvidenceSpec
 from .verdict import ValidationVerdict
 
@@ -146,5 +147,29 @@ def validate_spec(spec: EvidenceSpec) -> ValidationVerdict:
             f"(got {spec.strategy.sizing.value})",
             field="strategy.sizing.value",
         )
+
+    # 0.9.0 Wave 2: fill_model validation.
+    # When present: name/version must resolve in the registry; params must be
+    # valid per-model.  static_bps@1 takes NO params → reject non-empty dict.
+    if spec.costs.fill_model is not None:
+        fm = spec.costs.fill_model
+        try:
+            _resolve_fill_model(fm.name, fm.version)
+        except ValueError as exc:
+            v.add_error(
+                "E_EVIDENCE_SPEC_INVALID",
+                str(exc),
+                field="costs.fill_model",
+            )
+        else:
+            # Per-model param validation: static_bps@1 accepts no params.
+            if fm.name == "static_bps" and fm.version == 1:
+                if fm.params:
+                    v.add_error(
+                        "E_EVIDENCE_SPEC_INVALID",
+                        f"costs.fill_model static_bps@1 takes no params; "
+                        f"got: {sorted(fm.params.keys())}",
+                        field="costs.fill_model.params",
+                    )
 
     return v
