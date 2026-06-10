@@ -29,6 +29,9 @@ from pydantic import BaseModel, ConfigDict, field_validator
 from ..__version__ import ENGINE_VERIFICATION_GRADE
 from ..compile import compile_spec
 from ..compile.condition import Condition, compile_condition
+from ..crypto_ohlcv.compile import compile_crypto_ohlcv_spec
+from ..crypto_ohlcv.indicators import compute_indicator
+from ..crypto_ohlcv.types import CryptoOhlcvSpec
 from ..types import EvidenceSpec
 from .fill import BPS_DIVISOR, Fill, FillRejection, SimFillRouter
 
@@ -42,6 +45,11 @@ __all__ = [
     "TickResponse",
     "TickError",
     "tick",
+    "CryptoTickBar",
+    "CryptoTickPosition",
+    "CryptoTickRequest",
+    "CryptoTickResponse",
+    "tick_crypto",
 ]
 
 
@@ -489,6 +497,416 @@ def tick(request: TickRequest) -> TickResponse:
         consecutive_losses=consecutive_losses,
         cooldown_remaining=cooldown_remaining,
     )
+
+
+# ---------------------------------------------------------------------------
+# tick_crypto() — single-bar paper evaluation for the crypto-OHLCV family
+# ---------------------------------------------------------------------------
+
+
+class CryptoTickBar(BaseModel):
+    """One OHLCV bar delivered to ``tick_crypto``.  ``t`` is the bar-OPEN epoch
+    seconds (UTC), matching ``OhlcvBar.t``; all OHLCV fields are required.
+
+    The bar carries the previous bar's context as well (``prev_open`` … ``prev_close``)
+    so that cross-above / cross-below conditions can be evaluated without storing
+    full history on the dispatcher side.  Set all ``prev_*`` fields to ``None``
+    on the very first bar (no prior context → cross conditions are False, identical
+    to the backtest warm-up convention)."""
+
+    model_config = ConfigDict(extra="allow")
+
+    t: int
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: float
+    # Previous bar values — required for cross-type conditions; None = first bar.
+    prev_open: float | None = None
+    prev_high: float | None = None
+    prev_low: float | None = None
+    prev_close: float | None = None
+    prev_volume: float | None = None
+    # Pre-computed indicator values at this bar (None = warm-up / not-yet-defined).
+    # Keys must match ``CryptoOhlcvSpec.strategy.indicators[*].id``.
+    indicator_values: dict[str, float | None] = {}
+    prev_indicator_values: dict[str, float | None] = {}
+
+
+class CryptoTickPosition(BaseModel):
+    """Open crypto position threaded through dispatcher ↔ engine.  All monetary
+    fields are in the spec's ``currency`` (default USD)."""
+
+    instrument_id: str
+    side: str            # "long" | "short"
+    qty: float           # signed position size (+ long, − short)
+    entry_fill: float    # price at which the position was opened (after slippage)
+    entry_quote: float   # pre-slip open price at entry
+    notional: float      # cash committed at entry
+    entry_fee: float
+    opened_at: int       # epoch seconds (bar-OPEN time of the entry bar)
+
+
+class CryptoTickRequest(BaseModel):
+    """Dispatcher → engine for a single crypto-OHLCV paper tick.
+
+    ``tick_cursor`` is the bar-OPEN epoch seconds of ``bar`` (matches ``bar.t``).
+    The dispatcher is responsible for building the ``CryptoTickBar`` with the
+    correct ``prev_*`` and ``indicator_values`` / ``prev_indicator_values`` fields
+    — the engine performs no look-back here (no look-ahead rule applies equally)."""
+
+    deployment_id: str
+    mode: str = "paper"
+    strategy_spec: CryptoOhlcvSpec
+    tick_cursor: int
+    bar: CryptoTickBar
+    current_cash: float
+    current_position: CryptoTickPosition | None = None
+    # paper_guard threads identically to PM tick (optional; safe defaults)
+    peak_equity: float | None = None
+    consecutive_losses: int = 0
+    cooldown_remaining: int = 0
+
+
+class CryptoTickResponse(BaseModel):
+    """Engine → dispatcher for a single crypto-OHLCV paper tick.
+
+    ``paper_fill_convention`` is ALWAYS ``"bar_close"`` for paper/live crypto.
+
+    **Deliberate backtest ↔ paper divergence (documented here and in the field):**
+    The crypto backtest (``run_crypto_ohlcv``) fills at NEXT BAR OPEN — this is the
+    correct historical-simulation choice (you can't trade at a bar's open before the
+    bar opens).  In the paper / live-feed path the concept of "next bar" does not
+    exist at tick time: the live agent receives the JUST-CLOSED bar and must act NOW.
+    Filling at the CLOSE of the just-delivered bar is the live-trading analogue —
+    it represents the market price the moment the signal fired.  Callers MUST NOT
+    compare paper PnL directly to backtest PnL without accounting for this
+    convention difference; ``paper_fill_convention="bar_close"`` is surfaced in the
+    response so receipts can never silently conflate the two."""
+
+    events: list[PaperEvent]
+    new_cash: float
+    new_position: CryptoTickPosition | None
+    new_equity: float
+    paper_fill_convention: str = "bar_close"
+    verification_boundary: VerificationBoundary
+    # paper_guard state threaded through (None when not active)
+    peak_equity: float | None = None
+    consecutive_losses: int = 0
+    cooldown_remaining: int = 0
+
+
+def tick_crypto(request: CryptoTickRequest) -> CryptoTickResponse:
+    """Run one crypto-OHLCV paper tick. Pure function of ``request``; deterministic.
+
+    **Fill convention (paper_fill_convention = "bar_close"):**
+    Entry and exit fills execute at the delivered bar's CLOSE price (after
+    slippage).  This diverges from the backtest's next-bar-open fill
+    (``fill_timing="next_bar_open"``).  See ``CryptoTickResponse`` for the full
+    rationale; the divergence is intentional and documented in the response field
+    ``paper_fill_convention`` so every receipt carries the convention used.
+
+    Order within a tick:
+      1. If ``current_position`` is open → evaluate exit condition; close at
+         ``bar.close`` (with sell-side slippage + fee) if it fires.
+      2. paper_guard check (identical logic to PM ``tick()``): if tripped or
+         ``cooldown_remaining > 0``, skip entry.
+      3. If flat after step 1 → evaluate entry condition; open at ``bar.close``
+         (with buy-side slippage + fee) if it fires.
+      4. ``new_equity`` = cash + mark-at-close of open position (if any).
+
+    Validation:
+      - ``request.mode`` must be ``"paper"``.
+      - ``request.strategy_spec.spec_family`` must be ``"crypto-ohlcv-spec"``.
+      - ``request.bar.t`` must equal ``request.tick_cursor`` (no look-ahead).
+    """
+    if request.mode != "paper":
+        raise TickError(
+            "UNSUPPORTED_MODE",
+            f"mode {request.mode!r} is not supported",
+            retryable=False,
+        )
+    if request.strategy_spec.spec_family != "crypto-ohlcv-spec":
+        raise TickError(
+            "INVALID_SPEC_FAMILY",
+            f"tick_crypto requires spec_family='crypto-ohlcv-spec', "
+            f"got {request.strategy_spec.spec_family!r}",
+            retryable=False,
+        )
+    if request.bar.t != request.tick_cursor:
+        raise TickError(
+            "LOOKAHEAD",
+            f"bar.t {request.bar.t} != tick_cursor {request.tick_cursor}",
+            retryable=False,
+        )
+
+    t = request.tick_cursor
+    spec = request.strategy_spec
+    compiled = compile_crypto_ohlcv_spec(spec)
+
+    slip = compiled.slippage_bps / BPS_DIVISOR
+    fee_rate = compiled.fee_bps / BPS_DIVISOR
+
+    bar = request.bar
+    # Build evaluation contexts from the dispatcher-supplied indicator values.
+    cur: dict[str, float] = {
+        "open": bar.open, "high": bar.high,
+        "low": bar.low, "close": bar.close,
+    }
+    for k, v in bar.indicator_values.items():
+        if v is not None:
+            cur[k] = v
+
+    prev: dict[str, float] | None = None
+    if bar.prev_close is not None:
+        prev = {
+            "open": bar.prev_open or bar.open,
+            "high": bar.prev_high or bar.high,
+            "low": bar.prev_low or bar.low,
+            "close": bar.prev_close,
+        }
+        for k, v in bar.prev_indicator_values.items():
+            if v is not None:
+                prev[k] = v
+
+    cash = float(request.current_cash)
+    events: list[PaperEvent] = []
+    current_position = request.current_position
+
+    # Guard state — thread from request
+    consecutive_losses = request.consecutive_losses
+    cooldown_remaining = request.cooldown_remaining
+
+    # Start-of-tick equity for guard evaluation (before any close).
+    start_equity = _crypto_equity(cash, current_position, bar.close)
+    peak_equity = request.peak_equity
+    if peak_equity is None:
+        peak_equity = start_equity
+    else:
+        peak_equity = max(peak_equity, start_equity)
+
+    # 1. Exit evaluation — if position open and exit condition fires, close now.
+    if current_position is not None:
+        if compiled.exit(prev, cur):
+            # Sell-side exit: proceeds are reduced by slippage.
+            qty = abs(current_position.qty)
+            direction = 1.0 if current_position.side == "long" else -1.0
+            if current_position.side == "long":
+                exit_fill = bar.close * (1.0 - slip)
+                gross = qty * exit_fill
+                exit_fee = gross * fee_rate
+                proceeds = gross - exit_fee
+                cash += proceeds
+            else:  # short → buy back
+                exit_fill = bar.close * (1.0 + slip)
+                gross = qty * exit_fill
+                exit_fee = gross * fee_rate
+                cash -= gross + exit_fee
+                proceeds = -gross - exit_fee  # cash delta from closing short
+            pnl = (
+                direction * qty * (exit_fill - current_position.entry_fill)
+                - current_position.entry_fee
+                - exit_fee
+            )
+            events.append(PaperEvent(
+                event_kind="position_closed",
+                observed_at=t,
+                tick_cursor=t,
+                payload={
+                    "instrument_id": current_position.instrument_id,
+                    "side": current_position.side,
+                    "reason": "exit",
+                    "exit_fill": exit_fill,
+                    "exit_price_quote": bar.close,
+                    "shares": qty,
+                    "exit_fee": exit_fee,
+                    "pnl": pnl,
+                    "paper_fill_convention": "bar_close",
+                },
+            ))
+            # Guard: full-loss on position closed via exit → track consecutive losses
+            # (a loss = negative pnl)
+            if spec.strategy.paper_guard is not None:
+                if pnl < 0:
+                    consecutive_losses += 1
+                else:
+                    consecutive_losses = 0
+            current_position = None
+
+    # 2. paper_guard — decide whether to skip new entry.
+    guard = spec.strategy.paper_guard
+    skip_entry = False
+    just_tripped = False
+    tripped_guard_name = ""
+    tripped_observed = 0.0
+    tripped_threshold = 0.0
+
+    if cooldown_remaining > 0:
+        skip_entry = True
+        cooldown_remaining -= 1
+    elif guard is not None:
+        if not skip_entry and "max_drawdown_pct" in guard:
+            threshold = float(guard["max_drawdown_pct"])
+            observed_dd = (peak_equity - start_equity) / peak_equity if peak_equity > 0 else 0.0
+            if observed_dd >= threshold:
+                skip_entry = True
+                just_tripped = True
+                tripped_guard_name = "max_drawdown_pct"
+                tripped_observed = observed_dd
+                tripped_threshold = threshold
+        if not skip_entry and "max_consecutive_losses" in guard:
+            threshold_int = int(guard["max_consecutive_losses"])
+            if consecutive_losses >= threshold_int:
+                skip_entry = True
+                just_tripped = True
+                tripped_guard_name = "max_consecutive_losses"
+                tripped_observed = float(consecutive_losses)
+                tripped_threshold = float(threshold_int)
+
+        if just_tripped:
+            cooldown_bars = int(guard.get("cooldown_bars", 1))
+            cooldown_remaining = cooldown_bars
+            events.append(PaperEvent(
+                event_kind="guard_suspended",
+                observed_at=t,
+                tick_cursor=t,
+                payload={
+                    "guard": tripped_guard_name,
+                    "observed": tripped_observed,
+                    "threshold": tripped_threshold,
+                },
+            ))
+
+    # 3. Entry evaluation — only when flat and not guard-suspended.
+    if not skip_entry and current_position is None:
+        if compiled.entry(prev, cur):
+            notional = cash * compiled.sizing_value
+            if notional <= 0:
+                events.append(PaperEvent(
+                    event_kind="order_rejected",
+                    observed_at=t,
+                    tick_cursor=t,
+                    payload={
+                        "instrument_id": spec.instrument_id,
+                        "side": compiled.side,
+                        "reason": "sizing_zero",
+                        "available_cash": cash,
+                    },
+                ))
+            else:
+                side_str = compiled.side
+                if side_str == "long":
+                    fill_price = bar.close * (1.0 + slip)
+                    entry_fee = notional * fee_rate
+                    qty = (notional - entry_fee) / fill_price
+                    cash -= notional
+                    new_qty = qty
+                else:  # short
+                    fill_price = bar.close * (1.0 - slip)
+                    if fill_price <= 0:
+                        fill_price = 0.0
+                        events.append(PaperEvent(
+                            event_kind="order_rejected",
+                            observed_at=t,
+                            tick_cursor=t,
+                            payload={
+                                "instrument_id": spec.instrument_id,
+                                "side": side_str,
+                                "reason": "non_positive_short_fill",
+                                "bar_close": bar.close,
+                            },
+                        ))
+                        fill_price = -1.0  # sentinel so we skip below
+                    if fill_price > 0:
+                        entry_fee = notional * fee_rate
+                        qty = -(notional / fill_price)
+                        cash += notional - entry_fee
+                        new_qty = qty
+                    else:
+                        notional = 0.0
+                        entry_fee = 0.0
+                        new_qty = 0.0
+
+                if notional > 0:
+                    events.append(PaperEvent(
+                        event_kind="order_placed",
+                        observed_at=t,
+                        tick_cursor=t,
+                        payload={
+                            "instrument_id": spec.instrument_id,
+                            "side": side_str,
+                            "notional": notional,
+                            "paper_fill_convention": "bar_close",
+                        },
+                    ))
+                    events.append(PaperEvent(
+                        event_kind="order_filled",
+                        observed_at=t,
+                        tick_cursor=t,
+                        payload={
+                            "instrument_id": spec.instrument_id,
+                            "side": side_str,
+                            "fill_price": fill_price,
+                            "quote_price": bar.close,
+                            "qty": new_qty,
+                            "notional": notional,
+                            "entry_fee": entry_fee,
+                            "paper_fill_convention": "bar_close",
+                        },
+                    ))
+                    events.append(PaperEvent(
+                        event_kind="position_opened",
+                        observed_at=t,
+                        tick_cursor=t,
+                        payload={
+                            "instrument_id": spec.instrument_id,
+                            "side": side_str,
+                            "qty": new_qty,
+                            "entry_fill": fill_price,
+                            "entry_quote": bar.close,
+                            "notional": notional,
+                            "entry_fee": entry_fee,
+                            "paper_fill_convention": "bar_close",
+                        },
+                    ))
+                    current_position = CryptoTickPosition(
+                        instrument_id=spec.instrument_id,
+                        side=side_str,
+                        qty=new_qty,
+                        entry_fill=fill_price,
+                        entry_quote=bar.close,
+                        notional=notional,
+                        entry_fee=entry_fee,
+                        opened_at=t,
+                    )
+
+    # 4. new_equity = cash + mark-at-close of open position (if any).
+    new_equity = _crypto_equity(cash, current_position, bar.close)
+    peak_equity = max(peak_equity, new_equity)
+
+    return CryptoTickResponse(
+        events=events,
+        new_cash=cash,
+        new_position=current_position,
+        new_equity=new_equity,
+        paper_fill_convention="bar_close",
+        verification_boundary=VerificationBoundary(
+            verification_grade=ENGINE_VERIFICATION_GRADE
+        ),
+        peak_equity=peak_equity,
+        consecutive_losses=consecutive_losses,
+        cooldown_remaining=cooldown_remaining,
+    )
+
+
+def _crypto_equity(cash: float, pos: CryptoTickPosition | None, bar_close: float) -> float:
+    """Mark an open crypto position at bar.close. long: cash + qty*close;
+    short: cash + qty*close (qty is negative, so this subtracts the mark-to-market
+    loss/gain correctly)."""
+    if pos is None:
+        return cash
+    return cash + pos.qty * bar_close
 
 
 # ---------------------------------------------------------------------------

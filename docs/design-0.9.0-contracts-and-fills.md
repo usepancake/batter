@@ -95,3 +95,50 @@ corrections 0.8.1→0.9.0 for the two receipts (rerun bundles preserved in
 local recompute is valid for BOTH old(0.8.1) and new(0.9.0) hashes this time).
 Post-cut (0.9.x additive): book_replay@1 + TTR covariate + SimFillRouter
 unification; crypto paper tick().
+
+## 5. 0.10.0 — The Chain + The Ledger (PMO plan, locked 2026-06-10)
+
+**Version posture (decision): 0.10.0 is ADDITIVE.** ENGINE_VERSION stays 0.9.0
+(the 0.7.0 pattern; __version__ is the PyPI vehicle). Chain records and
+portfolio receipts are NEW hashed artifact classes carrying their own
+`format_version` + engine identity — existing receipt hashes never move, zero
+correction churn. Anything later forcing a hashed change to run_backtest gets
+its own deliberate break.
+
+Wave C — The Chain (pure engine, new `pancake_engine/chain/`):
+- Order-state machine: proposed→submitted→acked→partially_filled→filled |
+  canceled | rejected | expired. Deterministic transition table; illegal
+  transition = typed error, never silent repair.
+- Chain format: record = {seq, t, kind: deploy|tick|order_state|fill|
+  settlement|guard|reconciliation, payload, prev_hash, record_hash} hashed via
+  sha256_canonical. Genesis record pins the strategy version: compiled_spec_hash
+  + the BACKTEST result_hash — the provenance line backtest→paper→live that
+  makes a strategy claim an asset.
+- Reconciliation record: exchange-reported state vs internal expectation;
+  diffs explicit in the payload.
+- `batter verify --chain`: re-walk, recompute every record_hash + prev link,
+  validate state-machine legality + P&L roll-forward. Exit codes mirror verify.
+
+Wave D — The Ledger (engine, `runner/batch.py` + trials seam):
+- `run_many(specs, dataset, ...)`: deterministic multi-spec orchestration;
+  emits a TrialLedger {session_id?, trials: [{compiled_spec_hash, sharpe, ...}]}
+  and auto-threads the accumulated trials into each run's `deflated` block —
+  running DSR as the search deepens. Correctness first; array-axes
+  vectorization (vectorbt clean-room) deferred until profiling demands it.
+
+Wave E — portfolio receipt + regime stability + sports contract:
+- Portfolio receipt: N strategy versions + allocation → joint equity curve,
+  per-leg + portfolio metrics, pairwise return correlations; its own
+  result_hash (new artifact class, format_version pinned).
+- Regime stability: additive non-hashed block — metrics re-computed per time
+  quartile of the dataset (regime taxonomy stays descriptive, no hashed claim).
+- SportsEventContract: minimal feature-provider/validation contract (macro
+  pattern).
+
+Platform lane (after C+D merge): paper scheduler emits chain records per tick;
+trial-ledger persistence + auto-DSR; chain verify route + bundle.
+
+**HUMAN GATE (Michael):** the live execution adapter (CTF Exchange V2 client).
+PMO drafts the ADR (incl. lifting anti-drift rules 142/148, key custody, kill
+switches); NO live wiring lands until Michael accepts it. 0.10.0 ships complete
+on paper without it.
