@@ -19,6 +19,7 @@ from ..__version__ import ENGINE, ENGINE_MODE, ENGINE_VERSION
 from ..compile import CompiledSpec, compile_spec
 from ..compile.condition import Condition, extract_referenced_columns
 from ..metrics.cost_sensitivity import cost_sensitivity
+from ..metrics.psr import deflated_sharpe_ratio
 from ..config import BacktestConfig
 from ..hash import sha256_canonical
 from ..metrics import (
@@ -37,6 +38,7 @@ from ..result import (
     MonthlyReturn,
     compute_result_hash,
 )
+from ..trials import TrialHistory
 from ..types import EvidenceDataset, EvidenceSpec
 from ..validate import ValidationVerdict, validate_dataset, validate_spec
 from ..warnings import Severity, Warning, WarningCode
@@ -59,6 +61,7 @@ def run_backtest(
     *,
     with_inference: bool = True,
     _entry_override: Optional[Condition] = None,
+    trial_history: Optional[TrialHistory] = None,
 ) -> BacktestResult:
     """Run an EvidenceSpec against an EvidenceDataset.
 
@@ -75,6 +78,15 @@ def run_backtest(
     surface — an always-true condition is intentionally not expressible as a spec
     (see the 0.8 empty-``all_of`` guard), and the override does not touch
     ``compiled_spec_hash``.
+
+    ``trial_history`` is an EXECUTION argument (like ``with_inference``): it is
+    NOT part of ``config``/``config_hash`` and does NOT affect ``result_hash``.
+    When supplied AND the run has defined daily returns, a Deflated Sharpe Ratio
+    block is added as ``BacktestResult.deflated`` (additive, non-hashed). The
+    platform (pancake 0.10.0+) supplies the caller's TRUE search history so DSR
+    is computed against the real trial count rather than a synthetic sweep grid.
+    The current run's own Sharpe is always appended to the trial set (the run is
+    itself a trial); ``deflated.own_sharpe_included`` is always ``True``.
     """
     config = config or BacktestConfig()
 
@@ -327,6 +339,38 @@ def run_backtest(
         except (OverflowError, ValueError, ZeroDivisionError):
             cost_sens = None
 
+    # 0.9: deflated Sharpe block (additive; NOT hashed — trial_history is an
+    # execution argument like with_inference; same gate as cost_sensitivity).
+    # Scale convention: metrics.standard.sharpe is ANNUALIZED (already ×sqrt(252)).
+    # When trial_history.annualized=True the own sharpe is used as-is; when False
+    # it is divided by sqrt(252) to match the per-period scale PSR uses internally.
+    # deflated_sharpe_ratio always receives per-period or always annualized sharpes
+    # (the sharpes_annualized flag tells it which); we pass the combined list on the
+    # SAME scale as the caller supplied, appending own sharpe on that scale.
+    deflated_block = None
+    if with_inference and trial_history is not None and daily_rets:
+        own_sharpe_ann: Optional[float] = metrics_standard.sharpe  # may be None
+        if own_sharpe_ann is not None:
+            # Scale the run's own (annualized) Sharpe to match the caller's scale.
+            # metrics_standard.sharpe is annualized (×sqrt(252)); when the caller
+            # supplied per-period Sharpes (annualized=False), divide back down.
+            if trial_history.annualized:
+                own_sharpe_on_scale = own_sharpe_ann
+            else:
+                own_sharpe_on_scale = own_sharpe_ann / math.sqrt(252)
+            all_trial_sharpes = list(trial_history.trial_sharpes) + [own_sharpe_on_scale]
+            dsr = deflated_sharpe_ratio(
+                list(daily_rets),
+                all_trial_sharpes,
+                sharpes_annualized=trial_history.annualized,
+            )
+            deflated_block = {
+                "dsr": dsr,
+                "n_trials": len(all_trial_sharpes),
+                "source": trial_history.source,
+                "own_sharpe_included": True,
+            }
+
     # 0.8 baseline (spec v0.2 subset; additive, NOT hashed — the REQUEST is hashed
     # via the spec, the output block folds into the hash at the 0.9.0 break).
     # NO-FILTER convention: same side/sizing/costs on every candidate row — the
@@ -384,6 +428,7 @@ def run_backtest(
         },
         cost_sensitivity=cost_sens,
         baseline=baseline_block,
+        deflated=deflated_block,
     )
 
 

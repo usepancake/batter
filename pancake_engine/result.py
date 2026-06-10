@@ -135,6 +135,11 @@ class BacktestResult:
     # The REQUEST is hashed (baseline field lives in the spec → compiled_spec_hash);
     # this OUTPUT block is additive/non-hashed until the 0.9.0 break folds it in.
     baseline: dict[str, Any] | None = None
+    # 0.9: deflated Sharpe block (additive; NOT in result_hash — execution argument
+    # trial_history is not part of config/config_hash). None when trial_history is
+    # not supplied, with_inference is skipped, or daily returns are undefined.
+    # Shape: {"dsr": float|None, "n_trials": int, "source": str, "own_sharpe_included": True}
+    deflated: dict[str, Any] | None = None
 
     # --- serialization ---
 
@@ -163,6 +168,7 @@ class BacktestResult:
             "meta": self.meta,
             "cost_sensitivity": self.cost_sensitivity,
             "baseline": self.baseline,
+            "deflated": self.deflated,
         }
 
 
