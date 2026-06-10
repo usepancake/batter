@@ -82,14 +82,28 @@ breaking change to the receipt contract.
     so the MCP surface reported it as an opaque engine error (error-recovery eval
     2026-06-06). Stricter rejection only — valid datasets are byte-unchanged, so
     ENGINE_VERSION stays 0.6.0.
+
+0.8.0 (credibility release — DELIBERATE result_hash break):
+  - MetricsStandard gains `psr` (Probabilistic Sharpe Ratio, Bailey & López de
+    Prado 2012) and `min_track_record_length` (MinTRL) — the primary significance
+    + sufficiency signals, complementing the sign-permutation sharpe_p_value.
+  - The bootstrap CIs (cagr_ci / sharpe_ci / sortino_ci) switch from the 0.4 IID
+    resample to a STATIONARY block bootstrap (Politis-Romano 1994), preserving
+    serial correlation → honester (wider) intervals for autocorrelated returns.
+  - Additive, non-hashed surfaces also land: deflated Sharpe (DSR) + BHY
+    false-discovery-rate control on the sensitivity sweep, and transaction-cost
+    sensitivity + break-even multiplier.
+  - ENGINE_VERSION 0.6.0 -> 0.8.0 is part of result_hash, so EVERY hash changes;
+    published receipts are re-run transparently (per-receipt old_hash -> new_hash
+    correction record), never silently version-pinned. (policy B; credibility-first
+    sequencing 2026-06-10 — receipt break-cost ~0 post the ADR-0045 reset.)
 """
 
-__version__ = "0.7.2"
+__version__ = "0.8.0"
 ENGINE = "batter"
-# Deliberately NOT bumped: 0.7.0 is additive (sensitivity); run_backtest math and
-# result_hash are unchanged. ENGINE_VERSION is part of result_hash — bumping it
-# would force a needless correction record on every existing receipt.
-ENGINE_VERSION = "0.6.0"
+# 0.8.0 is a DELIBERATE result_hash break: MetricsStandard gains psr +
+# min_track_record_length and the CIs become block-bootstrap — all part of the hash.
+ENGINE_VERSION = "0.8.0"
 ENGINE_MODE = "event_time_v1"
 
 # Verification grade the engine self-identifies with (rule 159 / ADR-0035 §2.2).

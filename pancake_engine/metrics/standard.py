@@ -27,8 +27,9 @@ from collections.abc import Callable
 from ..result import EquityPoint, MetricsStandard
 from ..runner.trade import Trade
 from ..warnings import Warning
-from .bootstrap import bootstrap_ci
+from .bootstrap import block_bootstrap_ci
 from .permutation import permutation_p_sharpe
+from .psr import min_track_record_length, probabilistic_sharpe_ratio
 
 __all__ = ["compute_standard", "SECONDS_PER_YEAR", "ANNUALIZATION_DAYS"]
 
@@ -159,15 +160,19 @@ def compute_standard(
     # We compute it again here from equity_curve for the standard metric.
     max_dd = _max_drawdown(equity_curve)
 
-    # --- Engine 0.4: bootstrap CIs + permutation (the expensive inference) ---
+    # --- Engine 0.4→0.8: block-bootstrap CIs + permutation + PSR/MinTRL (inference) ---
     extra_warnings: list[Warning] = []
     cagr_ci: tuple[float | None, float | None] = (None, None)
     sharpe_ci: tuple[float | None, float | None] = (None, None)
     sortino_ci: tuple[float | None, float | None] = (None, None)
     sharpe_p: float | None = None
+    psr_value: float | None = None
+    mintrl_value: float | None = None
 
     if with_inference:
-        cagr_ci, cagr_ci_warns = bootstrap_ci(daily_rets, _cagr_proxy_fn(
+        # 0.8: stationary block bootstrap (Politis-Romano) replaces the 0.4 IID
+        # resample — preserves serial correlation, so CIs are honester (wider).
+        cagr_ci, cagr_ci_warns = block_bootstrap_ci(daily_rets, _cagr_proxy_fn(
             starting_capital=starting_capital,
             ending_equity=ending_equity,
             period_seconds=period_seconds,
@@ -175,14 +180,19 @@ def compute_standard(
         ))
         extra_warnings.extend(cagr_ci_warns)
 
-        sharpe_ci, sharpe_ci_warns = bootstrap_ci(daily_rets, sharpe_ratio)
+        sharpe_ci, sharpe_ci_warns = block_bootstrap_ci(daily_rets, sharpe_ratio)
         extra_warnings.extend(sharpe_ci_warns)
 
-        sortino_ci, sortino_ci_warns = bootstrap_ci(daily_rets, sortino_ratio)
+        sortino_ci, sortino_ci_warns = block_bootstrap_ci(daily_rets, sortino_ratio)
         extra_warnings.extend(sortino_ci_warns)
 
         (sharpe_p, perm_warns) = permutation_p_sharpe(daily_rets)
         extra_warnings.extend(perm_warns)
+
+        # 0.8 credibility signals (Bailey & López de Prado) — cheap, but gated with
+        # the rest of the inference block so the sweep's fast path stays free of them.
+        psr_value = probabilistic_sharpe_ratio(daily_rets)
+        mintrl_value = min_track_record_length(daily_rets)
 
     standard = MetricsStandard(
         total_return=tr,
@@ -198,6 +208,8 @@ def compute_standard(
         sharpe_ci=sharpe_ci,
         sortino_ci=sortino_ci,
         sharpe_p_value=sharpe_p,
+        psr=psr_value,
+        min_track_record_length=mintrl_value,
     )
     return standard, ruined, overflowed, extra_warnings
 

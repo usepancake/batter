@@ -71,6 +71,14 @@ def compile_condition(node: dict[str, Any]) -> Condition:
 
     if "all_of" in node:
         children = [compile_condition(c) for c in node["all_of"]]
+        if not children:
+            # all([]) is vacuously True → a silent always-true entry condition.
+            # An empty all_of is a spec error; reject it, consistent with the
+            # unknown-operator guard below and the 0.6.0 always-true fix. (any_of
+            # empty is a coherent False sentinel; empty all_of is not.)
+            raise ValueError(
+                "E_EVIDENCE_SPEC_INVALID: all_of requires at least one child condition"
+            )
         return lambda row: all(c(row) for c in children)
 
     if "any_of" in node:

@@ -9,6 +9,7 @@ documented in docs/math-audit-0.4.md.
 
 from __future__ import annotations
 
+import dataclasses
 import math
 import sys
 from itertools import groupby
@@ -16,7 +17,8 @@ from typing import Any, Optional
 
 from ..__version__ import ENGINE, ENGINE_MODE, ENGINE_VERSION
 from ..compile import CompiledSpec, compile_spec
-from ..compile.condition import extract_referenced_columns
+from ..compile.condition import Condition, extract_referenced_columns
+from ..metrics.cost_sensitivity import cost_sensitivity
 from ..config import BacktestConfig
 from ..hash import sha256_canonical
 from ..metrics import (
@@ -56,6 +58,7 @@ def run_backtest(
     config: Optional[BacktestConfig] = None,
     *,
     with_inference: bool = True,
+    _entry_override: Optional[Condition] = None,
 ) -> BacktestResult:
     """Run an EvidenceSpec against an EvidenceDataset.
 
@@ -66,6 +69,12 @@ def run_backtest(
     Used by the parameter sweep (ADR-0046), where each cell only needs Sharpe;
     it is an EXECUTION argument, not part of ``config``/``config_hash``, so the
     default (True) leaves ``result_hash`` byte-identical for every receipt.
+
+    ``_entry_override`` is ENGINE-INTERNAL (the baseline pass): it replaces the
+    compiled entry condition after compilation. Never exposed through any public
+    surface — an always-true condition is intentionally not expressible as a spec
+    (see the 0.8 empty-``all_of`` guard), and the override does not touch
+    ``compiled_spec_hash``.
     """
     config = config or BacktestConfig()
 
@@ -79,6 +88,8 @@ def run_backtest(
 
     # 2. Compile spec (condition AST → callables)
     compiled = compile_spec(spec)
+    if _entry_override is not None:
+        compiled = dataclasses.replace(compiled, entry_condition=_entry_override)
 
     # 3. Resolve observation_time
     warnings: list[Warning] = []
@@ -283,6 +294,48 @@ def run_backtest(
         future_rows_count=future_rows_count,
     )
 
+    # 0.8: transaction-cost sensitivity (additive, NOT hashed). Gated with the rest
+    # of the inference block so the sweep's fast path stays free of it. Best-effort:
+    # on a degenerate clamped-overflow run (AF-3) the rescale can overflow fsum — cost
+    # analysis is meaningless there, so fall back to None rather than raise.
+    cost_sens = None
+    if with_inference and ledger.trades:
+        try:
+            cost_sens = cost_sensitivity(ledger.trades).to_dict()
+        except (OverflowError, ValueError, ZeroDivisionError):
+            cost_sens = None
+
+    # 0.8 baseline (spec v0.2 subset; additive, NOT hashed — the REQUEST is hashed
+    # via the spec, the output block folds into the hash at the 0.9.0 break).
+    # NO-FILTER convention: same side/sizing/costs on every candidate row — the
+    # baseline differs from the strategy only by the entry condition, so it
+    # isolates the entry condition's selection value. Implemented as an internal
+    # second pass with the entry condition replaced by always-true; the inner
+    # run's warnings/hashes are internal and dropped.
+    baseline_block = None
+    if with_inference and _entry_override is None and spec.strategy.baseline:
+        base_res = run_backtest(
+            spec, dataset, config,
+            with_inference=False,
+            _entry_override=lambda _row: True,
+        )
+        bs = base_res.metrics.standard
+        baseline_block = {
+            "kind": spec.strategy.baseline.get("kind", "buy_and_hold"),
+            "convention": "no_filter",
+            "total_return": bs.total_return,
+            "cagr": bs.cagr,
+            "sharpe": bs.sharpe,
+            "sortino": bs.sortino,
+            "max_drawdown": bs.max_drawdown,
+            "win_rate": bs.win_rate,
+            "num_trades": bs.num_trades,
+            "ending_capital": bs.ending_capital,
+            "equity_curve": [
+                {"t": p.t, "equity": p.equity} for p in base_res.equity_curve
+            ],
+        }
+
     return BacktestResult(
         engine=ENGINE,
         engine_version=ENGINE_VERSION,
@@ -307,6 +360,8 @@ def run_backtest(
             "unresolved_rows_count": unresolved_rows_count,
             "duration_ms": 0,  # not measured; placeholder for ABI stability
         },
+        cost_sensitivity=cost_sens,
+        baseline=baseline_block,
     )
 
 

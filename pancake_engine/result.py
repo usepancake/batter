@@ -66,10 +66,18 @@ class MetricsStandard:
     ending_capital: float
     # Engine 0.4: bootstrap CI + permutation test (additive; default to safe sentinels
     # for backward-compat with 0.3 callers and old fixtures that predate 0.4).
+    # Engine 0.8: CIs are now STATIONARY block-bootstrap (Politis-Romano) — they
+    # preserve serial correlation, so they are wider/honester than the 0.4 IID CIs.
     cagr_ci: tuple[float | None, float | None] = (None, None)
     sharpe_ci: tuple[float | None, float | None] = (None, None)
     sortino_ci: tuple[float | None, float | None] = (None, None)
     sharpe_p_value: float | None = None
+    # Engine 0.8: credibility signals (Bailey & López de Prado). psr = probability the
+    # true Sharpe exceeds 0 given sample length + skew/kurtosis; min_track_record_length
+    # = observations needed for the Sharpe to be significant at 95%. Both None when
+    # with_inference is skipped (the sweep) or undefined (n<2 / zero variance).
+    psr: float | None = None
+    min_track_record_length: float | None = None
 
 
 @dataclass(frozen=True)
@@ -119,6 +127,14 @@ class BacktestResult:
     validation: ValidationVerdict
 
     meta: dict[str, Any] = field(default_factory=dict)
+    # 0.8: transaction-cost sensitivity curve + break-even multiplier (additive;
+    # NOT in result_hash — compute_result_hash omits it). None when no trades or
+    # with_inference is skipped (the sweep).
+    cost_sensitivity: dict[str, Any] | None = None
+    # 0.8: buy-and-hold baseline block (spec v0.2 subset; no-filter convention).
+    # The REQUEST is hashed (baseline field lives in the spec → compiled_spec_hash);
+    # this OUTPUT block is additive/non-hashed until the 0.9.0 break folds it in.
+    baseline: dict[str, Any] | None = None
 
     # --- serialization ---
 
@@ -145,6 +161,8 @@ class BacktestResult:
             "warnings": [w.to_dict() for w in self.warnings],
             "validation": self.validation.to_dict(),
             "meta": self.meta,
+            "cost_sensitivity": self.cost_sensitivity,
+            "baseline": self.baseline,
         }
 
 

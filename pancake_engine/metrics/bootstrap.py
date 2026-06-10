@@ -38,10 +38,16 @@ import numpy as np
 
 from ..warnings import Severity, Warning, WarningCode
 
-__all__ = ["bootstrap_ci"]
+__all__ = ["bootstrap_ci", "block_bootstrap_ci"]
 
 # Type alias for a (ci_low, ci_high) tuple
 CITuple = tuple[float | None, float | None]
+
+# An index-maker draws a (n_resamples × n) integer index matrix from ``rng``.
+# Default (None) is IID-with-replacement; block_bootstrap_ci passes a stationary
+# (Politis-Romano) generator. This is the resampling Seam — everything else
+# (guards, percentile method, CI_TOO_WIDE / degenerate-CI handling) is shared.
+IndexMaker = Callable[[np.random.Generator, int, int], np.ndarray]
 
 # Upper bound on n_resamples: a pathological caller (public API) could otherwise
 # allocate an enormous (n_resamples × n) index matrix. Audit 2026-06-04 #7.
@@ -54,6 +60,8 @@ def bootstrap_ci(
     n_resamples: int = 10_000,
     ci_level: float = 0.95,
     seed: int = 0,
+    *,
+    make_indices: IndexMaker | None = None,
 ) -> tuple[CITuple, list[Warning]]:
     """Compute a percentile bootstrap CI for any scalar metric over ``daily_returns``.
 
@@ -125,8 +133,14 @@ def bootstrap_ci(
     rng = np.random.default_rng(seed)
     n = len(arr)
 
-    # Draw resample indices: shape (n_resamples, n)
-    indices = rng.integers(0, n, size=(n_resamples, n))
+    # Draw resample indices: shape (n_resamples, n). Default is IID with
+    # replacement; the make_indices Seam lets block_bootstrap_ci substitute a
+    # stationary (Politis-Romano) resampler that preserves serial correlation.
+    indices = (
+        rng.integers(0, n, size=(n_resamples, n))
+        if make_indices is None
+        else make_indices(rng, n, n_resamples)
+    )
     boot_stats: list[float] = []
     for idxs in indices:
         resample = arr[idxs].tolist()
@@ -222,3 +236,61 @@ def bootstrap_ci(
 def _is_finite(x: float) -> bool:
     """Return True iff x is a finite float (not NaN, not ±Infinity)."""
     return math.isfinite(x)
+
+
+def _stationary_indices(
+    rng: np.random.Generator, n: int, n_resamples: int, expected_block_length: float
+) -> np.ndarray:
+    """Politis & Romano (1994) stationary-bootstrap indices, shape (n_resamples, n).
+
+    Random geometric block lengths (mean = ``expected_block_length``) with circular
+    wrap, so resamples preserve the serial correlation IID resampling destroys.
+    ``p = 1/L`` is the per-step probability of starting a fresh block. Deterministic
+    given ``rng`` — fixed draw order (``random()`` then ``integers()`` each step) —
+    and PCG64 byte-stable across platforms, like the IID path.
+    """
+    p = 1.0 / expected_block_length
+    idx = np.empty((n_resamples, n), dtype=np.int64)
+    cur = rng.integers(0, n, size=n_resamples)
+    idx[:, 0] = cur
+    for t in range(1, n):
+        new_block = rng.random(n_resamples) < p
+        fresh = rng.integers(0, n, size=n_resamples)
+        cur = np.where(new_block, fresh, (cur + 1) % n)
+        idx[:, t] = cur
+    return idx
+
+
+def block_bootstrap_ci(
+    daily_returns: list[float],
+    metric_fn: Callable[[list[float]], float | None],
+    expected_block_length: float | None = None,
+    n_resamples: int = 10_000,
+    ci_level: float = 0.95,
+    seed: int = 0,
+) -> tuple[CITuple, list[Warning]]:
+    """Stationary (Politis & Romano 1994) block-bootstrap CI.
+
+    Preserves the serial correlation IID resampling destroys, so the interval is
+    not artificially narrow for autocorrelated return series (volatility clustering,
+    momentum, trending equity). Delegates to :func:`bootstrap_ci`, swapping only the
+    resampler — same percentile method and degenerate / CI_TOO_WIDE / insufficient
+    guards, same determinism contract.
+
+    ``expected_block_length`` defaults to ``sqrt(n)`` (Politis-White rule of thumb).
+    A block length of 1 degenerates to (a different draw order of) IID resampling.
+    """
+    n = len(daily_returns)
+    block_len = (
+        expected_block_length
+        if (expected_block_length is not None and expected_block_length > 0)
+        else max(1.0, math.sqrt(n))
+    )
+    return bootstrap_ci(
+        daily_returns,
+        metric_fn,
+        n_resamples=n_resamples,
+        ci_level=ci_level,
+        seed=seed,
+        make_indices=lambda rng, nn, m: _stationary_indices(rng, nn, m, block_len),
+    )

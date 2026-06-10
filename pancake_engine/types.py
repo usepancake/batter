@@ -126,6 +126,11 @@ class EvidenceStrategy(BaseModel):
     entry: dict[str, Any]
     yes_payoff: dict[str, Any]
     sizing: EvidenceSizing
+    # 0.8: optional benchmark request (spec v0.2 subset). {"kind": "buy_and_hold"}.
+    # None default + exclude_none serialization → specs without it hash identically
+    # to pre-0.8 specs. Convention: NO-FILTER — same side/sizing/costs on every
+    # candidate row, isolating the entry condition's selection value.
+    baseline: Optional[dict[str, Any]] = None
 
 
 class EvidenceColumnRequirement(BaseModel):

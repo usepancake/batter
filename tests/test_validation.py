@@ -45,6 +45,51 @@ def test_validation_missing_column_in_dataset() -> None:
     assert "E_EVIDENCE_SCHEMA_MISMATCH" in codes
 
 
+def test_yes_payoff_undeclared_column_fails_validation() -> None:
+    # 2026-06-10 fade-path P1 root cause: a predicate on an UNDECLARED column (here
+    # the semantic-role name 'resolved_outcome_numeric' instead of the actual column
+    # 'outcome') silently evaluates False at runtime → a NO-side yes_payoff means the
+    # strategy "wins" every trade and emits astronomical garbage (~2e+68) with no error.
+    spec = make_spec(side="NO", yes_payoff_when={"feature": "resolved_outcome_numeric", "gte": 1})
+    verdict = validate_spec(spec)
+    assert not verdict.ok
+    assert "E_EVIDENCE_SPEC_INVALID" in {e.code for e in verdict.errors}
+
+
+def test_entry_undeclared_column_fails_validation() -> None:
+    spec = make_spec(entry_when={"feature": "nope_not_a_column", "gte": 1.0})
+    verdict = validate_spec(spec)
+    assert not verdict.ok
+    assert "E_EVIDENCE_SPEC_INVALID" in {e.code for e in verdict.errors}
+
+
+def test_undeclared_column_run_is_blocked_not_garbage() -> None:
+    from pancake_engine import BacktestConfig, run_backtest
+
+    spec = make_spec(
+        side="NO", sizing_value=0.1, starting_capital=1000.0,
+        yes_payoff_when={"feature": "resolved_outcome_numeric", "gte": 1},
+    )
+    dataset = make_dataset([
+        row(mkt=f"m/{i}", dec_ts=i * 100, res_ts=i * 100 + 50, price=0.5, outcome=1, alpha=3.0, target=1)
+        for i in range(1, 6)
+    ])
+    r = run_backtest(spec, dataset, BacktestConfig(observation_time=600))
+    assert not r.validation.ok                  # blocked, not a silent success
+    assert r.metrics.standard.num_trades == 0   # no garbage trades
+    assert r.metrics.standard.total_return == 0.0
+    assert r.result_hash == ""                  # blocked → no receipt hash
+
+
+def test_declared_columns_still_validate() -> None:
+    assert validate_spec(make_spec()).ok
+    assert validate_spec(make_spec(side="NO")).ok
+    assert validate_spec(
+        make_spec(entry_when={"feature": "alpha", "gte": 2.0},
+                  yes_payoff_when={"feature": "outcome", "gte": 1})
+    ).ok
+
+
 def test_validation_wrong_type_in_row() -> None:
     spec = make_spec()
     dataset = make_dataset([
