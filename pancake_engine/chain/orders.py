@@ -30,8 +30,13 @@ __all__ = [
 
 # Frozen transition table.
 ORDER_TRANSITIONS: dict[str, frozenset[str]] = {
-    "proposed": frozenset({"submitted", "canceled", "rejected"}),
-    "submitted": frozenset({"acked", "canceled", "expired"}),
+    # proposed → expired: TTL elapsed before submission (distinct from canceled,
+    # which is OUR action). proposed → rejected: pre-submit validation reject.
+    "proposed": frozenset({"submitted", "canceled", "rejected", "expired"}),
+    # submitted → rejected: the VENUE rejects at submission processing — on CTF
+    # Exchange V2 a failed GET /transaction/{id} poll after submit IS this edge
+    # (reject = venue's verdict; canceled = our action; never conflate them).
+    "submitted": frozenset({"acked", "canceled", "expired", "rejected"}),
     "acked": frozenset({"partially_filled", "filled", "canceled", "expired"}),
     "partially_filled": frozenset({"partially_filled", "filled", "canceled", "expired"}),
     # Terminal states — nothing follows.
