@@ -25,8 +25,10 @@ In each split:
 1. Rank configs by train-Sharpe. Take the train-winner.
 2. Compute the train-winner's rank among all configs on the test set.
 3. Compute the relative rank percentile:
-       ω_c = rank_oos(winner) / (N + 1)    [Bailey et al. §3, eq. (4)]
-   where rank_oos is the 1-based rank (1 = best, N = worst).
+       ω_c = 1 − rank_oos(winner) / (N + 1)    [Bailey et al. §3, eq. (4), inverted]
+   where rank_oos is the 1-based rank (1 = best, N = worst). Bailey's paper
+   ranks 1 = WORST; batter ranks 1 = BEST, so the inversion preserves the
+   semantics ω > 0.5 ↔ above-median OOS (see the comment at the computation).
 4. Compute the logit:
        λ_c = ln(ω_c / (1 − ω_c))
 
@@ -119,7 +121,8 @@ class PBOResult:
     logit_distribution
         λ_c = ln(ω_c / (1 − ω_c)) per split.  λ < 0 ↔ below-median OOS.
     oos_rank_distribution
-        ω_c = rank_oos(winner) / (N + 1) per split, each ∈ (0, 1).
+        ω_c = 1 − rank_oos(winner) / (N + 1) per split, each ∈ (0, 1); rank 1 =
+        best OOS, so 0.875 means best-of-7 — NOT near-worst.
     degenerate
         True when the analysis cannot be meaningfully completed (see module
         docstring for conditions).
