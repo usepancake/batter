@@ -131,6 +131,10 @@ class BacktestResult:
     # NOT in result_hash — compute_result_hash omits it). None when no trades or
     # with_inference is skipped (the sweep).
     cost_sensitivity: dict[str, Any] | None = None
+    # 0.8: buy-and-hold baseline block (spec v0.2 subset; no-filter convention).
+    # The REQUEST is hashed (baseline field lives in the spec → compiled_spec_hash);
+    # this OUTPUT block is additive/non-hashed until the 0.9.0 break folds it in.
+    baseline: dict[str, Any] | None = None
 
     # --- serialization ---
 
@@ -158,6 +162,7 @@ class BacktestResult:
             "validation": self.validation.to_dict(),
             "meta": self.meta,
             "cost_sensitivity": self.cost_sensitivity,
+            "baseline": self.baseline,
         }
 
 

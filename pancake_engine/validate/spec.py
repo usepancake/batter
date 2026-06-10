@@ -64,6 +64,20 @@ def validate_spec(spec: EvidenceSpec) -> ValidationVerdict:
             field="strategy.side",
         )
 
+    # 0.8 baseline block: only the locked spec v0.2 shape is accepted.
+    if spec.strategy.baseline is not None:
+        kind = (
+            spec.strategy.baseline.get("kind")
+            if isinstance(spec.strategy.baseline, dict)
+            else None
+        )
+        if kind != "buy_and_hold":
+            v.add_error(
+                "E_EVIDENCE_SPEC_INVALID",
+                f"strategy.baseline.kind must be 'buy_and_hold' (got {kind!r})",
+                field="strategy.baseline",
+            )
+
     if spec.strategy.sizing.mode not in SUPPORTED_SIZING_MODES:
         v.add_error(
             "E_EVIDENCE_SPEC_INVALID",
