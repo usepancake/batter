@@ -21,7 +21,7 @@ from typing import Any
 import pytest
 
 from pancake_engine import BacktestConfig, run_backtest
-from pancake_engine.fills.registry import _BookFillBlocked, _BookReplayV1, resolve
+from pancake_engine.fills.registry import FillBlocked, _BookReplayV1, resolve
 from pancake_engine.runner.fill import FillRejection, SimFillRouter
 from pancake_engine.types import EvidenceDataset, EvidenceSpec
 from pancake_engine.validate import validate_spec
@@ -172,7 +172,7 @@ def test_book_replay_worked_example_vwap() -> None:
         decision_time=100,
         book_slices=WORKED_EXAMPLE_LEVELS,
     )
-    assert not isinstance(result, _BookFillBlocked), f"Expected fill, got block: {result}"
+    assert not isinstance(result, FillBlocked), f"Expected fill, got block: {result}"
     expected_vwap, expected_shares = _hand_calc_vwap()
     assert math.isclose(result.fill_price, expected_vwap, rel_tol=1e-12), (
         f"fill_price={result.fill_price!r} != expected={expected_vwap!r}"
@@ -195,7 +195,7 @@ def test_book_replay_worked_example_with_fee() -> None:
         decision_time=100,
         book_slices=WORKED_EXAMPLE_LEVELS,
     )
-    assert not isinstance(result, _BookFillBlocked)
+    assert not isinstance(result, FillBlocked)
     expected_fee = 100.0 * (50.0 / 10_000)  # 0.5
     assert math.isclose(result.fee, expected_fee, rel_tol=1e-12)
 
@@ -220,7 +220,7 @@ def test_no_future_book_snapshot_ignored() -> None:
         decision_time=100,  # snapshot_time=200 > 100 → excluded
         book_slices=[future_level],
     )
-    assert isinstance(result, _BookFillBlocked)
+    assert isinstance(result, FillBlocked)
     assert result.reason == "BOOK_SLICE_MISSING"
 
 
@@ -243,7 +243,7 @@ def test_latest_past_snapshot_is_selected() -> None:
         book_slices=thin_levels + deep_levels,
     )
     # Should succeed (latest snapshot at t=90 has enough depth)
-    assert not isinstance(result, _BookFillBlocked), f"Expected fill, got block: {result}"
+    assert not isinstance(result, FillBlocked), f"Expected fill, got block: {result}"
 
 
 # ---------------------------------------------------------------------------
@@ -266,7 +266,7 @@ def test_depth_insufficient_blocks() -> None:
         decision_time=100,
         book_slices=shallow_book,
     )
-    assert isinstance(result, _BookFillBlocked)
+    assert isinstance(result, FillBlocked)
     assert result.reason == "BOOK_DEPTH_INSUFFICIENT"
     assert result.context["notional"] == 100.0
 
@@ -287,7 +287,7 @@ def test_missing_slice_blocks_wrong_market() -> None:
         decision_time=100,
         book_slices=WORKED_EXAMPLE_LEVELS,  # all for mkt/1
     )
-    assert isinstance(result, _BookFillBlocked)
+    assert isinstance(result, FillBlocked)
     assert result.reason == "BOOK_SLICE_MISSING"
 
 
@@ -302,7 +302,7 @@ def test_missing_slice_blocks_empty_book_slices() -> None:
         decision_time=100,
         book_slices=[],
     )
-    assert isinstance(result, _BookFillBlocked)
+    assert isinstance(result, FillBlocked)
     assert result.reason == "BOOK_SLICE_MISSING"
 
 
@@ -317,7 +317,7 @@ def test_missing_slice_blocks_none_book_slices() -> None:
         decision_time=100,
         book_slices=None,
     )
-    assert isinstance(result, _BookFillBlocked)
+    assert isinstance(result, FillBlocked)
     assert result.reason == "BOOK_SLICE_MISSING"
 
 
@@ -336,7 +336,7 @@ def test_bid_side_ignored_counts_as_missing() -> None:
         decision_time=100,
         book_slices=bid_levels,
     )
-    assert isinstance(result, _BookFillBlocked)
+    assert isinstance(result, FillBlocked)
     assert result.reason == "BOOK_SLICE_MISSING"
 
 
@@ -477,8 +477,8 @@ def test_book_replay_deterministic_level_order() -> None:
         market_link="mkt/1", decision_time=100, book_slices=levels_rev,
     )
 
-    assert not isinstance(r_asc, _BookFillBlocked)
-    assert not isinstance(r_rev, _BookFillBlocked)
+    assert not isinstance(r_asc, FillBlocked)
+    assert not isinstance(r_rev, FillBlocked)
     assert r_asc.fill_price == r_rev.fill_price
     assert r_asc.shares == r_rev.shares
 

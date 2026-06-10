@@ -184,7 +184,7 @@ def validate_spec(spec: EvidenceSpec) -> ValidationVerdict:
                         field="costs.fill_model.params",
                     )
                 # Unknown params are also rejected.
-                _BOOK_REPLAY_V1_KNOWN_PARAMS = frozenset()  # no known params in v1
+                _BOOK_REPLAY_V1_KNOWN_PARAMS: frozenset[str] = frozenset()  # no known params in v1
                 unknown = sorted(set(fm.params.keys()) - _BOOK_REPLAY_V1_KNOWN_PARAMS - {"ttr_fill_adjustment"})
                 if unknown:
                     v.add_error(

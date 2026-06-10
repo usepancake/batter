@@ -17,7 +17,7 @@ from typing import Any, Optional
 
 from ..__version__ import ENGINE, ENGINE_MODE, ENGINE_VERSION
 from ..compile import CompiledSpec, compile_spec
-from ..fills.registry import _BookFillBlocked
+from ..fills.registry import FillBlocked
 from ..compile.condition import Condition, extract_referenced_columns
 from ..metrics.cost_sensitivity import cost_sensitivity
 from ..metrics.psr import deflated_sharpe_ratio
@@ -120,7 +120,7 @@ def run_backtest(
         compiled = dataclasses.replace(compiled, entry_condition=_entry_override)
 
     # 2b. Extract book_slices from book_dataset (book_replay@1 only).
-    _book_slices: Optional[list] = None
+    _book_slices: Optional[list[dict[str, Any]]] = None
     _book_dataset_id: Optional[str] = None
     _book_rows_sha256: Optional[str] = None
     _book_schema_sha256: Optional[str] = None
@@ -486,7 +486,7 @@ def _process_decision(
     compiled: CompiledSpec,
     warnings: list[Warning],
     *,
-    book_slices: Optional[list] = None,
+    book_slices: Optional[list[dict[str, Any]]] = None,
 ) -> None:
     row = event.row
     if not compiled.entry_condition(row):
@@ -550,8 +550,8 @@ def _process_decision(
         book_slices=book_slices,
     )
 
-    # book_replay@1 returns a _BookFillBlocked sentinel on SLICE_MISSING or DEPTH_INSUFFICIENT.
-    if isinstance(entry_fill_or_blocked, _BookFillBlocked):
+    # book_replay@1 returns a FillBlocked sentinel on SLICE_MISSING or DEPTH_INSUFFICIENT.
+    if isinstance(entry_fill_or_blocked, FillBlocked):
         blocked = entry_fill_or_blocked
         code = WarningCode.BOOK_SLICE_MISSING if blocked.reason == "BOOK_SLICE_MISSING" else WarningCode.BOOK_DEPTH_INSUFFICIENT
         warnings.append(Warning(

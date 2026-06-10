@@ -29,7 +29,7 @@ import math
 from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 
-__all__ = ["EntryFill", "FillModel", "_BookFillBlocked", "resolve"]
+__all__ = ["EntryFill", "FillModel", "FillBlocked", "resolve"]
 
 BPS_DIVISOR = 10_000
 
@@ -59,7 +59,11 @@ class FillModel(Protocol):
     The engine calls ``apply_entry`` once per filled decision; the model
     receives the raw quote, the sizing notional, and the cost parameters
     from the spec.  It returns an ``EntryFill`` carrying the three values
-    the engine needs to open a ``Position``.
+    the engine needs to open a ``Position``, OR a ``FillBlocked`` when the
+    model deterministically cannot fill (e.g. book_replay@1 on a missing
+    slice / insufficient depth).  ``FillBlocked`` is part of the public
+    Protocol — callers MUST handle it; silently treating a blocked fill as
+    filled is the always-true bug class.
 
     All implementations MUST be deterministic (IEEE-exact / spec-correctly-
     rounded decimal only).  No I/O, no randomness.
@@ -86,7 +90,7 @@ class FillModel(Protocol):
         market_link: str | None = None,
         decision_time: int | None = None,
         book_slices: list[dict[str, Any]] | None = None,
-    ) -> EntryFill:
+    ) -> EntryFill | FillBlocked:
         """Compute the post-fill price, fee, and share count for an entry.
 
         Args:
@@ -100,7 +104,8 @@ class FillModel(Protocol):
             book_slices:   L2 snapshot rows from book_dataset (book_replay@1 only).
 
         Returns:
-            EntryFill with (fill_price, fee, shares).
+            EntryFill with (fill_price, fee, shares), or FillBlocked when the
+            model deterministically cannot fill.
         """
         ...  # pragma: no cover
 
@@ -192,7 +197,7 @@ class _NextBarOpenV1:
 # proceed due to missing slice or insufficient depth.  The engine checks for
 # this and emits the appropriate warning + skips the row.
 @dataclass(frozen=True)
-class _BookFillBlocked:
+class FillBlocked:
     """Indicates book_replay@1 could not fill; carries the block reason."""
 
     reason: str  # "BOOK_SLICE_MISSING" | "BOOK_DEPTH_INSUFFICIENT"
@@ -216,7 +221,7 @@ class _BookReplayV1:
     it are rejected at validate_spec with E_EVIDENCE_SPEC_INVALID
     ("reserved for a future version") before apply_entry is ever called.
 
-    Returns an ``EntryFill`` on success or a ``_BookFillBlocked`` sentinel on
+    Returns an ``EntryFill`` on success or a ``FillBlocked`` sentinel on
     block.  The engine caller checks type and routes accordingly.
 
     Determinism guarantees:
@@ -236,8 +241,8 @@ class _BookReplayV1:
         market_link: str | None = None,
         decision_time: int | None = None,
         book_slices: list[dict[str, Any]] | None = None,
-    ) -> EntryFill | _BookFillBlocked:
-        """Walk ask levels to compute VWAP fill, or return a _BookFillBlocked."""
+    ) -> EntryFill | FillBlocked:
+        """Walk ask levels to compute VWAP fill, or return a FillBlocked."""
         # 1. Find the latest snapshot with snapshot_time <= decision_time.
         #    Columns per ADR-0041: market_link, snapshot_time, side, level_price,
         #    level_size.  We only consume ASK levels (bid-side irrelevant for buys).
@@ -254,7 +259,7 @@ class _BookReplayV1:
         ]
 
         if not relevant:
-            return _BookFillBlocked(
+            return FillBlocked(
                 reason="BOOK_SLICE_MISSING",
                 context={"market_link": market_link, "decision_time": dt},
             )
@@ -293,7 +298,7 @@ class _BookReplayV1:
 
         if remaining > 0.0:
             # Insufficient depth to fill the full notional
-            return _BookFillBlocked(
+            return FillBlocked(
                 reason="BOOK_DEPTH_INSUFFICIENT",
                 context={
                     "market_link": market_link,
@@ -328,7 +333,7 @@ _BOOK_REPLAY_V1 = _BookReplayV1()
 _REGISTRY: dict[tuple[str, int], FillModel] = {
     ("static_bps", 1): _STATIC_BPS_V1,
     ("next_bar_open", 1): _NEXT_BAR_OPEN_V1,
-    ("book_replay", 1): _BOOK_REPLAY_V1,  # type: ignore[assignment]  # returns EntryFill | _BookFillBlocked
+    ("book_replay", 1): _BOOK_REPLAY_V1,
 }
 
 

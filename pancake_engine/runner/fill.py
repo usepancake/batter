@@ -30,6 +30,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from ..fills.registry import FillBlocked
 from ..fills.registry import default_model as _default_fill_model
 from ..fills.registry import resolve as _resolve_fill_model
 from .sizing import compute_sizing
@@ -130,13 +131,21 @@ class SimFillRouter:
             )
 
         # Delegate to registry model (static_bps@1 by default).
-        # The model returns an EntryFill with fill_price, fee, shares.
+        # The model returns an EntryFill, or FillBlocked for depth-aware
+        # models. The paper router only resolves static_bps/next_bar_open
+        # today (no book feed in paper), so a blocked fill here is a
+        # deterministic rejection, surfaced — never silently treated as filled.
         entry_fill = self._fill_model.apply_entry(
             quote=quote,
             notional=sizing.notional,
             slippage_bps=self.slippage_bps,
             fee_bps=self.fee_bps,
         )
+        if isinstance(entry_fill, FillBlocked):
+            return FillRejection(
+                "fill_blocked",
+                {"quote": quote, "reason": entry_fill.reason, "context": entry_fill.context},
+            )
 
         if not (0.0 < entry_fill.fill_price < 1.0):
             return FillRejection(
