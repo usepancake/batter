@@ -68,6 +68,45 @@ If you use batter in academic or independent research, please cite:
 }
 ```
 
+## Verify any receipt
+
+No trusted party required. Given a self-contained bundle (spec + inline dataset + expected hash), `batter verify` re-runs the engine locally and checks that the computed `result_hash` matches the declared one. Anyone can audit a Pancake receipt independently.
+
+```bash
+pip install batter
+
+# local bundle file
+batter verify --bundle receipt-bundle.json
+
+# or fetch from a URL directly
+batter verify --url https://usepancake.com/r/<receipt-id>/bundle.json
+```
+
+**Exit codes:** `0` verified · `1` hash or dataset integrity mismatch · `2` input/validation error · `3` unverifiable (pointer dataset — rows not inline, license-gated)
+
+**JSON output** (stdout):
+
+```json
+{
+  "verified": true,
+  "expected": "<sha256>",
+  "computed": "<sha256>",
+  "engine_version": "0.8.1",
+  "num_trades": 42
+}
+```
+
+**Bundle shapes accepted:**
+
+- **regen-style** (what `examples/*/regen.py` produces): `{spec, dataset, config?, expected_result_hash: "<sha256>"}`
+- **fixture-style**: `{spec, dataset, config?, expected: {result_hash: "<sha256>", ...}}`
+
+The dataset must carry `storage_mode: "inline"` with rows present. Pointer datasets (rows held under license) print a clear message and exit 3.
+
+`batter verify` also checks dataset integrity first: it recomputes `rows_sha256` and `schema_sha256` over the bundle's actual bytes and compares them to the declared values. A tampered bundle is caught before the engine even runs.
+
+If the bundle declares an `engine_version` that differs from the installed version, a warning is printed — `result_hash` values are only comparable under the same `ENGINE_VERSION`.
+
 ## License
 
 Apache-2.0 — Copyright 2026 Michael Mustopo
