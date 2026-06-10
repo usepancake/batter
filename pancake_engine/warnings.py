@@ -70,6 +70,9 @@ class WarningCode(str, Enum):
 
     # --- Operational ---
     OBSERVATION_TIME_DERIVED = "OBSERVATION_TIME_DERIVED"
+    # 0.9: strategy.exit accepted in spec but not applied in the backtest lane
+    # (evidence rows are one-shot hold-to-resolution; exit applies paper/live only).
+    EXIT_NOT_APPLIED_BACKTEST = "EXIT_NOT_APPLIED_BACKTEST"
 
     # --- Walk-forward (PR-2) ---
     EMPTY_FOLD = "EMPTY_FOLD"

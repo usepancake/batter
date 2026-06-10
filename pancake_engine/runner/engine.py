@@ -245,15 +245,37 @@ def run_backtest(
     ))
 
     # 7b. Verification-boundary: AGENT_SUPPLIED_FEATURE_UNVERIFIED (E3b parity with TS runner)
-    # Collect columns referenced in entry / yes_payoff predicates that carry semantic_role=feature.
+    # Collect columns referenced in entry / yes_payoff / exit predicates that carry semantic_role=feature.
     # These are agent-supplied (derived by the user before handing data to Pancake); Pancake
     # cannot verify their provenance, look-ahead cleanliness, or derivation correctness.
     entry_when = spec.strategy.entry.get("when", {})
     yes_payoff_when = spec.strategy.yes_payoff.get("when", {})
+    exit_when_for_feature = {}
+    if isinstance(spec.strategy.exit, dict):
+        ew = spec.strategy.exit.get("when")
+        if isinstance(ew, dict):
+            exit_when_for_feature = ew
     all_referenced = (
         extract_referenced_columns(entry_when if isinstance(entry_when, dict) else {})
         | extract_referenced_columns(yes_payoff_when if isinstance(yes_payoff_when, dict) else {})
+        | extract_referenced_columns(exit_when_for_feature)
     )
+
+    # 0.9: EXIT_NOT_APPLIED_BACKTEST — evidence rows are one-shot hold-to-resolution;
+    # exit applies only to the paper/live lanes until the bar-series domain lands.
+    # NOTE: this warning enters result_hash for specs that include exit (new specs only);
+    # specs without exit.when are byte-identical to pre-0.9 receipts.
+    if spec.strategy.exit is not None:
+        warnings.append(Warning(
+            code=WarningCode.EXIT_NOT_APPLIED_BACKTEST,
+            severity=Severity.INFO,
+            message=(
+                "strategy.exit is set but not applied in the backtest lane: "
+                "evidence rows are one-shot hold-to-resolution; "
+                "exit applies to the paper/live lanes until the bar-series domain lands."
+            ),
+            context={},
+        ))
     # Filter to columns that are declared as semantic_role=feature in schema_requirements.
     feature_role_cols = {
         req.name

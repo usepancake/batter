@@ -28,8 +28,9 @@ from pydantic import BaseModel, ConfigDict, field_validator
 
 from ..__version__ import ENGINE_VERIFICATION_GRADE
 from ..compile import compile_spec
+from ..compile.condition import Condition, compile_condition
 from ..types import EvidenceSpec
-from .fill import Fill, FillRejection, SimFillRouter
+from .fill import BPS_DIVISOR, Fill, FillRejection, SimFillRouter
 
 __all__ = [
     "ResolutionMarker",
@@ -196,6 +197,14 @@ def tick(request: TickRequest) -> TickResponse:
     router = SimFillRouter(slippage_bps=compiled.slippage_bps, fee_bps=compiled.fee_bps)
     bars: dict[str, MarketBar] = {b.instrument_id: b for b in request.market_snapshot}
 
+    # Compile exit condition if present (paper-lane only).
+    exit_condition: Condition | None = None
+    exit_cfg = request.strategy_spec_ir.strategy.exit
+    if isinstance(exit_cfg, dict):
+        exit_when = exit_cfg.get("when")
+        if isinstance(exit_when, dict):
+            exit_condition = compile_condition(exit_when)
+
     # No look-ahead (rule 139): the engine refuses any input dated after t.
     for b in request.market_snapshot:
         if b.observed_at > t:
@@ -278,8 +287,41 @@ def tick(request: TickRequest) -> TickResponse:
                     consecutive_losses = 0
             continue
 
-        # Hold → mark to market (carry forward if the instrument is absent).
+        # Exit condition: evaluate against current bar before falling through to mark.
         mark_per_share, stale = _mark_per_share(pos, bar)
+        if (
+            exit_condition is not None
+            and bar is not None
+            and exit_condition(_bar_to_row(bar, entry_price_col, pos.side))
+        ):
+            # Close the position at mark price, applying sell-side slippage + fee.
+            # sell-side slippage: proceeds are reduced (price moves against us on exit).
+            exit_price = mark_per_share * (1.0 - compiled.slippage_bps / BPS_DIVISOR)
+            notional = pos.shares * mark_per_share
+            fee = notional * (compiled.fee_bps / BPS_DIVISOR)
+            proceeds = pos.shares * exit_price - fee
+            cash += proceeds
+            settled_ids.add(iid)
+            events.append(PaperEvent(
+                event_kind="position_closed",
+                observed_at=t,
+                tick_cursor=t,
+                payload={
+                    "instrument_id": iid,
+                    "side": pos.side,
+                    "reason": "exit",
+                    "exit_price": exit_price,
+                    "mark_price": mark_per_share,
+                    "shares": pos.shares,
+                    "proceeds": proceeds,
+                    "fee": fee,
+                    "pnl": proceeds - pos.cost,
+                },
+                source_manifest_id=bar.source_manifest_id,
+            ))
+            continue
+
+        # Hold → mark to market (carry forward if the instrument is absent).
         events.append(PaperEvent(
             event_kind="mark_to_market",
             observed_at=t,
