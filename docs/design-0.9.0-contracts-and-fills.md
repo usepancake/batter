@@ -72,3 +72,26 @@ Wave 4: book_replay@1 + TTR covariate (additive registry entries; may slip to
         receipt result_hash persistence (gap found 2026-06-10: receipts never
         stored result_hash — verify needs it).
 ```
+
+## 4. Release cut 0.9.0 (PMO-owned; locked 2026-06-10)
+
+ECE design (the last hashed addition): trade-level calibration over
+(implied_prob_at_entry, realized_outcome_for_trade) pairs — BOTH already on the
+traded-side axis (see the NO-price-convention note; do NOT invert). 10 fixed
+bins [0,0.1)…[0.9,1.0]; ECE = Σ (n_b/N)·|acc_b − conf_b|. Pure arithmetic
+(fsum) — hash-safe. Split: `MetricsPM.calibration_ece: float|None` is HASHED
+(None when num_trades < 10 — deterministic threshold); the 10-bin reliability
+curve is a NON-hashed additive block `BacktestResult.calibration_bins`
+(cost_sensitivity pattern) — scalar headline in the receipt, curve render-side.
+
+Cut mechanics (one PR = release/0.9.0): ECE + ENGINE_VERSION 0.8.1→0.9.0 +
+__version__/pyproject 0.9.0 + changelog + examples regen (regen.py only).
+Gates: full suite + 6-OS matrix + read-only verify swarm on the branch.
+Then: tag 0.9.0 → release (auto-PyPI) → prod pin PR (Dockerfile + lockstep
+BATTER_PIN + acceptance identity literal + golden regen via
+scripts/regen-engine-golden.py + ADR-0031 amendment 0.9.0) → Fly deploy →
+corrections 0.8.1→0.9.0 for the two receipts (rerun bundles preserved in
+/tmp/receipt-rerun; same procedure, new_hash under 0.9.0 — platform-stable, so
+local recompute is valid for BOTH old(0.8.1) and new(0.9.0) hashes this time).
+Post-cut (0.9.x additive): book_replay@1 + TTR covariate + SimFillRouter
+unification; crypto paper tick().
