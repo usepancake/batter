@@ -1,0 +1,14 @@
+# Dependabot — automated weekly dependency update PRs.
+# Security audit 2026-06-10 follow-up (parity with pancake-production).
+version: 2
+updates:
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
