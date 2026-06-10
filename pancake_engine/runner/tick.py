@@ -126,6 +126,10 @@ class TickRequest(BaseModel):
     universe_state: Any = None
     current_cash: float
     current_positions: dict[str, TickPosition] = {}
+    # 0.9 paper_guard state — optional with safe defaults so existing callers are untouched.
+    peak_equity: float | None = None
+    consecutive_losses: int = 0
+    cooldown_remaining: int = 0
 
 
 class TickResponse(BaseModel):
@@ -137,6 +141,10 @@ class TickResponse(BaseModel):
     new_equity: float
     verification_boundary: VerificationBoundary
     suggested_next_check: int | None = None
+    # 0.9 paper_guard state threads through (optional; None when not active).
+    peak_equity: float | None = None
+    consecutive_losses: int = 0
+    cooldown_remaining: int = 0
 
 
 class TickError(Exception):
@@ -164,9 +172,13 @@ def tick(request: TickRequest) -> TickResponse:
 
     Order within a tick (deterministic, sorted by ``instrument_id``):
       1. Held positions → settle (if resolved as-of t) or mark-to-market.
-      2. Entries → evaluate the IR entry condition on each non-held, non-resolved
+         Guard state (peak_equity, consecutive_losses) is updated here.
+      2. paper_guard check → if tripped or cooldown_remaining > 0, skip all entries.
+         If just tripped: emit guard_suspended event, set cooldown.
+         If in existing cooldown: decrement, skip silently.
+      3. Entries → evaluate the IR entry condition on each non-held, non-resolved
          bar; open via ``SimFillRouter`` at ``bar.close``.
-      3. ``new_equity`` = cash + Σ mark(open positions).
+      4. ``new_equity`` = cash + Σ mark(open positions).
     """
     if request.mode != "paper":
         raise TickError(
@@ -207,6 +219,26 @@ def tick(request: TickRequest) -> TickResponse:
 
     entry_price_col = _entry_price_col(request.strategy_spec_ir)
 
+    # Guard state — thread from request; updated during settlements
+    consecutive_losses = request.consecutive_losses
+    cooldown_remaining = request.cooldown_remaining
+
+    # Compute start-of-tick equity for guard evaluation (before settlements).
+    # This ensures a winning settlement doesn't retroactively prevent a guard trip.
+    start_mark_total = 0.0
+    for pos in request.current_positions.values():
+        bar_ = {b.instrument_id: b for b in request.market_snapshot}.get(pos.instrument_id)
+        mps_, _ = _mark_per_share(pos, bar_)
+        start_mark_total += pos.shares * mps_
+    start_equity = cash + start_mark_total
+
+    # Update equity peak from start-of-tick equity.
+    peak_equity = request.peak_equity
+    if peak_equity is None:
+        peak_equity = start_equity
+    else:
+        peak_equity = max(peak_equity, start_equity)
+
     # 1. Settle or mark held positions.
     for iid in sorted(request.current_positions):
         pos = request.current_positions[iid]
@@ -237,6 +269,13 @@ def tick(request: TickRequest) -> TickResponse:
                 },
                 source_manifest_id=bar.source_manifest_id,
             ))
+            # Update consecutive_losses: a full-loss settlement (settle_value == 0) increments;
+            # a winning settlement resets. Only full losses count (settle_value == 0 exactly).
+            if request.strategy_spec_ir.strategy.paper_guard is not None:
+                if settle_value == 0.0:
+                    consecutive_losses += 1
+                else:
+                    consecutive_losses = 0
             continue
 
         # Hold → mark to market (carry forward if the instrument is absent).
@@ -255,92 +294,147 @@ def tick(request: TickRequest) -> TickResponse:
         ))
         open_positions[iid] = pos.model_copy(update={"last_mark": mark_per_share})
 
-    # 2. Entries: non-held, non-resolved candidates whose entry condition fires.
-    for iid in sorted(bars):
-        bar = bars[iid]
-        if iid in open_positions or iid in settled_ids:
-            continue
-        if bar.resolution is not None:
-            continue  # resolved instrument is terminal — never enterable
-        if not compiled.entry_condition(_bar_to_row(bar, entry_price_col, compiled.side)):
-            continue
+    # 2. paper_guard — decide whether to skip entries.
+    # Guard uses start_equity / peak_equity (computed before settlements above).
+    guard = request.strategy_spec_ir.strategy.paper_guard
+    skip_entries = False
+    just_tripped = False
+    tripped_guard_name: str = ""
+    tripped_observed: float = 0.0
+    tripped_threshold: float = 0.0
 
-        result = router.fill(
-            side=compiled.side,
-            yes_close=bar.close,
-            available_cash=cash,
-            sizing_value=compiled.sizing_value,
-        )
-        if isinstance(result, FillRejection):
+    if cooldown_remaining > 0:
+        # Already in cooldown — silently skip entries and decrement.
+        skip_entries = True
+        cooldown_remaining -= 1
+    elif guard is not None:
+        # Check each configured guard condition.
+        if not skip_entries and "max_drawdown_pct" in guard:
+            threshold = float(guard["max_drawdown_pct"])
+            if peak_equity > 0:
+                observed_dd = (peak_equity - start_equity) / peak_equity
+            else:
+                observed_dd = 0.0
+            if observed_dd >= threshold:
+                skip_entries = True
+                just_tripped = True
+                tripped_guard_name = "max_drawdown_pct"
+                tripped_observed = observed_dd
+                tripped_threshold = threshold
+
+        if not skip_entries and "max_consecutive_losses" in guard:
+            threshold_int = int(guard["max_consecutive_losses"])
+            if consecutive_losses >= threshold_int:
+                skip_entries = True
+                just_tripped = True
+                tripped_guard_name = "max_consecutive_losses"
+                tripped_observed = float(consecutive_losses)
+                tripped_threshold = float(threshold_int)
+
+        if just_tripped:
+            cooldown_bars = int(guard.get("cooldown_bars", 1))
+            cooldown_remaining = cooldown_bars
             events.append(PaperEvent(
-                event_kind="order_rejected",
+                event_kind="guard_suspended",
+                observed_at=t,
+                tick_cursor=t,
+                payload={
+                    "guard": tripped_guard_name,
+                    "observed": tripped_observed,
+                    "threshold": tripped_threshold,
+                },
+            ))
+
+    # 3. Entries: non-held, non-resolved candidates whose entry condition fires.
+    if not skip_entries:
+        for iid in sorted(bars):
+            bar = bars[iid]
+            if iid in open_positions or iid in settled_ids:
+                continue
+            if bar.resolution is not None:
+                continue  # resolved instrument is terminal — never enterable
+            if not compiled.entry_condition(_bar_to_row(bar, entry_price_col, compiled.side)):
+                continue
+
+            result = router.fill(
+                side=compiled.side,
+                yes_close=bar.close,
+                available_cash=cash,
+                sizing_value=compiled.sizing_value,
+            )
+            if isinstance(result, FillRejection):
+                events.append(PaperEvent(
+                    event_kind="order_rejected",
+                    observed_at=t,
+                    tick_cursor=t,
+                    payload={
+                        "instrument_id": iid,
+                        "side": compiled.side,
+                        "reason": result.reason,
+                        **result.detail,
+                    },
+                    source_manifest_id=bar.source_manifest_id,
+                ))
+                continue
+
+            fill: Fill = result
+            cash -= fill.cost
+            events.append(PaperEvent(
+                event_kind="order_placed",
+                observed_at=t,
+                tick_cursor=t,
+                payload={"instrument_id": iid, "side": compiled.side, "notional": fill.cost},
+                source_manifest_id=bar.source_manifest_id,
+            ))
+            events.append(PaperEvent(
+                event_kind="order_filled",
                 observed_at=t,
                 tick_cursor=t,
                 payload={
                     "instrument_id": iid,
                     "side": compiled.side,
-                    "reason": result.reason,
-                    **result.detail,
+                    "fill_price": fill.fill_price,
+                    "quote_price": fill.quote_price,
+                    "shares": fill.shares,
+                    "fee": fill.fee,
+                    "cost": fill.cost,
                 },
                 source_manifest_id=bar.source_manifest_id,
             ))
-            continue
+            open_positions[iid] = TickPosition(
+                instrument_id=iid,
+                side=compiled.side,
+                shares=fill.shares,
+                entry_price=fill.fill_price,
+                cost=fill.cost,
+                fee=fill.fee,
+                opened_at=t,
+                last_mark=fill.quote_price,
+            )
+            events.append(PaperEvent(
+                event_kind="position_opened",
+                observed_at=t,
+                tick_cursor=t,
+                payload={
+                    "instrument_id": iid,
+                    "side": compiled.side,
+                    "shares": fill.shares,
+                    "entry_price": fill.fill_price,
+                    "cost": fill.cost,
+                    "fee": fill.fee,
+                },
+                source_manifest_id=bar.source_manifest_id,
+            ))
 
-        fill: Fill = result
-        cash -= fill.cost
-        events.append(PaperEvent(
-            event_kind="order_placed",
-            observed_at=t,
-            tick_cursor=t,
-            payload={"instrument_id": iid, "side": compiled.side, "notional": fill.cost},
-            source_manifest_id=bar.source_manifest_id,
-        ))
-        events.append(PaperEvent(
-            event_kind="order_filled",
-            observed_at=t,
-            tick_cursor=t,
-            payload={
-                "instrument_id": iid,
-                "side": compiled.side,
-                "fill_price": fill.fill_price,
-                "quote_price": fill.quote_price,
-                "shares": fill.shares,
-                "fee": fill.fee,
-                "cost": fill.cost,
-            },
-            source_manifest_id=bar.source_manifest_id,
-        ))
-        open_positions[iid] = TickPosition(
-            instrument_id=iid,
-            side=compiled.side,
-            shares=fill.shares,
-            entry_price=fill.fill_price,
-            cost=fill.cost,
-            fee=fill.fee,
-            opened_at=t,
-            last_mark=fill.quote_price,
-        )
-        events.append(PaperEvent(
-            event_kind="position_opened",
-            observed_at=t,
-            tick_cursor=t,
-            payload={
-                "instrument_id": iid,
-                "side": compiled.side,
-                "shares": fill.shares,
-                "entry_price": fill.fill_price,
-                "cost": fill.cost,
-                "fee": fill.fee,
-            },
-            source_manifest_id=bar.source_manifest_id,
-        ))
-
-    # 3. Equity = cash + Σ mark(open positions) at market.
+    # 4. Equity = cash + Σ mark(open positions) at market.
     mark_total = 0.0
     for iid, pos in open_positions.items():
         mark_per_share, _ = _mark_per_share(pos, bars.get(iid))
         mark_total += pos.shares * mark_per_share
     new_equity = cash + mark_total
+
+    # Update peak equity one final time with the post-entry equity.
+    peak_equity = max(peak_equity, new_equity)
 
     return TickResponse(
         events=events,
@@ -349,6 +443,9 @@ def tick(request: TickRequest) -> TickResponse:
         new_equity=new_equity,
         verification_boundary=VerificationBoundary(verification_grade=ENGINE_VERIFICATION_GRADE),
         suggested_next_check=None,
+        peak_equity=peak_equity,
+        consecutive_losses=consecutive_losses,
+        cooldown_remaining=cooldown_remaining,
     )
 
 

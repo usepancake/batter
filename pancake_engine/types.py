@@ -131,6 +131,15 @@ class EvidenceStrategy(BaseModel):
     # to pre-0.8 specs. Convention: NO-FILTER — same side/sizing/costs on every
     # candidate row, isolating the entry condition's selection value.
     baseline: Optional[dict[str, Any]] = None
+    # 0.9: paper_guard — tick()/paper-lane-only risk circuit-breaker.
+    # Shape: {"max_drawdown_pct": float in (0,1], "max_consecutive_losses": int>=1,
+    #         "cooldown_bars": int>=1} — at least one key required.
+    # None default + exclude_none serialization → specs without it hash identically.
+    paper_guard: Optional[dict[str, Any]] = None
+    # 0.9: exit — {"when": <condition AST>}.  Paper lane: close held position when
+    # the condition fires.  Backtest: accepted, warns EXIT_NOT_APPLIED_BACKTEST.
+    # None default → specs without it hash identically.
+    exit: Optional[dict[str, Any]] = None
 
 
 class EvidenceColumnRequirement(BaseModel):

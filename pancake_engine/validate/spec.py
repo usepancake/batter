@@ -19,6 +19,7 @@ from .verdict import ValidationVerdict
 __all__ = ["validate_spec"]
 
 SUPPORTED_SIZING_MODES = {"fixed_fraction"}  # PR-1 ships fixed_fraction only
+_PAPER_GUARD_ALLOWED_KEYS = frozenset({"max_drawdown_pct", "max_consecutive_losses", "cooldown_bars"})
 
 
 def _when(node: Any) -> dict[str, Any]:
@@ -43,9 +44,15 @@ def validate_spec(spec: EvidenceSpec) -> ValidationVerdict:
     # `resolved_outcome_numeric` instead of the actual column). Reject it here so
     # run_backtest returns a clean blocked verdict instead of a garbage success.
     declared = {req.name for req in spec.schema_requirements.required_columns}
+    exit_when: dict[str, Any] = {}
+    if isinstance(spec.strategy.exit, dict):
+        w = spec.strategy.exit.get("when")
+        if isinstance(w, dict):
+            exit_when = w
     referenced = (
         extract_referenced_columns(_when(spec.strategy.entry))
         | extract_referenced_columns(_when(spec.strategy.yes_payoff))
+        | extract_referenced_columns(exit_when)
     )
     undeclared = sorted(referenced - declared)
     if undeclared:
@@ -77,6 +84,52 @@ def validate_spec(spec: EvidenceSpec) -> ValidationVerdict:
                 f"strategy.baseline.kind must be 'buy_and_hold' (got {kind!r})",
                 field="strategy.baseline",
             )
+
+    # 0.9 paper_guard block: validate shape + values.
+    if spec.strategy.paper_guard is not None:
+        pg = spec.strategy.paper_guard
+        if not isinstance(pg, dict) or not pg:
+            v.add_error(
+                "E_EVIDENCE_SPEC_INVALID",
+                "strategy.paper_guard must be a non-empty dict",
+                field="strategy.paper_guard",
+            )
+        else:
+            unknown_keys = sorted(set(pg.keys()) - _PAPER_GUARD_ALLOWED_KEYS)
+            if unknown_keys:
+                v.add_error(
+                    "E_EVIDENCE_SPEC_INVALID",
+                    f"strategy.paper_guard contains unknown key(s): {unknown_keys}; "
+                    f"allowed: {sorted(_PAPER_GUARD_ALLOWED_KEYS)}",
+                    field="strategy.paper_guard",
+                )
+            if "max_drawdown_pct" in pg:
+                mdp = pg["max_drawdown_pct"]
+                if not isinstance(mdp, (int, float)) or isinstance(mdp, bool) or not (0 < mdp <= 1):
+                    v.add_error(
+                        "E_EVIDENCE_SPEC_INVALID",
+                        f"strategy.paper_guard.max_drawdown_pct must be a float in (0, 1] "
+                        f"(got {mdp!r})",
+                        field="strategy.paper_guard.max_drawdown_pct",
+                    )
+            if "max_consecutive_losses" in pg:
+                mcl = pg["max_consecutive_losses"]
+                if not isinstance(mcl, int) or isinstance(mcl, bool) or mcl < 1:
+                    v.add_error(
+                        "E_EVIDENCE_SPEC_INVALID",
+                        f"strategy.paper_guard.max_consecutive_losses must be an int >= 1 "
+                        f"(got {mcl!r})",
+                        field="strategy.paper_guard.max_consecutive_losses",
+                    )
+            if "cooldown_bars" in pg:
+                cb = pg["cooldown_bars"]
+                if not isinstance(cb, int) or isinstance(cb, bool) or cb < 1:
+                    v.add_error(
+                        "E_EVIDENCE_SPEC_INVALID",
+                        f"strategy.paper_guard.cooldown_bars must be an int >= 1 "
+                        f"(got {cb!r})",
+                        field="strategy.paper_guard.cooldown_bars",
+                    )
 
     if spec.strategy.sizing.mode not in SUPPORTED_SIZING_MODES:
         v.add_error(

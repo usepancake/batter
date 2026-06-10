@@ -30,19 +30,26 @@ def make_spec(
     entry_when: dict | None = None,
     yes_payoff_when: dict | None = None,
     starting_capital: float = 1000.0,
+    paper_guard: dict | None = None,
+    exit_when: dict | None = None,
 ) -> EvidenceSpec:
+    strategy: dict = {
+        "side": side,
+        "entry": {"when": entry_when or {"feature": "alpha", "gte": 2.0}},
+        "yes_payoff": {"when": yes_payoff_when or {"feature_equal": {"a": "target", "b": "outcome"}}},
+        "sizing": {"mode": "fixed_fraction", "value": sizing_value},
+    }
+    if paper_guard is not None:
+        strategy["paper_guard"] = paper_guard
+    if exit_when is not None:
+        strategy["exit"] = {"when": exit_when}
     return EvidenceSpec.model_validate({
         "spec_family": "pancake-evidence-spec",
         "spec_version": "0.1",
         "name": "test-spec",
         "evidence_dataset_id": "ev_runner_test",
         "schema_requirements": {"required_columns": SCHEMA_COLUMNS},
-        "strategy": {
-            "side": side,
-            "entry": {"when": entry_when or {"feature": "alpha", "gte": 2.0}},
-            "yes_payoff": {"when": yes_payoff_when or {"feature_equal": {"a": "target", "b": "outcome"}}},
-            "sizing": {"mode": "fixed_fraction", "value": sizing_value},
-        },
+        "strategy": strategy,
         "costs": {"slippage_bps": slip_bps, "fee_bps": fee_bps},
         "starting_capital": starting_capital,
     })
