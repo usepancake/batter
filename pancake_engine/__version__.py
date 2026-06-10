@@ -97,13 +97,28 @@ breaking change to the receipt contract.
     published receipts are re-run transparently (per-receipt old_hash -> new_hash
     correction record), never silently version-pinned. (policy B; credibility-first
     sequencing 2026-06-10 — receipt break-cost ~0 post the ADR-0045 reset.)
+
+0.8.1 (cross-platform determinism hotfix — DELIBERATE result_hash break of 0.8.0):
+  - 0.8.0 computed psr via math.erf (libm): glibc and Apple libm round the last
+    ULP differently, so psr — a HASHED field — diverged by 2 ULP between ubuntu
+    and macOS and result_hash was platform-ambiguous (caught by the 6-matrix CI;
+    field-level bit probe isolated psr as the sole divergent field).
+  - Φ and the probit now run in 50-digit decimal (libmpdec; correctly rounded BY
+    SPECIFICATION on every platform): erf by Maclaurin series with pinned
+    constants; probit = Acklam float seed + Decimal-Newton (quadratic convergence
+    erases seed ULPs). Bit-exact contract pinned in tests/test_phi_bit_exact.py.
+  - Hashed-path discipline going forward: hashed values may only come from
+    IEEE-exact float ops (+,-,*,/,sqrt, fsum) or spec-correctly-rounded decimal.
+  - ENGINE_VERSION 0.8.0 -> 0.8.1: psr moves at the ULP level, so hashes change.
+    0.8.0 was never deployed to Fly and minted zero receipts; 0.8.0 receipts
+    cannot exist consistently (platform-ambiguous), so the break is free.
 """
 
-__version__ = "0.8.0"
+__version__ = "0.8.1"
 ENGINE = "batter"
 # 0.8.0 is a DELIBERATE result_hash break: MetricsStandard gains psr +
 # min_track_record_length and the CIs become block-bootstrap — all part of the hash.
-ENGINE_VERSION = "0.8.0"
+ENGINE_VERSION = "0.8.1"
 ENGINE_MODE = "event_time_v1"
 
 # Verification grade the engine self-identifies with (rule 159 / ADR-0035 §2.2).

@@ -112,7 +112,7 @@ def test_cli_run_writes_result(tmp_path: Path) -> None:
     assert out_path.exists()
     result = json.loads(out_path.read_text(encoding="utf-8"))
     assert result["engine"] == "batter"
-    assert result["engine_version"] == "0.8.0"
+    assert result["engine_version"] == "0.8.1"
     assert result["engine_mode"] == "event_time_v1"
     assert result["hashes"]["result_hash"] != ""
     assert result["metrics"]["standard"]["num_trades"] == 1
