@@ -262,7 +262,7 @@ def tick(request: TickRequest) -> TickResponse:
             continue
         if bar.resolution is not None:
             continue  # resolved instrument is terminal — never enterable
-        if not compiled.entry_condition(_bar_to_row(bar, entry_price_col)):
+        if not compiled.entry_condition(_bar_to_row(bar, entry_price_col, compiled.side)):
             continue
 
         result = router.fill(
@@ -370,18 +370,23 @@ def _mark_per_share(pos: TickPosition, bar: MarketBar | None) -> tuple[float, bo
     return pos.entry_price, True
 
 
-def _bar_to_row(bar: MarketBar, entry_price_col: str | None) -> dict[str, Any]:
+def _bar_to_row(bar: MarketBar, entry_price_col: str | None, side: str = "YES") -> dict[str, Any]:
     """Project a bar onto the row the compiled IR conditions read. Feature
     columns (open/high/low/close/volume + data-plane extras) pass through; the
-    entry_price semantic-role column is mapped to ``bar.close`` so conditions that
-    reference it resolve."""
+    entry_price semantic-role column is mapped to the side-appropriate contract
+    price — ``bar.close`` (the YES price) for YES, ``1 - bar.close`` (the NO
+    price) for NO — so the entry condition evaluates against the same price domain
+    run_backtest uses. run_backtest reads the entry_price column straight from the
+    dataset, where the convention is the literal side price (see
+    test_case_03_no_at_096_wins); without the NO inversion here, paper/live entry
+    gates diverge from the backtest for every NO-side spec."""
     row: dict[str, Any] = {
         k: v
         for k, v in bar.model_dump(exclude_none=True).items()
         if k not in ("instrument_id", "source_manifest_id", "resolution")
     }
     if entry_price_col is not None and entry_price_col not in row:
-        row[entry_price_col] = bar.close
+        row[entry_price_col] = bar.close if side == "YES" else 1.0 - bar.close
     return row
 
 

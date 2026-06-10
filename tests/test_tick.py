@@ -75,6 +75,27 @@ def test_no_entry_when_condition_false() -> None:
     assert math.isclose(resp.new_equity, 1000.0)
 
 
+def test_no_side_entry_condition_uses_no_price() -> None:
+    # For a NO-side spec, the entry condition references the entry_price column,
+    # which run_backtest populates with the literal NO price (see
+    # test_case_03_no_at_096_wins). bar.close is the YES price, so tick() must map
+    # the entry_price column to 1 - bar.close — otherwise live/paper diverges.
+    # YES close 0.08 → NO price 0.92 ≥ 0.90 → enters.
+    resp = tick(_req(
+        side="NO",
+        entry_when={"feature": "price", "gte": 0.90},
+        bars=[MarketBar(instrument_id="X", observed_at=990, close=0.08, alpha=3.0)],
+    ))
+    assert set(resp.new_positions) == {"X"}
+    # Negative control: YES close 0.15 → NO price 0.85 < 0.90 → no entry.
+    resp2 = tick(_req(
+        side="NO",
+        entry_when={"feature": "price", "gte": 0.90},
+        bars=[MarketBar(instrument_id="Y", observed_at=990, close=0.15, alpha=3.0)],
+    ))
+    assert resp2.new_positions == {}
+
+
 def test_resolved_instrument_not_entered() -> None:
     from pancake_engine import ResolutionMarker
     bar = MarketBar(

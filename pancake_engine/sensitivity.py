@@ -120,6 +120,8 @@ def run_sensitivity_analysis(
     only the entry threshold + sizing fraction varied. The MC drawdown reshuffles
     the base cell's realised trade order ``n_mc`` times (deterministic ``mc_seed``).
     """
+    if n_mc < 1:
+        raise ValueError("E_SENSITIVITY_INVALID_N_MC: n_mc must be >= 1")
     entry = spec.strategy.entry if isinstance(spec.strategy.entry, dict) else {}
     entry_when = entry.get("when", {}) if isinstance(entry.get("when"), dict) else {}
     base_entry = _find_gte(entry_when)
@@ -212,6 +214,12 @@ def run_sensitivity_analysis(
                 "p95": float(pct[4, s]),
             }
             for s in range(n_steps)
+        ]
+    else:
+        # Zero-trade base cell: still emit the single t=0 starting point so the
+        # documented len == base_num_trades + 1 invariant holds (n_steps == 1).
+        mc_drawdown_points = [
+            {"t": 0.0, "p5": 0.0, "p25": 0.0, "p50": 0.0, "p75": 0.0, "p95": 0.0}
         ]
 
     return SensitivityResult(

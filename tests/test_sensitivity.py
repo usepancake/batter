@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from pancake_engine import run_backtest, run_sensitivity_analysis
 from pancake_engine.sensitivity import _centered_grid, _find_gte, _set_gte
 
@@ -91,6 +93,31 @@ def test_deterministic_same_seed():
     a = run_sensitivity_analysis(spec, dataset, n_mc=300, mc_seed=7)
     b = run_sensitivity_analysis(spec, dataset, n_mc=300, mc_seed=7)
     assert a.to_dict() == b.to_dict()
+
+
+def test_n_mc_zero_raises():
+    # n_mc=0 with >=1 trade used to reach np.percentile on an empty array →
+    # IndexError. Guard it with a clear ValueError instead.
+    spec, dataset = _spec_and_dataset()
+    with pytest.raises(ValueError, match="n_mc"):
+        run_sensitivity_analysis(spec, dataset, n_mc=0)
+
+
+def test_zero_trade_base_cell_emits_t0_sentinel():
+    # Entry threshold above every alpha → base cell fires no trades. The MC fan
+    # must still honor the documented len == base_num_trades + 1 invariant by
+    # emitting the single t=0 (no-drawdown) sentinel.
+    spec = make_spec(side="YES", sizing_value=0.1, entry_when={"feature": "alpha", "gte": 99.0})
+    dataset = make_dataset([
+        row(mkt="m/A", dec_ts=100, res_ts=500, price=0.40, outcome=1, alpha=3.0, target=1),
+        row(mkt="m/B", dec_ts=600, res_ts=1000, price=0.55, outcome=0, alpha=3.5, target=0),
+    ])
+    res = run_sensitivity_analysis(spec, dataset, n_mc=10, mc_seed=0)
+    assert res.base_num_trades == 0
+    assert len(res.mc_drawdown_points) == res.base_num_trades + 1
+    assert res.mc_drawdown_points[0] == {
+        "t": 0.0, "p5": 0.0, "p25": 0.0, "p50": 0.0, "p75": 0.0, "p95": 0.0,
+    }
 
 
 def test_explicit_grids_respected():

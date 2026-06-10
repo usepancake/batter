@@ -76,6 +76,14 @@ def test_any_of_empty() -> None:
     assert c({"x": 1}) is False
 
 
+def test_all_of_empty_raises() -> None:
+    # all([]) is vacuously True → a silent always-true entry condition (enters on
+    # everything). Reject it, mirroring the any_of empty handling and the 0.6.0
+    # unknown-operator always-true guard.
+    with pytest.raises(ValueError, match="E_EVIDENCE_SPEC_INVALID"):
+        compile_condition({"all_of": []})
+
+
 def test_not() -> None:
     c = compile_condition({"not": {"feature": "alpha", "gte": 5.0}})
     assert c({"alpha": 4.0}) is True
