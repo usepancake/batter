@@ -168,9 +168,15 @@ def test_result_hash_changes_with_spec():
     assert a.result_hash != b.result_hash
 
 
-def test_instrument_mismatch_raises():
+def test_instrument_mismatch_returns_blocked_result():
+    # Validation failure → empty result with result_hash="" (consistent with PM
+    # run_backtest blocked path; does NOT raise).
     ds = _ds([(100, 101)])
     spec = _spec()
     object.__setattr__(spec, "instrument_id", "other")  # force mismatch
-    with pytest.raises(ValueError, match="E_CRYPTO_OHLCV_RUN_INVALID"):
-        run_crypto_ohlcv(spec, ds)
+    r = run_crypto_ohlcv(spec, ds)
+    assert r.result_hash == ""
+    assert not r.validation.ok
+    assert any("E_CRYPTO_OHLCV_RUN_INVALID" in e.code for e in r.validation.errors)
+    assert r.trades == []
+    assert r.equity_curve == []

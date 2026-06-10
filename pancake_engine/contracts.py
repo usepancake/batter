@@ -1,4 +1,4 @@
-"""DatasetContract Seam (Wave 2, 0.9.0).
+"""DatasetContract Seam (Wave 2 + Wave 3, 0.9.0).
 
 Design doc: docs/design-0.9.0-contracts-and-fills.md §1.
 
@@ -7,7 +7,8 @@ dataset registration and run time.  The contracts codify rules that were
 previously implicit / ad-hoc in validate/dataset.py.
 
 Wave 2 ships: PredictionMarketContract (PM domain).
-Waves 3/4: CryptoOHLCVContract, MacroSignalContract (future).
+Wave 3 ships: CryptoOHLCVContract (bar-series domain; ADR-0043).
+Wave 4: MacroSignalContract (future).
 
 The refactor is PURE: validate_dataset's observable behavior (error codes,
 messages, warning emission, role_lookup) does not change — the existing
@@ -22,6 +23,7 @@ __all__ = [
     "RoleSpec",
     "DatasetContract",
     "PredictionMarketContract",
+    "CryptoOHLCVContract",
     "contract_for_spec_family",
 ]
 
@@ -93,11 +95,34 @@ PredictionMarketContract = DatasetContract(
 
 
 # ---------------------------------------------------------------------------
+# CryptoOHLCVContract — codifies the ADR-0043 bar-series domain rules
+# ---------------------------------------------------------------------------
+
+CryptoOHLCVContract = DatasetContract(
+    domain="crypto_ohlcv",
+    required_roles=(
+        # instrument_id: string key linking the spec to the dataset.
+        RoleSpec(name="instrument_id", col_type="string"),
+        # bar_period: locked to "1m" in v1 (price_bars 1-min source, ADR-0043).
+        RoleSpec(name="bar_period", col_type="string"),
+        # bars: the OHLCV bar series (open/high/low/close/volume per bar-open timestamp).
+        # value_range=None because bars is a list of structured objects, not a
+        # scalar column; range validation lives in OhlcvBar's pydantic validators.
+        RoleSpec(name="bars", col_type="array", value_range=None),
+    ),
+    time_model="bar_series",
+    resolution_semantics=None,          # no binary payout; P&L is continuous
+    fill_reference="next_bar_open",     # ADR-0043 locked pick; registry: next_bar_open@1
+)
+
+
+# ---------------------------------------------------------------------------
 # Registry: spec_family → DatasetContract
 # ---------------------------------------------------------------------------
 
 _REGISTRY: dict[str, DatasetContract] = {
     "pancake-evidence-spec": PredictionMarketContract,
+    "crypto-ohlcv-spec": CryptoOHLCVContract,
 }
 
 
@@ -105,11 +130,11 @@ def contract_for_spec_family(spec_family: str) -> DatasetContract:
     """Return the DatasetContract for a given spec_family.
 
     The lookup is total for all spec_family values that pass pydantic
-    validation (currently only 'pancake-evidence-spec' is a valid Literal).
-    An unknown family is therefore unreachable at runtime — pydantic rejects
-    it before we ever call this.  The KeyError path is left as a defensive
-    assertion so that future spec_family additions that forget to register a
-    contract fail loudly.
+    validation ('pancake-evidence-spec' and 'crypto-ohlcv-spec' are the
+    currently valid Literals).  An unknown family is therefore unreachable
+    at runtime — pydantic rejects it before we ever call this.  The KeyError
+    path is left as a defensive assertion so that future spec_family additions
+    that forget to register a contract fail loudly.
     """
     contract = _REGISTRY.get(spec_family)
     if contract is None:

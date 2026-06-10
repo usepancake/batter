@@ -25,6 +25,7 @@ from typing import Any
 
 from ..hash import sha256_canonical
 from ..result import DrawdownPoint, EquityPoint, MetricsStandard, MonthlyReturn
+from ..validate.verdict import ValidationVerdict
 
 __all__ = [
     "OhlcvTrade",
@@ -63,7 +64,7 @@ class CryptoOhlcvResult:
 
     compiled_spec_hash: str
     dataset_hash: str
-    result_hash: str
+    result_hash: str  # "" when blocked (validation failed)
 
     metrics: MetricsStandard
     equity_curve: list[EquityPoint]
@@ -71,6 +72,7 @@ class CryptoOhlcvResult:
     monthly_returns: list[MonthlyReturn]
     trades: list[OhlcvTrade]
     warnings: list[str]
+    validation: ValidationVerdict
 
     meta: dict[str, Any] = field(default_factory=dict)
 
@@ -90,6 +92,7 @@ class CryptoOhlcvResult:
             "monthly_returns": [asdict(p) for p in self.monthly_returns],
             "trades": [t.to_dict() for t in self.trades],
             "warnings": list(self.warnings),
+            "validation": self.validation.to_dict(),
             "meta": self.meta,
         }
 
