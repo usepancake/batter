@@ -1078,3 +1078,51 @@ def _relink_chain(records: list[ChainRecord], from_index: int) -> None:
             prev_hash=prev_hash,
         )
         records[i] = replace(rec, prev_hash=prev_hash, record_hash=new_hash)
+
+
+class TestVenueRejectEdges:
+    """Release-cut additions: the CTF V2 venue-reject + pre-submit-expiry edges.
+
+    submitted -> rejected models a failed GET /transaction/{id} poll after
+    submit (the venue's verdict); proposed -> expired models TTL elapsing
+    before submission. Both are distinct from canceled (our action).
+    """
+
+    def test_submitted_to_rejected_is_legal(self) -> None:
+        from pancake_engine.chain.orders import advance
+
+        rec = advance("submitted", "rejected", t=1, payload={"reason": "venue_reject"})
+        assert rec["state"] == "rejected"
+
+    def test_proposed_to_expired_is_legal(self) -> None:
+        from pancake_engine.chain.orders import advance
+
+        rec = advance("proposed", "expired", t=1, payload={"reason": "ttl_before_submit"})
+        assert rec["state"] == "expired"
+
+    def test_acked_to_rejected_stays_illegal(self) -> None:
+        import pytest
+
+        from pancake_engine.chain.orders import ChainTransitionError, advance
+
+        with pytest.raises(ChainTransitionError):
+            advance("acked", "rejected", t=1, payload={})
+
+    def test_full_table_enumeration_against_spec(self) -> None:
+        """All 64 pairs vs the design-doc spec — the table is the contract."""
+        import itertools
+
+        from pancake_engine.chain.orders import ORDER_TRANSITIONS
+
+        spec = {
+            "proposed": {"submitted", "canceled", "rejected", "expired"},
+            "submitted": {"acked", "canceled", "rejected", "expired"},
+            "acked": {"partially_filled", "filled", "canceled", "expired"},
+            "partially_filled": {"partially_filled", "filled", "canceled", "expired"},
+            "filled": set(),
+            "canceled": set(),
+            "rejected": set(),
+            "expired": set(),
+        }
+        for a, b in itertools.product(spec, repeat=2):
+            assert (b in spec[a]) == (b in ORDER_TRANSITIONS.get(a, frozenset())), (a, b)

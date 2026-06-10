@@ -147,9 +147,28 @@ breaking change to the receipt contract.
   - _phi lower-tail docstring: |z|>=11 -> 0.0 stated as the deliberate
     symmetric convention (Haiku-swarm finding; zero behavior change).
   - ENGINE_VERSION stays 0.9.0 — no receipt break, no corrections.
+
+0.10.0 (The Chain + The Ledger — ADDITIVE, result_hash UNCHANGED):
+  - chain/1: hash-linked deployment records (ChainRecord/ChainBuilder/
+    verify_chain + `batter verify --chain`). Genesis pins compiled_spec_hash +
+    backtest result_hash + dataset id + starting_cash; verify does EXACT P&L
+    roll-forward (E_CHAIN_CASH_MISMATCH on bit mismatch — no heuristics).
+    Order-state machine with frozen transition table; cumulative-fill
+    monotonicity; every tamper class tested.
+  - trials/1: run_many batch orchestration threading an accumulating trial
+    history into each run's deflated block (running DSR as the search
+    deepens); TrialLedger hashed session record; final_dsr vs the complete
+    ledger. Per-run result_hash byte-identical to standalone runs (asserted).
+  - portfolio/1: compute_portfolio — joint carry-forward equity, portfolio
+    metrics, pairwise correlations, leg result_hash provenance pins, own
+    portfolio_hash. regime block (additive non-hashed quartile stability).
+    SportsEventContract on the domain Seam.
+  - ENGINE_VERSION stays 0.9.0 — new artifact classes carry their own
+    format_version; existing receipt hashes never move. No corrections.
+
 """
 
-__version__ = "0.9.1"
+__version__ = "0.10.0"
 ENGINE = "batter"
 # 0.9.0 is a DELIBERATE result_hash break: MetricsPM gains calibration_ece (hashed).
 ENGINE_VERSION = "0.9.0"
