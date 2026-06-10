@@ -26,7 +26,7 @@ multiplier is the unique root, found by bisection.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 
 from ..runner.trade import Trade
 
@@ -49,6 +49,12 @@ class CostSensitivityResult:
     points: list[CostSensitivityPoint]
     break_even_multiplier: float | None  # cost× where mean trade return crosses 0
 
+    def to_dict(self) -> dict:
+        return {
+            "points": [asdict(p) for p in self.points],
+            "break_even_multiplier": self.break_even_multiplier,
+        }
+
 
 def _rescaled_pnl(t: Trade, k: float) -> float | None:
     """P&L of trade ``t`` if slippage and fees were scaled by ``k``. None if degenerate."""
@@ -64,7 +70,8 @@ def _rescaled_pnl(t: Trade, k: float) -> float | None:
         return None
     shares_k = investable_k / fill_k
     settle = t.exit_price  # 0.0 or 1.0
-    return shares_k * settle - cost
+    pnl = shares_k * settle - cost
+    return pnl if math.isfinite(pnl) else None  # drop AF-3-style overflow trades
 
 
 def _mean_return(trades: list[Trade], k: float) -> float | None:

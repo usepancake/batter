@@ -127,6 +127,10 @@ class BacktestResult:
     validation: ValidationVerdict
 
     meta: dict[str, Any] = field(default_factory=dict)
+    # 0.8: transaction-cost sensitivity curve + break-even multiplier (additive;
+    # NOT in result_hash — compute_result_hash omits it). None when no trades or
+    # with_inference is skipped (the sweep).
+    cost_sensitivity: dict[str, Any] | None = None
 
     # --- serialization ---
 
@@ -153,6 +157,7 @@ class BacktestResult:
             "warnings": [w.to_dict() for w in self.warnings],
             "validation": self.validation.to_dict(),
             "meta": self.meta,
+            "cost_sensitivity": self.cost_sensitivity,
         }
 
 

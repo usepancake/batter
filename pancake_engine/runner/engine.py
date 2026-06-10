@@ -17,6 +17,7 @@ from typing import Any, Optional
 from ..__version__ import ENGINE, ENGINE_MODE, ENGINE_VERSION
 from ..compile import CompiledSpec, compile_spec
 from ..compile.condition import extract_referenced_columns
+from ..metrics.cost_sensitivity import cost_sensitivity
 from ..config import BacktestConfig
 from ..hash import sha256_canonical
 from ..metrics import (
@@ -283,6 +284,17 @@ def run_backtest(
         future_rows_count=future_rows_count,
     )
 
+    # 0.8: transaction-cost sensitivity (additive, NOT hashed). Gated with the rest
+    # of the inference block so the sweep's fast path stays free of it. Best-effort:
+    # on a degenerate clamped-overflow run (AF-3) the rescale can overflow fsum — cost
+    # analysis is meaningless there, so fall back to None rather than raise.
+    cost_sens = None
+    if with_inference and ledger.trades:
+        try:
+            cost_sens = cost_sensitivity(ledger.trades).to_dict()
+        except (OverflowError, ValueError, ZeroDivisionError):
+            cost_sens = None
+
     return BacktestResult(
         engine=ENGINE,
         engine_version=ENGINE_VERSION,
@@ -307,6 +319,7 @@ def run_backtest(
             "unresolved_rows_count": unresolved_rows_count,
             "duration_ms": 0,  # not measured; placeholder for ABI stability
         },
+        cost_sensitivity=cost_sens,
     )
 
 

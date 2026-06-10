@@ -101,3 +101,30 @@ def test_smoke_over_real_backtest_trades() -> None:
     assert p1.total_pnl == pytest.approx(
         r.metrics.standard.ending_capital - r.metrics.standard.starting_capital, rel=1e-9
     )
+
+
+def test_run_backtest_populates_cost_sensitivity_field() -> None:
+    import sys
+    sys.path.insert(0, "tests")
+    from _runner_helpers import make_dataset, make_spec, row  # noqa: E402
+
+    from pancake_engine import BacktestConfig, run_backtest
+
+    spec = make_spec(side="YES", sizing_value=0.1, slip_bps=50, fee_bps=10, starting_capital=1000.0)
+    dataset = make_dataset([
+        row(mkt="m/A", dec_ts=100, res_ts=200, price=0.5, outcome=1, alpha=3, target=1),
+        row(mkt="m/B", dec_ts=300, res_ts=400, price=0.6, outcome=0, alpha=3, target=1),
+    ])
+    cfg = BacktestConfig(observation_time=500)
+
+    r = run_backtest(spec, dataset, cfg)  # with_inference=True by default
+    assert r.cost_sensitivity is not None
+    assert "points" in r.cost_sensitivity and "break_even_multiplier" in r.cost_sensitivity
+    assert len(r.cost_sensitivity["points"]) >= 1
+    assert "cost_sensitivity" in r.to_dict()
+
+    # Sweep fast path (with_inference=False) skips it.
+    fast = run_backtest(spec, dataset, cfg, with_inference=False)
+    assert fast.cost_sensitivity is None
+    # ...and it never enters result_hash (additive field).
+    assert fast.result_hash != ""
