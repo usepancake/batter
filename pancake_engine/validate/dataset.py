@@ -2,17 +2,25 @@
 
 Port of TS ``preflightSchemaMatch`` + ``preflightRowInvariants``
 (``lib/evidence-runner/runner.ts``), extended with structured warnings.
+
+0.9.0 Wave 2: rules are now sourced from ``DatasetContract`` (via
+``contract_for_spec_family``) rather than hard-coded ad-hoc.  Observable
+behavior (error codes, messages, warning emission, role_lookup) is
+byte-identical — the existing test suite is the safety net.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
+from ..contracts import contract_for_spec_family
 from ..types import EvidenceDataset, EvidenceSpec, SemanticRole
 from .verdict import ValidationVerdict
 
 __all__ = ["validate_dataset", "RoleLookup"]
 
+# REQUIRED_UNIQUE_ROLES is kept as a module constant so external callers that
+# import it directly (e.g. tests that assert on it) continue to work.
 REQUIRED_UNIQUE_ROLES: tuple[SemanticRole, ...] = (
     "market_link",
     "decision_time",
@@ -32,9 +40,18 @@ def validate_dataset(dataset: EvidenceDataset, spec: EvidenceSpec) -> tuple[Vali
     Returns the verdict plus the ``role -> column_name`` lookup, which the
     runner needs to read row values. If the verdict is not ``ok``, the
     lookup may be incomplete; callers must check ``verdict.ok`` first.
+
+    Row invariants are now driven by the DatasetContract for the spec's
+    domain (``contract_for_spec_family(spec.spec_family)``), but the
+    observable behavior is identical to the pre-0.9.0 implementation.
     """
     v = ValidationVerdict()
     lookup = RoleLookup()
+
+    # Resolve the contract for this spec family.  This is total for all
+    # families that pass pydantic (only 'pancake-evidence-spec' is a valid
+    # Literal today), so KeyError is unreachable at runtime.
+    contract = contract_for_spec_family(spec.spec_family)
 
     if dataset.storage_mode != "inline":
         v.add_error(
@@ -79,6 +96,9 @@ def validate_dataset(dataset: EvidenceDataset, spec: EvidenceSpec) -> tuple[Vali
             )
 
     # --- Each required-unique role must resolve to exactly one spec column ---
+    # The set of required roles comes from the contract (same as REQUIRED_UNIQUE_ROLES
+    # for the PM domain; contracts preserve the identical role set).
+    contract_required_roles = {r.name for r in contract.required_roles}
     role_to_col: dict[str, str] = {}
     for req in spec.schema_requirements.required_columns:
         if req.semantic_role == "feature":
@@ -107,7 +127,21 @@ def validate_dataset(dataset: EvidenceDataset, spec: EvidenceSpec) -> tuple[Vali
     for role, col in role_to_col.items():
         lookup[role] = col
 
-    # --- Row invariants ---
+    # --- Row invariants (driven by contract) ---
+    # The contract codifies:
+    #   - type/range checks (incl. the 0.7.2 entry_price∈[0,1]-even-without-
+    #     declared-range rule)
+    #   - look-ahead: decision_time < resolution_time
+    #   - monotonicity: unique (market_link, decision_time) pairs
+    #
+    # The implementation below is a mechanical extraction: same codes, same
+    # messages, same order as the pre-0.9.0 ad-hoc logic.  The contract's
+    # ``required_roles`` drives the nullable check for resolved_outcome_numeric
+    # and the entry_price domain rule.
+
+    # Build a role→nullable map from the contract for the nullable check.
+    contract_role_nullable = {r.name: r.nullable for r in contract.required_roles}
+
     seen_market_decisions: dict[str, set[Any]] = {}
     required_cols = spec.schema_requirements.required_columns
 
@@ -115,11 +149,12 @@ def validate_dataset(dataset: EvidenceDataset, spec: EvidenceSpec) -> tuple[Vali
         for req in required_cols:
             val = row.get(req.name)
             if val is None:
-                # `resolved_outcome_numeric` may be null (unresolved row).
+                # ``resolved_outcome_numeric`` may be null (unresolved row).
                 # The runner skips such rows with UNRESOLVED_ROW_SKIPPED warning.
                 # Per architecture §observation_time rule: a dataset with any null
                 # resolved_outcome_numeric requires config.observation_time to be set.
-                if req.semantic_role == "resolved_outcome_numeric":
+                # The contract codifies this via RoleSpec.nullable=True.
+                if contract_role_nullable.get(req.semantic_role, False):
                     continue
                 v.add_error(
                     "E_EVIDENCE_FEATURE_MISSING",
@@ -157,11 +192,13 @@ def validate_dataset(dataset: EvidenceDataset, spec: EvidenceSpec) -> tuple[Vali
                     )
 
             # entry_price is a probability — enforce [0, 1] even when neither the
-            # spec requirement nor the dataset column declares a range. Without
-            # this, an out-of-range entry_price (e.g. 1.7) was silently skipped at
-            # run time with an ENTRY_PRICE_OUT_OF_RANGE warning instead of failing
-            # pre-flight, so the MCP surface reported it as an opaque engine error
-            # (MCP error-recovery eval, 2026-06-06).
+            # spec requirement nor the dataset column declares a range.
+            # The contract codifies this as the PM domain's "entry_price_col" fill
+            # reference with no static value_range (the range is applied here as a
+            # domain rule when no explicit range is declared).
+            # Without this, an out-of-range entry_price (e.g. 1.7) was silently
+            # skipped at run time with an ENTRY_PRICE_OUT_OF_RANGE warning instead
+            # of failing pre-flight (MCP error-recovery eval, 2026-06-06).
             if (
                 req.semantic_role == "entry_price"
                 and effective_range is None
@@ -177,6 +214,7 @@ def validate_dataset(dataset: EvidenceDataset, spec: EvidenceSpec) -> tuple[Vali
                 )
 
         # Lookahead invariant: decision_time < resolution_time strictly
+        # Contract: time_model="event_resolution" → decision must precede resolution.
         if "decision_time" in lookup and "resolution_time" in lookup:
             dec = row.get(lookup["decision_time"])
             res = row.get(lookup["resolution_time"])
@@ -190,6 +228,7 @@ def validate_dataset(dataset: EvidenceDataset, spec: EvidenceSpec) -> tuple[Vali
                     )
 
         # Monotonicity: no duplicate (market_link, decision_time) pairs
+        # Contract: resolution_semantics="binary_payout" → each market×decision is unique.
         if "market_link" in lookup and "decision_time" in lookup:
             mkt = row.get(lookup["market_link"])
             dec = row.get(lookup["decision_time"])

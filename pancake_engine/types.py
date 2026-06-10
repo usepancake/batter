@@ -24,6 +24,7 @@ __all__ = [
     "EvidenceSchema",
     "EvidenceDataset",
     "EvidenceSizing",
+    "FillModelRef",
     "EvidenceCosts",
     "EvidenceStrategy",
     "EvidenceColumnRequirement",
@@ -84,6 +85,21 @@ class EvidenceSizing(BaseModel):
     value: float
 
 
+class FillModelRef(BaseModel):
+    """A reference to a named, versioned fill model in the engine registry.
+
+    Spec field: ``costs.fill_model`` (optional; None → static_bps@1 default).
+    Hash policy: when present, this dict is included in the serialized spec →
+    compiled_spec_hash → result_hash differs from the omitted-field path.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    version: int
+    params: dict[str, Any] = Field(default_factory=dict)
+
+
 class EvidenceCosts(BaseModel):
     """Cost block with non-negativity validators.
 
@@ -96,6 +112,10 @@ class EvidenceCosts(BaseModel):
 
     slippage_bps: float
     fee_bps: float
+    # 0.9.0 Wave 2: optional fill model reference.
+    # None default + exclude_none serialization → specs without it hash identically
+    # to pre-0.9.0 specs (byte-identical constraint).
+    fill_model: Optional[FillModelRef] = None
 
     @field_validator("slippage_bps")
     @classmethod

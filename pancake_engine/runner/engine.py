@@ -445,8 +445,18 @@ def _process_decision(
         ))
         return
 
-    # Slippage: multiplicative bps
-    fill_price = entry_price * (1 + compiled.slippage_bps / BPS_DIVISOR)
+    # Fill model: delegates to the compiled fill model (default: static_bps@1).
+    # static_bps@1 reproduces the original inline math bit-for-bit.
+    entry_fill = compiled.fill_model.apply_entry(
+        quote=entry_price,
+        notional=sizing.notional,
+        slippage_bps=compiled.slippage_bps,
+        fee_bps=compiled.fee_bps,
+    )
+    fill_price = entry_fill.fill_price
+    fee = entry_fill.fee
+    shares = entry_fill.shares
+
     if not (0 < fill_price < 1):
         warnings.append(Warning(
             code=WarningCode.FILL_PRICE_OUT_OF_RANGE,
@@ -461,11 +471,6 @@ def _process_decision(
             },
         ))
         return
-
-    # Fees + shares
-    fee = sizing.notional * (compiled.fee_bps / BPS_DIVISOR)
-    investable = sizing.notional - fee
-    shares = investable / fill_price
 
     position = Position(
         id=event.source_row_index,
