@@ -37,6 +37,7 @@ from .result import (
     MonthlyReturn,
 )
 from .runner import (
+    BatchResult,
     Fill,
     FillRejection,
     MarketBar,
@@ -47,8 +48,10 @@ from .runner import (
     TickPosition,
     TickRequest,
     TickResponse,
+    TrialLedger,
     VerificationBoundary,
     run_backtest,
+    run_many,
     tick,
 )
 from .pbo import PBOResult, run_pbo_analysis
@@ -105,6 +108,10 @@ __all__ = [
     "FoldDefinition",
     "AggregateMetrics",
     "run_walkforward",
+    # Wave D: run_many + TrialLedger + BatchResult
+    "run_many",
+    "TrialLedger",
+    "BatchResult",
     # ADR-0035 paper /tick surface
     "tick",
     "SimFillRouter",
