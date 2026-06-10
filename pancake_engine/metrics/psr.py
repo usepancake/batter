@@ -95,8 +95,19 @@ def _phi_dec(z: "Decimal") -> "Decimal":
 def _phi(z: float) -> float:
     """Standard normal CDF, byte-identical across platforms (see module note).
 
-    |z| ≥ 11 → exactly 0.0/1.0 (the true tail mass ~2e-28 is far below half an
-    ULP of 1.0, so the clamped value IS the correctly rounded float64).
+    |z| ≥ 11 is clamped symmetrically to 0.0 / 1.0 — a deliberate CONVENTION,
+    not a claim that both bounds are the correctly-rounded float64:
+
+    - Upper tail (z ≥ 11): Φ(11) ≈ 1 − 2e-28. The distance to 1.0 is ~2e-28,
+      which is far below half an ULP of 1.0 (≈ 1.1e-16), so 1.0 IS the
+      correctly-rounded value here.
+    - Lower tail (z ≤ −11): Φ(−11) ≈ 2e-28. float64 CAN represent values as
+      small as ~6.6e-31 (the minimum positive subnormal), so 0.0 is NOT the
+      correctly-rounded result — the true value is representable. We return 0.0
+      anyway for SYMMETRY with the upper bound: PSR values below ~2e-28 are
+      statistically indistinguishable from zero in any practical context, and a
+      symmetric clamp keeps the contract simple. This is a shipped, hashed
+      convention; behaviour will not change.
     """
     if math.isnan(z):
         raise ValueError("_phi domain error: z is NaN")

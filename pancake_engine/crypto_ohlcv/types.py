@@ -199,6 +199,7 @@ class CryptoOhlcvStrategy(BaseModel):
     entry: Condition
     exit: Condition
     sizing: OhlcvSizing
+    paper_guard: dict | None = None  # same guard schema as PM tick; None = disabled
 
     @model_validator(mode="after")
     def _refs_resolve(self) -> CryptoOhlcvStrategy:
