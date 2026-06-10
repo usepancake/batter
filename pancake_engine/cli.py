@@ -1,6 +1,7 @@
 """Pancake Engine 0.3 CLI.
 
 PR-1 subcommands: ``hash`` (PR-0), ``validate``, ``run``.
+0.9.0 adds: ``verify``.
 
 Engine 0.3 is correctness-first, not TS parity. Known TS divergences are documented
 in docs/math-audit-0.4.md.
@@ -11,14 +12,17 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import urllib.error
+import urllib.request
 from typing import Optional
 
 from .__version__ import ENGINE, ENGINE_VERSION
 from .config import BacktestConfig, WalkforwardConfig
 from .hash import sha256_canonical
 from .io.dump import dump_result
-from .io.load import load_dataset, load_json, load_spec
+from .io.load import load_dataset, load_json, load_spec, parse_json
 from .runner import run_backtest
+from .types import EvidenceDataset, EvidenceSpec
 from .validate import validate_dataset, validate_spec
 from .walkforward import run_walkforward
 
@@ -134,6 +138,218 @@ def cmd_walkforward(args: argparse.Namespace) -> int:
     return 0 if result.validation.ok else 1
 
 
+def _extract_expected_hash(bundle: dict) -> "str | None":
+    """Sniff both bundle shapes and return the expected result_hash string, or None."""
+    # regen-style: top-level string
+    if isinstance(bundle.get("expected_result_hash"), str):
+        return bundle["expected_result_hash"]
+    # fixture-style: {expected: {result_hash: ...}}
+    expected = bundle.get("expected")
+    if isinstance(expected, dict) and isinstance(expected.get("result_hash"), str):
+        return expected["result_hash"]
+    return None
+
+
+def _sniff_engine_version(bundle: dict) -> "str | None":
+    """Return a declared engine_version from common bundle locations, or None."""
+    # Top level
+    if isinstance(bundle.get("engine_version"), str):
+        return bundle["engine_version"]
+    # Under _fixture_meta
+    meta = bundle.get("_fixture_meta")
+    if isinstance(meta, dict) and isinstance(meta.get("engine_version"), str):
+        return meta["engine_version"]
+    # Under expected block
+    expected = bundle.get("expected")
+    if isinstance(expected, dict) and isinstance(expected.get("engine_version"), str):
+        return expected["engine_version"]
+    return None
+
+
+def _dataset_schema_dict_from_dataset(dataset: EvidenceDataset) -> dict:
+    """Round-trip the dataset schema through pydantic to get a canonical-shape dict."""
+    return dataset.dataset_schema.model_dump(exclude_none=True, mode="python")
+
+
+def cmd_verify(args: argparse.Namespace) -> int:
+    """Verify a self-contained backtest bundle.
+
+    Exit codes:
+      0  verified (result_hash matched + dataset integrity confirmed)
+      1  mismatch (result_hash or dataset integrity)
+      2  input/validation error (malformed bundle, missing required fields)
+      3  unverifiable (pointer dataset — rows not inline)
+    """
+    # ------------------------------------------------------------------ load
+    if args.bundle:
+        try:
+            raw = load_json(args.bundle)
+        except Exception as exc:
+            print(f"error: could not load bundle: {exc}", file=sys.stderr)
+            return 2
+    else:
+        # URL mode — stdlib urllib only
+        timeout = getattr(args, "timeout", 30) or 30
+        try:
+            req = urllib.request.Request(
+                args.url,
+                headers={"User-Agent": f"batter/{ENGINE_VERSION}"},
+            )
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                text = resp.read().decode("utf-8")
+            raw = parse_json(text)
+        except urllib.error.URLError as exc:
+            print(f"error: could not fetch URL: {exc}", file=sys.stderr)
+            return 2
+        except Exception as exc:
+            print(f"error: could not load bundle from URL: {exc}", file=sys.stderr)
+            return 2
+
+    if not isinstance(raw, dict):
+        print("error: bundle must be a JSON object", file=sys.stderr)
+        return 2
+
+    # ------------------------------------------------------------------ sniff shape
+    spec_raw = raw.get("spec")
+    dataset_raw = raw.get("dataset")
+    config_raw = raw.get("config")
+
+    if not isinstance(spec_raw, dict):
+        print("error: bundle missing 'spec' object", file=sys.stderr)
+        return 2
+    if not isinstance(dataset_raw, dict):
+        print("error: bundle missing 'dataset' object", file=sys.stderr)
+        return 2
+
+    expected_hash = _extract_expected_hash(raw)
+    if expected_hash is None:
+        print(
+            "error: bundle missing expected_result_hash (regen-style) "
+            "or expected.result_hash (fixture-style)",
+            file=sys.stderr,
+        )
+        return 2
+
+    # ------------------------------------------------------------------ pointer guard
+    storage_mode = dataset_raw.get("storage_mode")
+    rows_inline = dataset_raw.get("rows_inline")
+    if storage_mode == "pointer" or not isinstance(rows_inline, list):
+        print(
+            "error: bundle does not carry rows "
+            "(license-gated replay bundle required)",
+            file=sys.stderr,
+        )
+        return 3
+
+    # ------------------------------------------------------------------ parse types
+    try:
+        spec = EvidenceSpec.model_validate(spec_raw)
+    except Exception as exc:
+        print(f"error: invalid spec: {exc}", file=sys.stderr)
+        return 2
+
+    try:
+        dataset = EvidenceDataset.model_validate(dataset_raw)
+    except Exception as exc:
+        print(f"error: invalid dataset: {exc}", file=sys.stderr)
+        return 2
+
+    # ------------------------------------------------------------------ dataset integrity
+    # Recompute schema_sha256 and rows_sha256 over the bundle's actual data.
+    # A tampered bundle will show declared != recomputed here.
+    schema_dict = _dataset_schema_dict_from_dataset(dataset)
+    recomputed_schema_sha256 = sha256_canonical(schema_dict)
+    recomputed_rows_sha256 = sha256_canonical(rows_inline)
+
+    declared_schema_sha256 = dataset_raw.get("schema_sha256", "")
+    declared_rows_sha256 = dataset_raw.get("rows_sha256", "")
+
+    schema_ok = (recomputed_schema_sha256 == declared_schema_sha256)
+    rows_ok = (recomputed_rows_sha256 == declared_rows_sha256)
+
+    if not schema_ok or not rows_ok:
+        if not schema_ok:
+            print(
+                f"error: schema bytes differ from declaration "
+                f"(declared={declared_schema_sha256[:16]}… "
+                f"recomputed={recomputed_schema_sha256[:16]}…) — "
+                "dataset may have been tampered with",
+                file=sys.stderr,
+            )
+        if not rows_ok:
+            print(
+                f"error: rows bytes differ from declaration "
+                f"(declared={declared_rows_sha256[:16]}… "
+                f"recomputed={recomputed_rows_sha256[:16]}…) — "
+                "dataset may have been tampered with",
+                file=sys.stderr,
+            )
+        out = {
+            "verified": False,
+            "expected": expected_hash,
+            "computed": None,
+            "engine_version": ENGINE_VERSION,
+            "num_trades": None,
+            "integrity_error": True,
+        }
+        print(json.dumps(out))
+        return 1
+
+    # ------------------------------------------------------------------ engine version guard
+    declared_engine_version = _sniff_engine_version(raw)
+    version_mismatch = (
+        declared_engine_version is not None
+        and declared_engine_version != ENGINE_VERSION
+    )
+    if version_mismatch:
+        print(
+            f"warning: bundle declares engine_version={declared_engine_version!r} "
+            f"but current engine is {ENGINE_VERSION!r}; "
+            "result_hash values are only comparable under the same ENGINE_VERSION — "
+            "attempting re-run anyway",
+            file=sys.stderr,
+        )
+
+    # ------------------------------------------------------------------ re-run
+    observation_time: "int | None" = None
+    if isinstance(config_raw, dict):
+        ot = config_raw.get("observation_time")
+        if isinstance(ot, int):
+            observation_time = ot
+
+    config = BacktestConfig(observation_time=observation_time)
+    try:
+        result = run_backtest(spec, dataset, config)
+    except Exception as exc:
+        print(f"error: engine run failed: {exc}", file=sys.stderr)
+        return 3
+
+    computed_hash = result.result_hash
+    verified = (computed_hash == expected_hash)
+
+    # ------------------------------------------------------------------ output
+    human_verdict = "VERIFIED" if verified else "MISMATCH"
+    print(
+        f"{human_verdict}  expected={expected_hash[:16]}…  "
+        f"computed={computed_hash[:16]}…  "
+        f"engine={ENGINE_VERSION}  trades={result.metrics.standard.num_trades}",
+        file=sys.stderr,
+    )
+
+    out: dict = {
+        "verified": verified,
+        "expected": expected_hash,
+        "computed": computed_hash,
+        "engine_version": ENGINE_VERSION,
+        "num_trades": result.metrics.standard.num_trades,
+    }
+    if version_mismatch:
+        out["version_mismatch"] = True
+
+    print(json.dumps(out))
+    return 0 if verified else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="batter",
@@ -169,6 +385,31 @@ def build_parser() -> argparse.ArgumentParser:
                        help="Unix seconds; if omitted, derived from dataset (errors if unresolved rows)")
     p_run.add_argument("--pretty", action="store_true", help="Indent JSON output")
     p_run.set_defaults(func=cmd_run)
+
+    # verify
+    p_ver = sub.add_parser(
+        "verify",
+        help="Verify a self-contained backtest bundle (local file or remote URL)",
+    )
+    g_ver = p_ver.add_mutually_exclusive_group(required=True)
+    g_ver.add_argument(
+        "--bundle",
+        metavar="PATH",
+        help="Path to a self-contained bundle JSON file",
+    )
+    g_ver.add_argument(
+        "--url",
+        metavar="URL",
+        help="URL of a self-contained bundle JSON (stdlib urllib; no new deps)",
+    )
+    p_ver.add_argument(
+        "--timeout",
+        type=int,
+        default=30,
+        metavar="SECONDS",
+        help="HTTP timeout in seconds for --url mode (default: 30)",
+    )
+    p_ver.set_defaults(func=cmd_verify)
 
     # walkforward
     p_wf = sub.add_parser("walkforward", help="Run a frozen-spec walk-forward evaluation")
