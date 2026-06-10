@@ -19,10 +19,17 @@ Execution model (the determinism contract):
     long  → shares = (notional−fee)/entry_fill; cash −= notional;        qty = +shares
     short → shares =  notional/entry_fill;       cash += (notional−fee);  qty = −shares
     pnl   → dir·shares·(exit_fill − entry_fill) − entry_fee − exit_fee   (dir = +1/−1)
+
+Validation path (consistent with PM run_backtest):
+- A failed instrument_id match → ValidationVerdict with one error; returns an
+  empty CryptoOhlcvResult with result_hash="" (never raises for this case).
+- The pydantic validators on CryptoOhlcvSpec + OhlcvDataset catch structural
+  errors at load time; callers should validate before passing.
 """
 
 from __future__ import annotations
 
+from ..validate.verdict import ValidationVerdict
 from ..__version__ import ENGINE, ENGINE_VERSION
 from ..metrics import (
     build_drawdown_curve,
@@ -30,11 +37,15 @@ from ..metrics import (
     compute_standard,
     daily_returns_carry_forward,
 )
-from ..result import DrawdownPoint, EquityPoint
+from ..result import DrawdownPoint, EquityPoint, MetricsStandard
 from .compile import Ctx, compile_crypto_ohlcv_spec
 from .indicators import compute_indicator
 from .result import CryptoOhlcvResult, OhlcvTrade, compute_crypto_result_hash
 from .types import CryptoOhlcvSpec, OhlcvDataset
+
+# Deletion test: this module is the ONLY caller of compute_crypto_result_hash.
+# If that function disappears or is renamed, this import line breaks. There is
+# intentionally no second copy of the hash logic (design §3 "one compute_result_hash").
 
 __all__ = ["run_crypto_ohlcv", "ENGINE_MODE"]
 
@@ -44,11 +55,16 @@ _ERR = "E_CRYPTO_OHLCV_RUN_INVALID"
 
 
 def run_crypto_ohlcv(spec: CryptoOhlcvSpec, dataset: OhlcvDataset) -> CryptoOhlcvResult:
+    # Validation gate — consistent with PM run_backtest (blocked → empty, result_hash="").
+    verdict = ValidationVerdict()
     if spec.instrument_id != dataset.instrument_id:
-        raise ValueError(
-            f"{_ERR}: spec.instrument_id {spec.instrument_id!r} != "
-            f"dataset.instrument_id {dataset.instrument_id!r}"
+        verdict.add_error(
+            _ERR,
+            f"spec.instrument_id {spec.instrument_id!r} != "
+            f"dataset.instrument_id {dataset.instrument_id!r}",
         )
+    if not verdict.ok:
+        return _empty_crypto_result(spec, verdict)
 
     compiled = compile_crypto_ohlcv_spec(spec)
     bars = dataset.bars
@@ -216,6 +232,7 @@ def run_crypto_ohlcv(spec: CryptoOhlcvSpec, dataset: OhlcvDataset) -> CryptoOhlc
         monthly_returns=monthly_returns,
         trades=trades,
         warnings=warnings,
+        validation=verdict,
         meta={
             "instrument_id": spec.instrument_id,
             "bar_count": n,
@@ -230,3 +247,37 @@ def _dataset_hash(dataset: OhlcvDataset) -> str:
     from ..hash import sha256_canonical
 
     return sha256_canonical(dataset.model_dump(by_alias=True, exclude_none=True, mode="python"))
+
+
+def _empty_crypto_result(spec: CryptoOhlcvSpec, verdict: ValidationVerdict) -> CryptoOhlcvResult:
+    """Return a zero-value result for the validation-failed (blocked) path.
+
+    result_hash is "" — the empty string signals "no valid receipt" to callers,
+    consistent with the PM run_backtest blocked path.
+    """
+    return CryptoOhlcvResult(
+        engine=ENGINE,
+        engine_version=ENGINE_VERSION,
+        engine_mode=ENGINE_MODE,
+        compiled_spec_hash="",
+        dataset_hash="",
+        result_hash="",
+        metrics=MetricsStandard(
+            total_return=0.0,
+            cagr=0.0,
+            sharpe=None,
+            sortino=None,
+            max_drawdown=0.0,
+            win_rate=None,
+            num_trades=0,
+            starting_capital=float(spec.starting_capital),
+            ending_capital=float(spec.starting_capital),
+        ),
+        equity_curve=[],
+        drawdown_curve=[],
+        monthly_returns=[],
+        trades=[],
+        warnings=[],
+        validation=verdict,
+        meta={"blocked": True},
+    )
