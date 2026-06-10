@@ -5,6 +5,7 @@ single-bar paper step (ADR-0035), reusing the same fill/ledger primitives.
 """
 
 from .engine import run_backtest
+from .batch import run_many, TrialLedger, BatchResult
 from .fill import Fill, FillRejection, SimFillRouter
 from .tick import (
     CryptoTickBar,
@@ -25,6 +26,9 @@ from .tick import (
 
 __all__ = [
     "run_backtest",
+    "run_many",
+    "TrialLedger",
+    "BatchResult",
     "tick",
     "tick_crypto",
     "SimFillRouter",
