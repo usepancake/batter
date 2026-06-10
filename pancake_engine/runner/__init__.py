@@ -7,6 +7,10 @@ single-bar paper step (ADR-0035), reusing the same fill/ledger primitives.
 from .engine import run_backtest
 from .fill import Fill, FillRejection, SimFillRouter
 from .tick import (
+    CryptoTickBar,
+    CryptoTickPosition,
+    CryptoTickRequest,
+    CryptoTickResponse,
     MarketBar,
     PaperEvent,
     ResolutionMarker,
@@ -16,11 +20,13 @@ from .tick import (
     TickResponse,
     VerificationBoundary,
     tick,
+    tick_crypto,
 )
 
 __all__ = [
     "run_backtest",
     "tick",
+    "tick_crypto",
     "SimFillRouter",
     "Fill",
     "FillRejection",
@@ -32,4 +38,8 @@ __all__ = [
     "TickRequest",
     "TickResponse",
     "TickError",
+    "CryptoTickBar",
+    "CryptoTickPosition",
+    "CryptoTickRequest",
+    "CryptoTickResponse",
 ]
