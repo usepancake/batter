@@ -34,6 +34,9 @@ class SensitivityResult:
     engine_version: str
     # Sharpe per cell: sharpe_grid[entry_idx][sizing_idx]; None where undefined.
     sharpe_grid: list[list[Optional[float]]]
+    # 0.9: total_return per cell (additive, NOT a receipt → no result_hash impact).
+    # Same shape as sharpe_grid; None where Sharpe is also None.
+    total_return_grid: list[list[Optional[float]]]
     entry_thresholds: list[float]
     sizing_fractions: list[float]
     base_entry_idx: int
@@ -62,6 +65,7 @@ class SensitivityResult:
             "engine": self.engine,
             "engine_version": self.engine_version,
             "sharpe_grid": self.sharpe_grid,
+            "total_return_grid": self.total_return_grid,
             "entry_thresholds": self.entry_thresholds,
             "sizing_fractions": self.sizing_fractions,
             "base_entry_idx": self.base_entry_idx,
@@ -172,11 +176,13 @@ def run_sensitivity_analysis(
         )
 
     sharpe_grid: list[list[Optional[float]]] = []
+    total_return_grid: list[list[Optional[float]]] = []
     cell_p_values: list[float] = []  # one-sided p = 1 - PSR per defined cell (for FDR)
     base_result = None
     for ei, e in enumerate(entry_thresholds):
         new_entry = {**entry, "when": _set_gte(entry_when, e)}
-        row: list[Optional[float]] = []
+        sharpe_row: list[Optional[float]] = []
+        total_return_row: list[Optional[float]] = []
         for si, s in enumerate(sizing_fractions):
             new_sizing = spec.strategy.sizing.model_copy(update={"value": s})
             new_strategy = spec.strategy.model_copy(
@@ -192,13 +198,23 @@ def run_sensitivity_analysis(
                 config,
                 with_inference=False,
             )
-            row.append(res.metrics.standard.sharpe)
+            cell_sharpe = res.metrics.standard.sharpe
+            sharpe_row.append(cell_sharpe)
+            # 0.9: collect total_return for the heatmap surface.
+            # Use None only when no trades fired (zero-trade cell → total_return=0 is meaningless).
+            # total_return is always defined even when Sharpe is None (degenerate daily returns).
+            total_return_row.append(
+                res.metrics.standard.total_return
+                if res.metrics.standard.num_trades > 0
+                else None
+            )
             cell_psr = probabilistic_sharpe_ratio(daily_returns_carry_forward(res.equity_curve))
             if cell_psr is not None:
                 cell_p_values.append(1.0 - cell_psr)
             if ei == base_entry_idx and si == base_sizing_idx:
                 base_result = res
-        sharpe_grid.append(row)
+        sharpe_grid.append(sharpe_row)
+        total_return_grid.append(total_return_row)
 
     if base_result is None:  # base indices fell outside the grid (clamped) — run it directly
         # Only the base cell's trades/equity feed the MC fan; its CIs are unused.
@@ -262,6 +278,7 @@ def run_sensitivity_analysis(
         engine=ENGINE,
         engine_version=ENGINE_VERSION,
         sharpe_grid=sharpe_grid,
+        total_return_grid=total_return_grid,
         entry_thresholds=entry_thresholds,
         sizing_fractions=sizing_fractions,
         base_entry_idx=base_entry_idx,
