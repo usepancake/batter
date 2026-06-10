@@ -130,9 +130,26 @@ breaking change to the receipt contract.
   - ENGINE_VERSION 0.8.1 -> 0.9.0; every existing hash changes; published
     receipts are re-run transparently (per-receipt old_hash -> new_hash correction
     record), never silently version-pinned. (policy B; 2026-06-10)
+
+0.9.1 (paper + replay surfaces — ADDITIVE, result_hash UNCHANGED):
+  - book_replay@1 PM fill model: VWAP walk of captured L2 ask levels
+    (ADR-0041 slices via run_backtest(book_dataset=...)); slice-missing /
+    depth-insufficient BLOCK (no silent fallback); the book dataset id+shas
+    pin into result_hash ONLY for runs that used replay — every existing
+    hash is byte-identical (asserted by test). ttr_fill_adjustment is
+    declared-but-reserved and hard-rejects.
+  - FillBlocked joins the public FillModel Protocol (EntryFill | FillBlocked).
+  - SimFillRouter resolves fill models from the registry — paper and backtest
+    share one fill implementation (live/paper parity by construction).
+  - tick_crypto(): single-bar crypto paper evaluation; bar_close fill
+    convention (deliberate, documented divergence from backtest
+    next-bar-open; surfaced as paper_fill_convention on every response).
+  - _phi lower-tail docstring: |z|>=11 -> 0.0 stated as the deliberate
+    symmetric convention (Haiku-swarm finding; zero behavior change).
+  - ENGINE_VERSION stays 0.9.0 — no receipt break, no corrections.
 """
 
-__version__ = "0.9.0"
+__version__ = "0.9.1"
 ENGINE = "batter"
 # 0.9.0 is a DELIBERATE result_hash break: MetricsPM gains calibration_ece (hashed).
 ENGINE_VERSION = "0.9.0"
