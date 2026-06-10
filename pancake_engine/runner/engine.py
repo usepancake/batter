@@ -17,6 +17,7 @@ from typing import Any, Optional
 
 from ..__version__ import ENGINE, ENGINE_MODE, ENGINE_VERSION
 from ..compile import CompiledSpec, compile_spec
+from ..fills.registry import FillBlocked
 from ..compile.condition import Condition, extract_referenced_columns
 from ..metrics.cost_sensitivity import cost_sensitivity
 from ..metrics.psr import deflated_sharpe_ratio
@@ -63,6 +64,7 @@ def run_backtest(
     with_inference: bool = True,
     _entry_override: Optional[Condition] = None,
     trial_history: Optional[TrialHistory] = None,
+    book_dataset: Optional[EvidenceDataset] = None,
 ) -> BacktestResult:
     """Run an EvidenceSpec against an EvidenceDataset.
 
@@ -96,6 +98,19 @@ def run_backtest(
     dataset_verdict, role_lookup = validate_dataset(dataset, spec)
     verdict.merge(dataset_verdict)
 
+    # book_dataset required when fill_model is book_replay@1.
+    _using_book_replay = (
+        spec.costs.fill_model is not None
+        and spec.costs.fill_model.name == "book_replay"
+        and spec.costs.fill_model.version == 1
+    )
+    if _using_book_replay and book_dataset is None:
+        verdict.add_error(
+            "E_EVIDENCE_BOOK_DATASET_REQUIRED",
+            "fill_model book_replay@1 requires book_dataset to be supplied to run_backtest; "
+            "pass book_dataset=<EvidenceDataset> with L2 snapshot rows.",
+        )
+
     if not verdict.ok:
         return _empty_result(spec, dataset, config, verdict, blocked=True)
 
@@ -103,6 +118,17 @@ def run_backtest(
     compiled = compile_spec(spec)
     if _entry_override is not None:
         compiled = dataclasses.replace(compiled, entry_condition=_entry_override)
+
+    # 2b. Extract book_slices from book_dataset (book_replay@1 only).
+    _book_slices: Optional[list[dict[str, Any]]] = None
+    _book_dataset_id: Optional[str] = None
+    _book_rows_sha256: Optional[str] = None
+    _book_schema_sha256: Optional[str] = None
+    if _using_book_replay and book_dataset is not None:
+        _book_slices = book_dataset.rows_inline or []
+        _book_dataset_id = book_dataset.id
+        _book_rows_sha256 = sha256_canonical(_book_slices)
+        _book_schema_sha256 = sha256_canonical(_dataset_schema_dict(book_dataset))
 
     # 3. Resolve observation_time
     warnings: list[Warning] = []
@@ -195,7 +221,7 @@ def run_backtest(
             continue
         for event in group_iter:
             if event.kind == EventKind.DECISION:
-                _process_decision(event, ledger, compiled, warnings)
+                _process_decision(event, ledger, compiled, warnings, book_slices=_book_slices)
             else:  # RESOLUTION
                 _process_resolution(event, ledger, compiled, warnings)
         eq = ledger.equity()
@@ -327,6 +353,9 @@ def run_backtest(
         trades=ledger.trades,
         warnings=warnings,
         future_rows_count=future_rows_count,
+        book_dataset_id=_book_dataset_id,
+        book_rows_sha256=_book_rows_sha256,
+        book_schema_sha256=_book_schema_sha256,
     )
 
     # 0.8: transaction-cost sensitivity (additive, NOT hashed). Gated with the rest
@@ -393,6 +422,7 @@ def run_backtest(
             spec, dataset, config,
             with_inference=False,
             _entry_override=lambda _row: True,
+            book_dataset=book_dataset,
         )
         bs = base_res.metrics.standard
         baseline_block = {
@@ -439,6 +469,9 @@ def run_backtest(
         baseline=baseline_block,
         deflated=deflated_block,
         calibration_bins=calibration_bins_block,
+        book_dataset_id=_book_dataset_id,
+        book_rows_sha256=_book_rows_sha256,
+        book_schema_sha256=_book_schema_sha256,
     )
 
 
@@ -452,6 +485,8 @@ def _process_decision(
     ledger: Ledger,
     compiled: CompiledSpec,
     warnings: list[Warning],
+    *,
+    book_slices: Optional[list[dict[str, Any]]] = None,
 ) -> None:
     row = event.row
     if not compiled.entry_condition(row):
@@ -501,13 +536,36 @@ def _process_decision(
         return
 
     # Fill model: delegates to the compiled fill model (default: static_bps@1).
-    # static_bps@1 reproduces the original inline math bit-for-bit.
-    entry_fill = compiled.fill_model.apply_entry(
+    # book_replay@1 receives market_link + decision_time + book_slices for L2 walk.
+    # static_bps@1 / next_bar_open@1 ignore those extra kwargs.
+    market_link_col = _role_col(compiled, "market_link")
+    dec_col = _role_col(compiled, "decision_time")
+    entry_fill_or_blocked = compiled.fill_model.apply_entry(
         quote=entry_price,
         notional=sizing.notional,
         slippage_bps=compiled.slippage_bps,
         fee_bps=compiled.fee_bps,
+        market_link=str(row.get(market_link_col, "")),
+        decision_time=int(row.get(dec_col, event.time)),
+        book_slices=book_slices,
     )
+
+    # book_replay@1 returns a FillBlocked sentinel on SLICE_MISSING or DEPTH_INSUFFICIENT.
+    if isinstance(entry_fill_or_blocked, FillBlocked):
+        blocked = entry_fill_or_blocked
+        code = WarningCode.BOOK_SLICE_MISSING if blocked.reason == "BOOK_SLICE_MISSING" else WarningCode.BOOK_DEPTH_INSUFFICIENT
+        warnings.append(Warning(
+            code=code,
+            severity=Severity.WARN,
+            message=(
+                f"row {event.source_row_index}: book_replay@1 blocked — {blocked.reason}; "
+                "row skipped (no silent fallback)."
+            ),
+            context={"row_index": event.source_row_index, **blocked.context},
+        ))
+        return
+
+    entry_fill = entry_fill_or_blocked
     fill_price = entry_fill.fill_price
     fee = entry_fill.fee
     shares = entry_fill.shares

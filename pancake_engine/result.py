@@ -150,10 +150,19 @@ class BacktestResult:
     # Shape: {"bins": [{"bin_low", "bin_high", "n", "confidence", "accuracy"}, …], "n_trades": int}
     calibration_bins: dict[str, Any] | None = None
 
+    # 0.9.x Wave A: book_replay@1 provenance fields.  Set only when the spec uses
+    # fill_model book_replay@1 AND a book_dataset was supplied to run_backtest.
+    # These are included in result_hash ONLY when book replay ran (conditional payload
+    # key "book" in compute_result_hash) — specs that don't use book_replay hash
+    # byte-identically to pre-Wave-A receipts.
+    book_dataset_id: str | None = None
+    book_rows_sha256: str | None = None
+    book_schema_sha256: str | None = None
+
     # --- serialization ---
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        d: dict[str, Any] = {
             "engine": self.engine,
             "engine_version": self.engine_version,
             "engine_mode": self.engine_mode,
@@ -180,6 +189,11 @@ class BacktestResult:
             "deflated": self.deflated,
             "calibration_bins": self.calibration_bins,
         }
+        if self.book_dataset_id is not None:
+            d["book_dataset_id"] = self.book_dataset_id
+            d["book_rows_sha256"] = self.book_rows_sha256
+            d["book_schema_sha256"] = self.book_schema_sha256
+        return d
 
 
 def compute_result_hash(
@@ -198,8 +212,19 @@ def compute_result_hash(
     trades: list[Any],
     warnings: list[Warning],
     future_rows_count: int,
+    book_dataset_id: str | None = None,
+    book_rows_sha256: str | None = None,
+    book_schema_sha256: str | None = None,
 ) -> str:
-    """Compute ``result_hash`` over the hash-policy fields only."""
+    """Compute ``result_hash`` over the hash-policy fields only.
+
+    Hash-conditionality for book_replay@1 (0.9.x Wave A):
+    When ``book_dataset_id`` is supplied (i.e. book_replay ran), the payload
+    gains a ``"book"`` key containing the three book provenance identifiers.
+    When absent (all other fill models), the ``"book"`` key is not present and
+    the payload is byte-identical to pre-Wave-A receipts — no hash break for
+    existing specs.
+    """
     payload: dict[str, Any] = {
         "engine": engine,
         "engine_version": engine_version,
@@ -219,4 +244,11 @@ def compute_result_hash(
         "warnings": [w.hashable_pair() for w in warnings],
         "validation": {"future_rows_count": future_rows_count},
     }
+    # Absent key for all non-book-replay specs keeps existing hashes byte-identical.
+    if book_dataset_id is not None:
+        payload["book"] = {
+            "book_dataset_id": book_dataset_id,
+            "book_rows_sha256": book_rows_sha256,
+            "book_schema_sha256": book_schema_sha256,
+        }
     return sha256_canonical(payload)
