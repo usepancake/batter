@@ -1,4 +1,4 @@
-"""DatasetContract Seam (Wave 2 + Wave 3, 0.9.0).
+"""DatasetContract Seam (Wave 2 + Wave 3 + Wave 4, 0.9.0).
 
 Design doc: docs/design-0.9.0-contracts-and-fills.md §1.
 
@@ -8,7 +8,7 @@ previously implicit / ad-hoc in validate/dataset.py.
 
 Wave 2 ships: PredictionMarketContract (PM domain).
 Wave 3 ships: CryptoOHLCVContract (bar-series domain; ADR-0043).
-Wave 4: MacroSignalContract (future).
+Wave 4 ships: MacroSignalContract (reference_series domain).
 
 The refactor is PURE: validate_dataset's observable behavior (error codes,
 messages, warning emission, role_lookup) does not change — the existing
@@ -24,7 +24,9 @@ __all__ = [
     "DatasetContract",
     "PredictionMarketContract",
     "CryptoOHLCVContract",
+    "MacroSignalContract",
     "contract_for_spec_family",
+    "contract_for_domain",
 ]
 
 
@@ -65,8 +67,8 @@ class DatasetContract:
     resolution_semantics: str | None
     """PM: 'binary_payout'; bar-series: None."""
 
-    fill_reference: str
-    """PM: 'entry_price_col'; crypto: 'next_bar_open'."""
+    fill_reference: str | None
+    """PM: 'entry_price_col'; crypto: 'next_bar_open'; macro: None (no fills)."""
 
 
 # ---------------------------------------------------------------------------
@@ -117,12 +119,60 @@ CryptoOHLCVContract = DatasetContract(
 
 
 # ---------------------------------------------------------------------------
-# Registry: spec_family → DatasetContract
+# MacroSignalContract — FEATURE-PROVIDER domain (Wave 4)
+#
+# Macro datasets (e.g. FRED reference series) are validated against this
+# contract via validate_reference_dataset in pancake_engine/validate/macro.py.
+#
+# time_model = "reference_series":  a new value meaning "this domain has no
+# engine runner".  Macro datasets are joined into evidence rows UPSTREAM by
+# the platform; the engine treats the resulting columns as ordinary declared
+# features in PM EvidenceSpecs.  No MacroSignalContract runner will ever be
+# added to the engine dispatch loop — the Seam is designed so that joining
+# happens before the spec reaches the engine.
+#
+# Platform flow example:
+#   1. Ingest FRED series → reference_observations rows (validated here).
+#   2. Platform left-joins reference rows into evidence rows on
+#      observation_time ≤ decision_time, per series.
+#   3. PM EvidenceSpec declares the joined column as a feature; the engine
+#      evaluates it identically to any other feature column.
+# ---------------------------------------------------------------------------
+
+MacroSignalContract = DatasetContract(
+    domain="macro_signal",
+    required_roles=(
+        # observation_time: epoch seconds (int).  Must be monotone
+        # non-decreasing per series_id.  No duplicates per (series_id,
+        # observation_time) — the data point at a given timestamp is unique.
+        RoleSpec(name="observation_time", col_type="int"),
+        # series_id: string key identifying the time series (e.g. "UNRATE").
+        RoleSpec(name="series_id", col_type="string"),
+        # value: the observed scalar (finite float or int).  No range
+        # constraint — macro series can be any real number (e.g. unemployment
+        # rates, real interest rates, spreads, price indices).
+        RoleSpec(name="value", col_type="number"),
+    ),
+    time_model="reference_series",
+    resolution_semantics=None,   # no binary payout; this is a feature source
+    fill_reference=None,         # macro datasets are never traded directly
+)
+
+
+# ---------------------------------------------------------------------------
+# Registry: spec_family → DatasetContract  (PM + crypto, keyed by spec_family)
+# Domain registry: domain string → DatasetContract  (all domains)
 # ---------------------------------------------------------------------------
 
 _REGISTRY: dict[str, DatasetContract] = {
     "pancake-evidence-spec": PredictionMarketContract,
     "crypto-ohlcv-spec": CryptoOHLCVContract,
+}
+
+_DOMAIN_REGISTRY: dict[str, DatasetContract] = {
+    "prediction_market": PredictionMarketContract,
+    "crypto_ohlcv": CryptoOHLCVContract,
+    "macro_signal": MacroSignalContract,
 }
 
 
@@ -140,6 +190,23 @@ def contract_for_spec_family(spec_family: str) -> DatasetContract:
     if contract is None:
         raise KeyError(
             f"No DatasetContract registered for spec_family={spec_family!r}. "
+            "Register a contract in pancake_engine/contracts.py."
+        )
+    return contract
+
+
+def contract_for_domain(domain: str) -> DatasetContract:
+    """Return the DatasetContract for an explicit domain string.
+
+    Used by validate_reference_dataset and any caller that routes by domain
+    rather than spec_family (e.g. the macro reference-data validation path,
+    which has no spec_family because macro datasets are not directly run).
+    Raises KeyError for unknown domains.
+    """
+    contract = _DOMAIN_REGISTRY.get(domain)
+    if contract is None:
+        raise KeyError(
+            f"No DatasetContract registered for domain={domain!r}. "
             "Register a contract in pancake_engine/contracts.py."
         )
     return contract
