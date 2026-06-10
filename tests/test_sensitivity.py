@@ -95,6 +95,32 @@ def test_deterministic_same_seed():
     assert a.to_dict() == b.to_dict()
 
 
+def test_sweep_emits_dsr_and_fdr():
+    # DSR/FDR need defined Sharpes → daily returns must span multiple UTC days
+    # (the sub-daily _spec_and_dataset gives degenerate daily returns → all None).
+    day = 86_400
+    outcomes = [1, 0, 1, 0, 1, 0, 1, 1, 0, 1]
+    alphas = [3.0, 3.5, 2.6, 4.0, 2.8, 3.2, 3.1, 2.9, 3.7, 2.7]
+    spec = make_spec(side="YES", sizing_value=0.1, entry_when={"feature": "alpha", "gte": 2.5})
+    dataset = make_dataset([
+        row(mkt=f"m/{i}", dec_ts=i * 5 * day, res_ts=i * 5 * day + 3 * day,
+            price=0.5, outcome=outcomes[i], alpha=alphas[i], target=1)
+        for i in range(10)
+    ])
+    res = run_sensitivity_analysis(spec, dataset, n_mc=200, mc_seed=0)
+    # DSR: probability in [0,1] (or None if <2 defined cells)
+    assert res.deflated_sharpe is None or 0.0 <= res.deflated_sharpe <= 1.0
+    # FDR over the per-cell one-sided p-values
+    assert res.fdr_method == "by"
+    assert res.fdr_n_tested >= 1
+    assert 0 <= res.fdr_n_significant <= res.fdr_n_tested
+    if res.fdr_min_raw_p is not None:
+        assert 0.0 <= res.fdr_min_raw_p <= 1.0
+        assert res.fdr_min_adjusted_p >= res.fdr_min_raw_p - 1e-12  # BY adjusts upward
+    d = res.to_dict()
+    assert "deflated_sharpe" in d and "fdr_n_significant" in d and "fdr_min_adjusted_p" in d
+
+
 def test_n_mc_zero_raises():
     # n_mc=0 with >=1 trade used to reach np.percentile on an empty array →
     # IndexError. Guard it with a clear ValueError instead.

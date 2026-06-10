@@ -19,6 +19,9 @@ import numpy as np
 
 from .__version__ import ENGINE, ENGINE_VERSION
 from .config import BacktestConfig
+from .metrics.fdr import fdr_control
+from .metrics.psr import deflated_sharpe_ratio, probabilistic_sharpe_ratio
+from .metrics.series import daily_returns_carry_forward
 from .runner.engine import run_backtest
 from .types import EvidenceDataset, EvidenceSpec
 
@@ -42,6 +45,17 @@ class SensitivityResult:
     mc_n: int
     mc_seed: int
     base_num_trades: int
+    # 0.8 (additive; sensitivity output is NOT a receipt → no result_hash impact):
+    # multiple-testing-aware credibility over the sweep. deflated_sharpe is the DSR of
+    # the base cell against the expected MAX Sharpe across all swept configs; the fdr_*
+    # fields are Benjamini-Yekutieli FDR control over the per-cell one-sided p-values
+    # (p = 1 - PSR), answering "how many of the swept configs survive multiple testing".
+    deflated_sharpe: Optional[float] = None
+    fdr_method: str = "by"
+    fdr_n_tested: int = 0
+    fdr_n_significant: int = 0
+    fdr_min_raw_p: Optional[float] = None
+    fdr_min_adjusted_p: Optional[float] = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -56,6 +70,12 @@ class SensitivityResult:
             "mc_n": self.mc_n,
             "mc_seed": self.mc_seed,
             "base_num_trades": self.base_num_trades,
+            "deflated_sharpe": self.deflated_sharpe,
+            "fdr_method": self.fdr_method,
+            "fdr_n_tested": self.fdr_n_tested,
+            "fdr_n_significant": self.fdr_n_significant,
+            "fdr_min_raw_p": self.fdr_min_raw_p,
+            "fdr_min_adjusted_p": self.fdr_min_adjusted_p,
         }
 
 
@@ -152,6 +172,7 @@ def run_sensitivity_analysis(
         )
 
     sharpe_grid: list[list[Optional[float]]] = []
+    cell_p_values: list[float] = []  # one-sided p = 1 - PSR per defined cell (for FDR)
     base_result = None
     for ei, e in enumerate(entry_thresholds):
         new_entry = {**entry, "when": _set_gte(entry_when, e)}
@@ -163,7 +184,8 @@ def run_sensitivity_analysis(
             )
             # with_inference=False: the sweep only reads .sharpe; skipping the
             # per-cell bootstrap CIs + permutation test is the ~50× speedup that
-            # keeps the whole sweep inside the request budget (ADR-0046).
+            # keeps the whole sweep inside the request budget (ADR-0046). PSR below
+            # is O(n) moments only (no resampling), so it preserves that speedup.
             res = run_backtest(
                 spec.model_copy(update={"strategy": new_strategy}),
                 dataset,
@@ -171,6 +193,9 @@ def run_sensitivity_analysis(
                 with_inference=False,
             )
             row.append(res.metrics.standard.sharpe)
+            cell_psr = probabilistic_sharpe_ratio(daily_returns_carry_forward(res.equity_curve))
+            if cell_psr is not None:
+                cell_p_values.append(1.0 - cell_psr)
             if ei == base_entry_idx and si == base_sizing_idx:
                 base_result = res
         sharpe_grid.append(row)
@@ -222,6 +247,17 @@ def run_sensitivity_analysis(
             {"t": 0.0, "p5": 0.0, "p25": 0.0, "p50": 0.0, "p75": 0.0, "p95": 0.0}
         ]
 
+    # 0.8: deflated Sharpe (base cell vs the sweep's expected-max) + BHY FDR over the
+    # per-cell p-values. Additive — sensitivity carries no result_hash.
+    flat_sharpes = [s for grid_row in sharpe_grid for s in grid_row if s is not None]
+    base_daily = daily_returns_carry_forward(base_result.equity_curve)
+    deflated = (
+        deflated_sharpe_ratio(base_daily, flat_sharpes, sharpes_annualized=True)
+        if len(flat_sharpes) >= 2
+        else None
+    )
+    fdr = fdr_control(cell_p_values, alpha=0.05, method="by") if cell_p_values else None
+
     return SensitivityResult(
         engine=ENGINE,
         engine_version=ENGINE_VERSION,
@@ -234,4 +270,10 @@ def run_sensitivity_analysis(
         mc_n=n_mc,
         mc_seed=mc_seed,
         base_num_trades=base_result.metrics.standard.num_trades,
+        deflated_sharpe=deflated,
+        fdr_method="by",
+        fdr_n_tested=(fdr.n if fdr else 0),
+        fdr_n_significant=(fdr.n_significant if fdr else 0),
+        fdr_min_raw_p=(fdr.min_raw_p if fdr else None),
+        fdr_min_adjusted_p=(fdr.min_adjusted_p if fdr else None),
     )
