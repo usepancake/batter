@@ -27,12 +27,23 @@ Conventions (documented so an independent quant reproduces the number exactly):
   (normal == 3).
 - Every sum uses ``math.fsum`` (correctly rounded) so the result is identical
   across interpreters — PSR enters ``result_hash`` (0.8.0 is a deliberate break).
-- ``Φ`` uses ``math.erf`` (stdlib); no SciPy runtime dependency.
+- ``Φ`` / ``Φ⁻¹`` are computed in 50-digit ``decimal`` (libmpdec) — NOT libm.
+  0.8.0 used ``math.erf``, whose last-ULP rounding differs between glibc and
+  Apple libm: psr diverged by 2 ULP between ubuntu and macOS, breaking
+  cross-platform ``result_hash`` equality (the receipt contract). Hashed values
+  may only come from operations correctly rounded BY SPECIFICATION everywhere;
+  IEEE-754 guarantees that for +,-,*,/,sqrt — and the General Decimal
+  Arithmetic spec guarantees it for ``decimal`` arithmetic, ``sqrt`` and
+  ``exp``. erf is computed by its Maclaurin series at 50 digits with pinned
+  constants; the probit refines an Acklam float seed with Decimal-Newton
+  (quadratic convergence erases the seed's libm ULPs), so the single final
+  float rounding is identical on every platform. (0.8.1 determinism hotfix.)
 """
 
 from __future__ import annotations
 
 import math
+from decimal import Decimal, localcontext
 
 __all__ = [
     "probabilistic_sharpe_ratio",
@@ -44,16 +55,70 @@ __all__ = [
 
 _EULER_MASCHERONI = 0.5772156649015329
 
+# 50-digit pinned constants for the decimal paths (deterministic by construction).
+_PREC = 50
+_D_SQRT2 = Decimal("1.41421356237309504880168872420969807856967187537695")
+_D_2_OVER_SQRTPI = Decimal("1.12837916709551257389615890312154517168810125865800")
+_D_SQRT_2PI = Decimal("2.50662827463100050241576528481104525300698674060994")
 
-def _phi(x: float) -> float:
-    """Standard normal CDF via ``math.erf`` (no SciPy dependency)."""
-    return 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
+
+def _erf_dec(x: "Decimal") -> "Decimal":
+    """erf(x) by Maclaurin series in the CURRENT decimal context (prec=_PREC).
+
+    erf(x) = 2/√π · Σ_{n≥0} (-1)^n x^(2n+1) / (n!·(2n+1)), term recurrence
+    c_{n+1} = c_n·(-x²)/(n+1). At |x| ≤ 8 the alternating series loses ≤ ~28
+    digits to cancellation — prec 50 leaves ≥ 22 good digits, far beyond the
+    17 needed for an exact float64 rounding. All operations are libmpdec
+    (correctly rounded per spec) → byte-identical on every platform.
+    """
+    x2 = x * x
+    c = x
+    s = Decimal(0)
+    n = 0
+    while True:
+        t = c / (2 * n + 1)
+        s += t
+        if abs(t) < Decimal("1e-45") * (abs(s) + Decimal("1e-30")):
+            break
+        n += 1
+        c = c * (-x2) / n
+        if n > 500:  # unreachable for |x| ≤ 8; defensive
+            break
+    return _D_2_OVER_SQRTPI * s
+
+
+def _phi_dec(z: "Decimal") -> "Decimal":
+    """Standard normal CDF in the current decimal context."""
+    return (1 + _erf_dec(z / _D_SQRT2)) / 2
+
+
+def _phi(z: float) -> float:
+    """Standard normal CDF, byte-identical across platforms (see module note).
+
+    |z| ≥ 11 → exactly 0.0/1.0 (the true tail mass ~2e-28 is far below half an
+    ULP of 1.0, so the clamped value IS the correctly rounded float64).
+    """
+    if math.isnan(z):
+        raise ValueError("_phi domain error: z is NaN")
+    if z >= 11.0:
+        return 1.0
+    if z <= -11.0:
+        return 0.0
+    with localcontext() as ctx:
+        ctx.prec = _PREC
+        return float(_phi_dec(Decimal(z)))
 
 
 def _norm_ppf(p: float) -> float:
-    """Inverse standard normal CDF (probit). Acklam's rational approximation plus
-    one Halley refinement via ``math.erfc`` → ~1e-15 accuracy. No SciPy dependency,
-    deterministic. Domain (0, 1)."""
+    """Inverse standard normal CDF (probit), byte-identical across platforms.
+
+    Acklam's rational approximation (float) seeds a Newton iteration carried
+    out in 50-digit decimal against the same series-based Φ used by ``_phi``,
+    with the normal pdf via the correctly-rounded ``Decimal.exp``. Quadratic
+    convergence (seed error ~1e-9 → ~1e-36 in two steps) makes the converged
+    value — and hence the single final float rounding — independent of any
+    libm ULP differences in the seed. Domain (0, 1); |z| > 10 unsupported
+    (raises — quantiles that extreme have no engine use)."""
     if not (0.0 < p < 1.0):
         raise ValueError(f"_norm_ppf domain error: p must be in (0, 1), got {p}")
     a = (-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02,
@@ -78,17 +143,26 @@ def _norm_ppf(p: float) -> float:
         q = math.sqrt(-2.0 * math.log(1.0 - p))
         x = -((((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5])
               / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1.0))
-    # One Halley refinement step against the true CDF; skip if it would overflow.
-    x0 = x
-    try:
-        err = 0.5 * math.erfc(-x / math.sqrt(2.0)) - p
-        u = err * math.sqrt(2.0 * math.pi) * math.exp(x * x / 2.0)
-        x = x - u / (1.0 + x * u / 2.0)
-        if not math.isfinite(x):
-            x = x0
-    except (OverflowError, ValueError):
-        x = x0
-    return x
+    # Decimal-Newton refinement against the deterministic series Φ. The float
+    # Acklam seed (above) is pure rational arithmetic in the central region but
+    # uses libm log/sqrt in the tails — irrelevant either way: Newton's quadratic
+    # convergence to the 50-digit root erases any ULP-level seed differences, so
+    # the final float depends only on correctly-rounded decimal operations.
+    if abs(x) > 10.0:
+        raise ValueError(
+            f"_norm_ppf domain error: quantile |z|>10 unsupported (p={p!r})"
+        )
+    with localcontext() as ctx:
+        ctx.prec = _PREC
+        dp = Decimal(p)
+        dx = Decimal(x)
+        for _ in range(4):
+            err = _phi_dec(dx) - dp
+            pdf = (-(dx * dx) / 2).exp() / _D_SQRT_2PI
+            if pdf == 0:
+                break
+            dx = dx - err / pdf
+        return float(dx)
 
 
 def return_moments(returns: list[float]) -> tuple[float, float, float, int] | None:
