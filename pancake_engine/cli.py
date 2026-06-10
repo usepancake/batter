@@ -172,14 +172,23 @@ def _dataset_schema_dict_from_dataset(dataset: EvidenceDataset) -> dict:
 
 
 def cmd_verify(args: argparse.Namespace) -> int:
-    """Verify a self-contained backtest bundle.
+    """Verify a self-contained backtest bundle or a chain JSON file.
 
-    Exit codes:
+    Exit codes (bundle mode):
       0  verified (result_hash matched + dataset integrity confirmed)
       1  mismatch (result_hash or dataset integrity)
       2  input/validation error (malformed bundle, missing required fields)
       3  unverifiable (pointer dataset — rows not inline)
+
+    Exit codes (--chain mode):
+      0  chain verified (all record hashes + invariants ok)
+      1  verification failed (hash mismatch, illegal transition, etc.)
+      2  input invalid (bad JSON, not a list, etc.)
     """
+    # ------------------------------------------------------------------ chain mode
+    if getattr(args, "chain", None):
+        return _cmd_verify_chain(args.chain)
+
     # ------------------------------------------------------------------ load
     if args.bundle:
         try:
@@ -350,6 +359,72 @@ def cmd_verify(args: argparse.Namespace) -> int:
     return 0 if verified else 1
 
 
+def _cmd_verify_chain(chain_path: str) -> int:
+    """Verify a JSON array of chain records.
+
+    Exit codes:
+      0  verified — all record hashes + invariants ok
+      1  verification failed — hash mismatch, illegal transition, etc.
+      2  input invalid — bad JSON, not a list, structural errors
+    """
+    from .chain.records import ChainRecord
+    from .chain.verify import verify_chain
+
+    try:
+        raw = load_json(chain_path)
+    except Exception as exc:
+        print(f"error: could not load chain file: {exc}", file=sys.stderr)
+        return 2
+
+    if not isinstance(raw, list):
+        print("error: chain file must contain a JSON array of record objects", file=sys.stderr)
+        return 2
+
+    # Parse each record dict into a ChainRecord.
+    records: list[ChainRecord] = []
+    for i, item in enumerate(raw):
+        if not isinstance(item, dict):
+            print(f"error: chain record at index {i} is not an object", file=sys.stderr)
+            return 2
+        required = {"seq", "t", "kind", "payload", "prev_hash", "record_hash"}
+        missing = required - set(item)
+        if missing:
+            print(
+                f"error: chain record at index {i} missing fields: {sorted(missing)}",
+                file=sys.stderr,
+            )
+            return 2
+        try:
+            records.append(ChainRecord(
+                seq=int(item["seq"]),
+                t=int(item["t"]),
+                kind=str(item["kind"]),
+                payload=dict(item["payload"]),
+                prev_hash=str(item["prev_hash"]),
+                record_hash=str(item["record_hash"]),
+            ))
+        except Exception as exc:
+            print(f"error: could not parse chain record at index {i}: {exc}", file=sys.stderr)
+            return 2
+
+    verdict = verify_chain(records)
+
+    human = "VERIFIED" if verdict.ok else "FAILED"
+    print(
+        f"{human}  records={len(records)}  errors={len(verdict.errors)}",
+        file=sys.stderr,
+    )
+
+    out: dict = {
+        "verified": verdict.ok,
+        "record_count": len(records),
+        "engine_version": ENGINE_VERSION,
+        "errors": verdict.errors,
+    }
+    print(json.dumps(out))
+    return 0 if verdict.ok else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="batter",
@@ -389,7 +464,10 @@ def build_parser() -> argparse.ArgumentParser:
     # verify
     p_ver = sub.add_parser(
         "verify",
-        help="Verify a self-contained backtest bundle (local file or remote URL)",
+        help=(
+            "Verify a self-contained backtest bundle (local file or remote URL), "
+            "or verify a chain JSON file (--chain)"
+        ),
     )
     g_ver = p_ver.add_mutually_exclusive_group(required=True)
     g_ver.add_argument(
@@ -401,6 +479,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--url",
         metavar="URL",
         help="URL of a self-contained bundle JSON (stdlib urllib; no new deps)",
+    )
+    g_ver.add_argument(
+        "--chain",
+        metavar="PATH",
+        help=(
+            "Path to a chain JSON file (array of chain records); "
+            "re-walks the chain and recomputes every record_hash + checks all invariants"
+        ),
     )
     p_ver.add_argument(
         "--timeout",
