@@ -4,16 +4,23 @@ Invariants enforced by append():
   1. Genesis-first: first record must be kind="deploy".
   2. Seq density: seq = len(records) (0-based, no gaps).
   3. t monotonicity: t >= previous t.
-  4. Genesis payload must contain compiled_spec_hash, result_hash, dataset_id.
+  4. Genesis payload must contain compiled_spec_hash, result_hash, dataset_id,
+     and starting_cash (finite float > 0).
   5. Order-state machine for order_state and fill kinds:
      - Tracks per-order current state internally.
      - Raises ChainTransitionError for illegal transitions.
      - Raises ValueError for fill overshoot (cumulative > order_qty).
   6. Reconciliation kind: payload must contain "diffs" key (list).
+
+running_cash() returns the current authoritative cash balance computed via
+math.fsum over genesis.starting_cash + all fill/settlement cash_delta values
+appended so far.  Producers must use this method when setting total_cash on
+settlement records — hand-computing the same sum independently risks drift.
 """
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 from .errors import ChainTransitionError
@@ -49,6 +56,9 @@ class ChainBuilder:
         self._order_fill_qty: dict[str, float] = {}
         # Per-order order_qty (set on first fill): order_id → float.
         self._order_qty: dict[str, float] = {}
+        # Cash roll-forward: starting_cash from genesis + accumulated cash_deltas.
+        # _cash_terms[0] = starting_cash; subsequent entries are each cash_delta appended.
+        self._cash_terms: list[float] = []
 
     def append(self, *, kind: str, t: int, payload: dict[str, Any]) -> ChainRecord:
         """Append a new record to the chain.
@@ -91,12 +101,24 @@ class ChainBuilder:
         # Kind-specific validation.
         if kind == "deploy":
             self._validate_genesis(payload)
+            # Seed the cash roll-forward with starting_cash.
+            self._cash_terms = [float(payload["starting_cash"])]
 
         elif kind == "order_state":
             self._validate_order_state(payload, t)
 
         elif kind == "fill":
             self._validate_fill(payload)
+            # Accumulate cash_delta into the roll-forward.
+            cd = payload.get("cash_delta")
+            if cd is not None:
+                self._cash_terms.append(float(cd))
+
+        elif kind == "settlement":
+            # Accumulate cash_delta into the roll-forward.
+            cd = payload.get("cash_delta")
+            if cd is not None:
+                self._cash_terms.append(float(cd))
 
         elif kind == "reconciliation":
             self._validate_reconciliation(payload)
@@ -126,6 +148,23 @@ class ChainBuilder:
         """Return a snapshot of the current record list (new list, same frozen records)."""
         return list(self._records)
 
+    def running_cash(self) -> float:
+        """Return the current authoritative cash balance.
+
+        Computed as math.fsum(starting_cash, *cash_deltas) over every fill and
+        settlement cash_delta appended so far.  Raises RuntimeError if genesis
+        has not yet been appended (starting_cash not available).
+
+        Producers MUST use this method when populating total_cash on settlement
+        records — hand-computing the same sum independently risks floating-point
+        drift that verify_chain will catch as E_CHAIN_CASH_MISMATCH.
+        """
+        if not self._cash_terms:
+            raise RuntimeError(
+                "running_cash() called before genesis (deploy) record was appended"
+            )
+        return math.fsum(self._cash_terms)
+
     # ------------------------------------------------------------------
     # private validators
     # ------------------------------------------------------------------
@@ -135,6 +174,22 @@ class ChainBuilder:
         if missing:
             raise ValueError(
                 f"Genesis (deploy) payload missing required keys: {sorted(missing)}"
+            )
+        # starting_cash must be a finite float > 0.
+        sc = payload["starting_cash"]
+        try:
+            sc_f = float(sc)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"Genesis starting_cash must be a finite float > 0; got {sc!r}"
+            ) from exc
+        if not math.isfinite(sc_f):
+            raise ValueError(
+                f"Genesis starting_cash must be finite; got {sc_f}"
+            )
+        if sc_f <= 0:
+            raise ValueError(
+                f"Genesis starting_cash must be > 0; got {sc_f}"
             )
 
     def _validate_order_state(self, payload: dict[str, Any], t: int) -> None:

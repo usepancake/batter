@@ -48,6 +48,7 @@ def _make_happy_chain() -> list[ChainRecord]:
             "compiled_spec_hash": "aaa" + "0" * 61,
             "result_hash": "bbb" + "0" * 61,
             "dataset_id": "ds-001",
+            "starting_cash": 100.0,
         },
     )
 
@@ -186,6 +187,7 @@ def test_t_regression_raises():
             "compiled_spec_hash": "a" * 64,
             "result_hash": "b" * 64,
             "dataset_id": "ds",
+            "starting_cash": 100.0,
         },
     )
     with pytest.raises(ValueError, match="monoton"):
@@ -202,6 +204,7 @@ def test_t_equal_is_allowed():
             "compiled_spec_hash": "a" * 64,
             "result_hash": "b" * 64,
             "dataset_id": "ds",
+            "starting_cash": 100.0,
         },
     )
     b.append(kind="tick", t=1000, payload={})
@@ -222,6 +225,7 @@ def test_illegal_transition_raises_chain_transition_error():
             "compiled_spec_hash": "a" * 64,
             "result_hash": "b" * 64,
             "dataset_id": "ds",
+            "starting_cash": 100.0,
         },
     )
     # Start an order
@@ -261,6 +265,7 @@ def test_terminal_state_rejects_further_transitions():
             "compiled_spec_hash": "a" * 64,
             "result_hash": "b" * 64,
             "dataset_id": "ds",
+            "starting_cash": 100.0,
         },
     )
     b.append(
@@ -291,6 +296,7 @@ def test_partial_fill_may_repeat():
             "compiled_spec_hash": "a" * 64,
             "result_hash": "b" * 64,
             "dataset_id": "ds",
+            "starting_cash": 100.0,
         },
     )
     for state in ("proposed", "submitted", "acked"):
@@ -334,6 +340,7 @@ def test_fill_overshoot_raises():
             "compiled_spec_hash": "a" * 64,
             "result_hash": "b" * 64,
             "dataset_id": "ds",
+            "starting_cash": 100.0,
         },
     )
     for state in ("proposed", "submitted", "acked"):
@@ -370,6 +377,7 @@ def test_fill_monotone_nondecreasing():
             "compiled_spec_hash": "a" * 64,
             "result_hash": "b" * 64,
             "dataset_id": "ds",
+            "starting_cash": 100.0,
         },
     )
     for state in ("proposed", "submitted", "acked"):
@@ -414,6 +422,7 @@ def test_reconciliation_record_appended():
             "compiled_spec_hash": "a" * 64,
             "result_hash": "b" * 64,
             "dataset_id": "ds",
+            "starting_cash": 100.0,
         },
     )
     b.append(
@@ -439,6 +448,7 @@ def test_reconciliation_missing_diffs_raises():
             "compiled_spec_hash": "a" * 64,
             "result_hash": "b" * 64,
             "dataset_id": "ds",
+            "starting_cash": 100.0,
         },
     )
     with pytest.raises(ValueError, match="diffs"):
@@ -558,7 +568,7 @@ def test_fill_overshoot_tamper_detected():
     b.append(
         kind="deploy",
         t=1000,
-        payload={"compiled_spec_hash": "a" * 64, "result_hash": "b" * 64, "dataset_id": "ds"},
+        payload={"compiled_spec_hash": "a" * 64, "result_hash": "b" * 64, "dataset_id": "ds", "starting_cash": 100.0},
     )
     for state in ("proposed", "submitted", "acked"):
         b.append(
@@ -631,12 +641,13 @@ def test_forged_genesis_without_backtest_pin_detected():
 
 
 def test_pnl_rollforward_settlement_mismatch_detected():
-    """A settlement summary record declaring a wrong total is caught."""
+    """A settlement total_cash off by even 1e-9 from the exact roll-forward is caught."""
+    import math
     b = ChainBuilder()
     b.append(
         kind="deploy",
         t=1000,
-        payload={"compiled_spec_hash": "a" * 64, "result_hash": "b" * 64, "dataset_id": "ds"},
+        payload={"compiled_spec_hash": "a" * 64, "result_hash": "b" * 64, "dataset_id": "ds", "starting_cash": 100.0},
     )
     for state in ("proposed", "submitted", "acked"):
         b.append(kind="order_state", t=1001,
@@ -645,23 +656,149 @@ def test_pnl_rollforward_settlement_mismatch_detected():
              payload={"order_id": "pnl1", "fill_qty": 10.0, "order_qty": 10.0, "cash_delta": -50.0})
     b.append(kind="order_state", t=1001,
              payload={"order_id": "pnl1", "state": "filled"})
-    # Settlement: cash_delta=60.0, total_cash=110.0 (started at 100, bought for 50, got 60 back)
-    # But we'll lie and say total_cash=999.0
+    # Correct total_cash: starting(100) + fill_cd(-50) + settle_cd(60) = 110.0
+    # Declare total_cash = 110.0 + 1e-9 → off by a tiny amount; verifier must catch it.
+    correct_total = math.fsum([100.0, -50.0, 60.0])  # == 110.0
+    wrong_total = correct_total + 1e-9
     b.append(kind="settlement", t=1010,
-             payload={"order_id": "pnl1", "cash_delta": 60.0, "pnl": 10.0, "total_cash": 999.0})
+             payload={"order_id": "pnl1", "cash_delta": 60.0, "pnl": 10.0, "total_cash": wrong_total})
     records = b.records()
-    # Verify should catch: sum of cash_deltas from fills (-50) + settlement (+60) = +10
-    # total_cash declared as 999 but only 110 can be derived → mismatch
-    # NOTE: we can only catch this when the verifier has a starting cash reference.
-    # The verifier checks internal consistency: sum(fill cash_deltas) + sum(settlement cash_deltas)
-    # must be consistent with any settlement.total_cash field present.
-    # For this test, just check the verifier surfaces the inconsistency.
     verdict = verify_chain(records)
     assert not verdict.ok
-    assert any(
-        e["code"] in ("PNL_MISMATCH", "SETTLEMENT_PNL_MISMATCH", "PNL_ROLLFORWARD_MISMATCH")
-        for e in verdict.errors
+    assert any(e["code"] == "E_CHAIN_CASH_MISMATCH" for e in verdict.errors)
+
+
+def test_pnl_rollforward_exact_fsum_passes():
+    """A settlement with total_cash == exact fsum value passes verification."""
+    import math
+    b = ChainBuilder()
+    b.append(
+        kind="deploy",
+        t=1000,
+        payload={"compiled_spec_hash": "a" * 64, "result_hash": "b" * 64, "dataset_id": "ds", "starting_cash": 100.0},
     )
+    for state in ("proposed", "submitted", "acked"):
+        b.append(kind="order_state", t=1001,
+                 payload={"order_id": "pnl2", "state": state, "instrument_id": "m"})
+    b.append(kind="fill", t=1001,
+             payload={"order_id": "pnl2", "fill_qty": 10.0, "order_qty": 10.0, "cash_delta": -50.0})
+    b.append(kind="order_state", t=1001,
+             payload={"order_id": "pnl2", "state": "filled"})
+    # Use ChainBuilder.running_cash() to get the authoritative value after fill.
+    # Then append settlement and set total_cash = running_cash() after the settlement cd.
+    # Simulate: total = fsum([100.0, -50.0, 60.0]) = 110.0
+    correct_total = math.fsum([100.0, -50.0, 60.0])
+    b.append(kind="settlement", t=1010,
+             payload={"order_id": "pnl2", "cash_delta": 60.0, "pnl": 10.0, "total_cash": correct_total})
+    records = b.records()
+    verdict = verify_chain(records)
+    assert verdict.ok, verdict.errors
+
+
+def test_running_cash_helper_matches_verify():
+    """ChainBuilder.running_cash() tracks the same fsum as verify_chain's roll-forward
+    across a multi-fill chain."""
+    import math
+    b = ChainBuilder()
+    b.append(
+        kind="deploy",
+        t=1000,
+        payload={"compiled_spec_hash": "a" * 64, "result_hash": "b" * 64, "dataset_id": "ds", "starting_cash": 200.0},
+    )
+    assert b.running_cash() == 200.0
+
+    for state in ("proposed", "submitted", "acked"):
+        b.append(kind="order_state", t=1001,
+                 payload={"order_id": "rc1", "state": state, "instrument_id": "m"})
+    b.append(kind="fill", t=1001,
+             payload={"order_id": "rc1", "fill_qty": 5.0, "order_qty": 10.0, "cash_delta": -30.0})
+    b.append(kind="order_state", t=1001,
+             payload={"order_id": "rc1", "state": "partially_filled"})
+    assert b.running_cash() == math.fsum([200.0, -30.0])
+
+    b.append(kind="fill", t=1002,
+             payload={"order_id": "rc1", "fill_qty": 5.0, "order_qty": 10.0, "cash_delta": -30.0})
+    b.append(kind="order_state", t=1002,
+             payload={"order_id": "rc1", "state": "filled"})
+    assert b.running_cash() == math.fsum([200.0, -30.0, -30.0])
+
+    settle_total = b.running_cash() + 70.0  # simulate payout
+    # Running cash after settlement = fsum([200.0, -30.0, -30.0, 70.0])
+    expected_final = math.fsum([200.0, -30.0, -30.0, 70.0])
+    b.append(kind="settlement", t=1010,
+             payload={"order_id": "rc1", "cash_delta": 70.0, "total_cash": expected_final})
+    assert b.running_cash() == expected_final
+
+    records = b.records()
+    verdict = verify_chain(records)
+    assert verdict.ok, verdict.errors
+
+
+def test_genesis_missing_starting_cash_raises():
+    """Builder rejects a genesis payload without starting_cash."""
+    b = ChainBuilder()
+    with pytest.raises(ValueError, match="starting_cash"):
+        b.append(
+            kind="deploy",
+            t=1000,
+            payload={"compiled_spec_hash": "a" * 64, "result_hash": "b" * 64, "dataset_id": "ds"},
+        )
+
+
+def test_genesis_starting_cash_non_finite_raises():
+    """Builder rejects a genesis with starting_cash=inf."""
+    import math
+    b = ChainBuilder()
+    with pytest.raises(ValueError, match="finite"):
+        b.append(
+            kind="deploy",
+            t=1000,
+            payload={
+                "compiled_spec_hash": "a" * 64,
+                "result_hash": "b" * 64,
+                "dataset_id": "ds",
+                "starting_cash": math.inf,
+            },
+        )
+
+
+def test_genesis_starting_cash_zero_raises():
+    """Builder rejects a genesis with starting_cash=0."""
+    b = ChainBuilder()
+    with pytest.raises(ValueError, match="> 0"):
+        b.append(
+            kind="deploy",
+            t=1000,
+            payload={
+                "compiled_spec_hash": "a" * 64,
+                "result_hash": "b" * 64,
+                "dataset_id": "ds",
+                "starting_cash": 0.0,
+            },
+        )
+
+
+def test_genesis_starting_cash_negative_raises():
+    """Builder rejects a genesis with starting_cash < 0."""
+    b = ChainBuilder()
+    with pytest.raises(ValueError, match="> 0"):
+        b.append(
+            kind="deploy",
+            t=1000,
+            payload={
+                "compiled_spec_hash": "a" * 64,
+                "result_hash": "b" * 64,
+                "dataset_id": "ds",
+                "starting_cash": -50.0,
+            },
+        )
+
+
+def test_running_cash_before_genesis_raises():
+    """running_cash() before genesis raises RuntimeError."""
+    b = ChainBuilder()
+    with pytest.raises(RuntimeError, match="genesis"):
+        b.running_cash()
 
 
 # ---------------------------------------------------------------------------
@@ -682,14 +819,14 @@ def test_payload_change_changes_hash():
     b1 = ChainBuilder()
     b1.append(
         kind="deploy", t=1000,
-        payload={"compiled_spec_hash": "a" * 64, "result_hash": "b" * 64, "dataset_id": "ds-1"},
+        payload={"compiled_spec_hash": "a" * 64, "result_hash": "b" * 64, "dataset_id": "ds-1", "starting_cash": 100.0},
     )
     b1.append(kind="tick", t=1001, payload={"new_equity": 100.0})
 
     b2 = ChainBuilder()
     b2.append(
         kind="deploy", t=1000,
-        payload={"compiled_spec_hash": "a" * 64, "result_hash": "b" * 64, "dataset_id": "ds-2"},  # changed
+        payload={"compiled_spec_hash": "a" * 64, "result_hash": "b" * 64, "dataset_id": "ds-2", "starting_cash": 100.0},  # changed
     )
     b2.append(kind="tick", t=1001, payload={"new_equity": 100.0})
 
@@ -868,7 +1005,7 @@ def test_full_lifecycle_proposed_to_filled():
     b.append(
         kind="deploy",
         t=1000,
-        payload={"compiled_spec_hash": "a" * 64, "result_hash": "b" * 64, "dataset_id": "ds"},
+        payload={"compiled_spec_hash": "a" * 64, "result_hash": "b" * 64, "dataset_id": "ds", "starting_cash": 100.0},
     )
     b.append(kind="order_state", t=1001,
              payload={"order_id": "life", "state": "proposed", "instrument_id": "m"})
@@ -890,7 +1027,7 @@ def test_full_lifecycle_proposed_to_expired():
     b.append(
         kind="deploy",
         t=1000,
-        payload={"compiled_spec_hash": "a" * 64, "result_hash": "b" * 64, "dataset_id": "ds"},
+        payload={"compiled_spec_hash": "a" * 64, "result_hash": "b" * 64, "dataset_id": "ds", "starting_cash": 100.0},
     )
     b.append(kind="order_state", t=1001,
              payload={"order_id": "exp1", "state": "proposed", "instrument_id": "m"})
@@ -908,7 +1045,7 @@ def test_guard_kind_appended():
     b.append(
         kind="deploy",
         t=1000,
-        payload={"compiled_spec_hash": "a" * 64, "result_hash": "b" * 64, "dataset_id": "ds"},
+        payload={"compiled_spec_hash": "a" * 64, "result_hash": "b" * 64, "dataset_id": "ds", "starting_cash": 100.0},
     )
     b.append(kind="guard", t=1001,
              payload={"guard": "max_drawdown_pct", "observed": 0.12, "threshold": 0.10})

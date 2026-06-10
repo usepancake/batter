@@ -18,6 +18,13 @@ Genesis (seq 0, kind "deploy") MUST carry:
     payload.compiled_spec_hash  — compiled spec identity
     payload.result_hash         — backtest result identity (provenance pin)
     payload.dataset_id          — dataset identity
+    payload.starting_cash       — initial cash balance (float, finite, > 0); used by
+                                  verify_chain as the anchor for exact P&L roll-forward.
+                                  Producers computing total_cash on settlement records
+                                  MUST use math.fsum over the same cash_delta sequence
+                                  that verify_chain walks — use ChainBuilder.running_cash()
+                                  to obtain the current authoritative value without
+                                  hand-computing the sum.
 
 prev_hash of genesis is "".
 """
@@ -39,7 +46,7 @@ __all__ = [
 CHAIN_FORMAT_VERSION = "chain/1"
 
 # Required keys for the genesis (deploy) record payload.
-GENESIS_REQUIRED_KEYS = frozenset({"compiled_spec_hash", "result_hash", "dataset_id"})
+GENESIS_REQUIRED_KEYS = frozenset({"compiled_spec_hash", "result_hash", "dataset_id", "starting_cash"})
 
 
 @dataclass(frozen=True)
