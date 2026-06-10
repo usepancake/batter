@@ -66,10 +66,18 @@ class MetricsStandard:
     ending_capital: float
     # Engine 0.4: bootstrap CI + permutation test (additive; default to safe sentinels
     # for backward-compat with 0.3 callers and old fixtures that predate 0.4).
+    # Engine 0.8: CIs are now STATIONARY block-bootstrap (Politis-Romano) — they
+    # preserve serial correlation, so they are wider/honester than the 0.4 IID CIs.
     cagr_ci: tuple[float | None, float | None] = (None, None)
     sharpe_ci: tuple[float | None, float | None] = (None, None)
     sortino_ci: tuple[float | None, float | None] = (None, None)
     sharpe_p_value: float | None = None
+    # Engine 0.8: credibility signals (Bailey & López de Prado). psr = probability the
+    # true Sharpe exceeds 0 given sample length + skew/kurtosis; min_track_record_length
+    # = observations needed for the Sharpe to be significant at 95%. Both None when
+    # with_inference is skipped (the sweep) or undefined (n<2 / zero variance).
+    psr: float | None = None
+    min_track_record_length: float | None = None
 
 
 @dataclass(frozen=True)

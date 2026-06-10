@@ -34,8 +34,8 @@ def test_with_inference_flag_skips_ci_and_permutation(monkeypatch):
     import pancake_engine.metrics.standard as std
 
     calls = {"bootstrap": 0, "perm": 0}
-    real_boot, real_perm = std.bootstrap_ci, std.permutation_p_sharpe
-    monkeypatch.setattr(std, "bootstrap_ci", lambda *a, **k: (calls.__setitem__("bootstrap", calls["bootstrap"] + 1), real_boot(*a, **k))[1])
+    real_boot, real_perm = std.block_bootstrap_ci, std.permutation_p_sharpe
+    monkeypatch.setattr(std, "block_bootstrap_ci", lambda *a, **k: (calls.__setitem__("bootstrap", calls["bootstrap"] + 1), real_boot(*a, **k))[1])
     monkeypatch.setattr(std, "permutation_p_sharpe", lambda *a, **k: (calls.__setitem__("perm", calls["perm"] + 1), real_perm(*a, **k))[1])
 
     spec, dataset = _spec_and_dataset()
