@@ -5,6 +5,7 @@ Errors block the run. Warnings surface but never block. See architecture
 """
 
 from .dataset import validate_dataset
+from .macro import validate_reference_dataset
 from .spec import validate_spec
 from .verdict import ValidationError, ValidationVerdict, ValidationWarning
 
@@ -13,5 +14,6 @@ __all__ = [
     "ValidationVerdict",
     "ValidationWarning",
     "validate_dataset",
+    "validate_reference_dataset",
     "validate_spec",
 ]
