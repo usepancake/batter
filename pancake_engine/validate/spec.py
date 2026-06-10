@@ -162,13 +162,34 @@ def validate_spec(spec: EvidenceSpec) -> ValidationVerdict:
                 field="costs.fill_model",
             )
         else:
-            # Per-model param validation: static_bps@1 accepts no params.
+            # Per-model param validation.
             if fm.name == "static_bps" and fm.version == 1:
                 if fm.params:
                     v.add_error(
                         "E_EVIDENCE_SPEC_INVALID",
                         f"costs.fill_model static_bps@1 takes no params; "
                         f"got: {sorted(fm.params.keys())}",
+                        field="costs.fill_model.params",
+                    )
+            elif fm.name == "book_replay" and fm.version == 1:
+                # ttr_fill_adjustment is declared but reserved for a future version.
+                # Hard-fail so declared-but-unimplemented params never silently no-op
+                # (the registry hash-policy / 0.6.0 always-true lesson).
+                if "ttr_fill_adjustment" in fm.params:
+                    v.add_error(
+                        "E_EVIDENCE_SPEC_INVALID",
+                        "costs.fill_model book_replay@1 param 'ttr_fill_adjustment' is "
+                        "reserved for a future version; remove it from params to use "
+                        "book_replay@1 without TTR adjustment.",
+                        field="costs.fill_model.params",
+                    )
+                # Unknown params are also rejected.
+                _BOOK_REPLAY_V1_KNOWN_PARAMS = frozenset()  # no known params in v1
+                unknown = sorted(set(fm.params.keys()) - _BOOK_REPLAY_V1_KNOWN_PARAMS - {"ttr_fill_adjustment"})
+                if unknown:
+                    v.add_error(
+                        "E_EVIDENCE_SPEC_INVALID",
+                        f"costs.fill_model book_replay@1 unrecognized params: {unknown}",
                         field="costs.fill_model.params",
                     )
 

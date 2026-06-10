@@ -74,6 +74,14 @@ class WarningCode(str, Enum):
     # (evidence rows are one-shot hold-to-resolution; exit applies paper/live only).
     EXIT_NOT_APPLIED_BACKTEST = "EXIT_NOT_APPLIED_BACKTEST"
 
+    # --- book_replay@1 (0.9.x Wave A) ---
+    # BOOK_SLICE_MISSING: no snapshot with snapshot_time <= decision_time for
+    # the market_link.  Hard blocks the row (no silent fallback — 0.6.0 lesson).
+    BOOK_SLICE_MISSING = "BOOK_SLICE_MISSING"
+    # BOOK_DEPTH_INSUFFICIENT: cumulative ask depth < notional for the fill.
+    # Partial fills are forbidden in v1; the row is blocked.
+    BOOK_DEPTH_INSUFFICIENT = "BOOK_DEPTH_INSUFFICIENT"
+
     # --- Walk-forward (PR-2) ---
     EMPTY_FOLD = "EMPTY_FOLD"
     LOW_TRADES_IN_FOLD = "LOW_TRADES_IN_FOLD"
