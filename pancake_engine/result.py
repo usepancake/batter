@@ -98,6 +98,10 @@ class MetricsPM:
     brier_crowd: float | None
     brier_skill_score: float | None
     mean_edge: float | None          # null in PR-1 (no fair_probability column)
+    # 0.9.0 (HASHED — deliberate result_hash break): Expected Calibration Error
+    # over 10 fixed bins on the traded-side (implied_prob_at_entry,
+    # realized_outcome_for_trade) pairs.  None when num_trades < 10.
+    calibration_ece: float | None = None
 
 
 @dataclass(frozen=True)
@@ -140,6 +144,11 @@ class BacktestResult:
     # not supplied, with_inference is skipped, or daily returns are undefined.
     # Shape: {"dsr": float|None, "n_trials": int, "source": str, "own_sharpe_included": True}
     deflated: dict[str, Any] | None = None
+    # 0.9: calibration reliability curve (additive; NOT in result_hash — cost_sensitivity
+    # pattern; scalar headline calibration_ece IS hashed via MetricsPM). None when
+    # num_trades < 10 or with_inference is skipped (fast path).
+    # Shape: {"bins": [{"bin_low", "bin_high", "n", "confidence", "accuracy"}, …], "n_trades": int}
+    calibration_bins: dict[str, Any] | None = None
 
     # --- serialization ---
 
@@ -169,6 +178,7 @@ class BacktestResult:
             "cost_sensitivity": self.cost_sensitivity,
             "baseline": self.baseline,
             "deflated": self.deflated,
+            "calibration_bins": self.calibration_bins,
         }
 
 

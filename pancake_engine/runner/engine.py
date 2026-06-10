@@ -30,6 +30,7 @@ from ..metrics import (
     daily_returns_carry_forward,
     emit_credibility_warnings,
 )
+from ..metrics.pm import calibration_bins as _calibration_bins
 from ..result import (
     BacktestResult,
     DrawdownPoint,
@@ -371,6 +372,14 @@ def run_backtest(
                 "own_sharpe_included": True,
             }
 
+    # 0.9: calibration reliability curve (additive; NOT hashed — scalar headline ECE
+    # IS hashed via MetricsPM.calibration_ece; same with_inference gate as cost_sensitivity).
+    calibration_bins_block = None
+    if with_inference and ledger.trades:
+        raw_bins = _calibration_bins(ledger.trades)
+        if raw_bins is not None:
+            calibration_bins_block = {"bins": raw_bins, "n_trades": len(ledger.trades)}
+
     # 0.8 baseline (spec v0.2 subset; additive, NOT hashed — the REQUEST is hashed
     # via the spec, the output block folds into the hash at the 0.9.0 break).
     # NO-FILTER convention: same side/sizing/costs on every candidate row — the
@@ -429,6 +438,7 @@ def run_backtest(
         cost_sensitivity=cost_sens,
         baseline=baseline_block,
         deflated=deflated_block,
+        calibration_bins=calibration_bins_block,
     )
 
 
