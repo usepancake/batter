@@ -21,6 +21,7 @@ from ..fills.registry import FillBlocked
 from ..compile.condition import Condition, extract_referenced_columns
 from ..metrics.cost_sensitivity import cost_sensitivity
 from ..metrics.psr import deflated_sharpe_ratio
+from ..metrics.regime import regime_stability
 from ..config import BacktestConfig
 from ..hash import sha256_canonical
 from ..metrics import (
@@ -409,6 +410,13 @@ def run_backtest(
         if raw_bins is not None:
             calibration_bins_block = {"bins": raw_bins, "n_trades": len(ledger.trades)}
 
+    # 0.10.0 Wave E: regime-stability block (additive; NOT hashed — calibration_bins
+    # pattern: computed under with_inference, omitted from compute_result_hash).
+    # None when <8 trades or <4 distinct equity timestamps.
+    regime_block = None
+    if with_inference:
+        regime_block = regime_stability(equity_curve, ledger.trades)
+
     # 0.8 baseline (spec v0.2 subset; additive, NOT hashed — the REQUEST is hashed
     # via the spec, the output block folds into the hash at the 0.9.0 break).
     # NO-FILTER convention: same side/sizing/costs on every candidate row — the
@@ -469,6 +477,7 @@ def run_backtest(
         baseline=baseline_block,
         deflated=deflated_block,
         calibration_bins=calibration_bins_block,
+        regime=regime_block,
         book_dataset_id=_book_dataset_id,
         book_rows_sha256=_book_rows_sha256,
         book_schema_sha256=_book_schema_sha256,

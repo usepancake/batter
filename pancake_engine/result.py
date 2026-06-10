@@ -159,6 +159,14 @@ class BacktestResult:
     book_rows_sha256: str | None = None
     book_schema_sha256: str | None = None
 
+    # 0.10.0 Wave E: regime-stability block (additive; NOT in result_hash — same
+    # pattern as calibration_bins / cost_sensitivity / baseline). None when
+    # with_inference is skipped or the run has <8 trades / <4 equity timestamps.
+    # Shape: {"quartiles": [{quartile, t_start, t_end, num_trades, total_return,
+    #                        max_drawdown}, ...], "stability": {return_sign_consistency,
+    #                        worst_quartile_return}}
+    regime: dict[str, Any] | None = None
+
     # --- serialization ---
 
     def to_dict(self) -> dict[str, Any]:
@@ -188,6 +196,7 @@ class BacktestResult:
             "baseline": self.baseline,
             "deflated": self.deflated,
             "calibration_bins": self.calibration_bins,
+            "regime": self.regime,
         }
         if self.book_dataset_id is not None:
             d["book_dataset_id"] = self.book_dataset_id

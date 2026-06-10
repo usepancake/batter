@@ -25,6 +25,7 @@ __all__ = [
     "PredictionMarketContract",
     "CryptoOHLCVContract",
     "MacroSignalContract",
+    "SportsEventContract",
     "contract_for_spec_family",
     "contract_for_domain",
 ]
@@ -160,6 +161,47 @@ MacroSignalContract = DatasetContract(
 
 
 # ---------------------------------------------------------------------------
+# SportsEventContract — sports-event resolution domain (Wave E)
+#
+# Sports events are validated against this contract via validate_sports_dataset
+# in pancake_engine/validate/sports.py.
+#
+# time_model = "event_resolution":  shares the PM resolution semantics —
+# a binary outcome resolved at resolution_time.  The engine CAN run sports
+# specs directly once a PM-compatible runner path is wired; for now the
+# contract lives here to enable dataset validation at registration time.
+#
+# Required roles (all mandatory, none nullable):
+#   market_link            — unique event identifier URL / ID (string)
+#   decision_time          — epoch-sec when the entry decision is made (int)
+#   resolution_time        — epoch-sec when the event resolves (int)
+#   entry_price            — probability in (0, 1) for the traded side (number)
+#   resolved_outcome_numeric — 0 (NO) or 1 (YES) — binary payout (int 0|1)
+#   event_id               — unique string id for the event (string)
+#   league                 — league / competition identifier (string)
+# ---------------------------------------------------------------------------
+
+SportsEventContract = DatasetContract(
+    domain="sports_event",
+    required_roles=(
+        RoleSpec(name="market_link",               col_type="string"),
+        RoleSpec(name="decision_time",             col_type="int"),
+        RoleSpec(name="resolution_time",           col_type="int"),
+        # entry_price: probability in (0, 1) for the traded side.
+        # Same convention as PredictionMarketContract — the literal SIDE price.
+        RoleSpec(name="entry_price",               col_type="number", value_range=None),
+        # resolved_outcome_numeric: 0 or 1 only (binary payout).
+        RoleSpec(name="resolved_outcome_numeric",  col_type="int",    nullable=False),
+        RoleSpec(name="event_id",                  col_type="string"),
+        RoleSpec(name="league",                    col_type="string"),
+    ),
+    time_model="event_resolution",
+    resolution_semantics="binary_payout",
+    fill_reference="entry_price_col",
+)
+
+
+# ---------------------------------------------------------------------------
 # Registry: spec_family → DatasetContract  (PM + crypto, keyed by spec_family)
 # Domain registry: domain string → DatasetContract  (all domains)
 # ---------------------------------------------------------------------------
@@ -173,6 +215,7 @@ _DOMAIN_REGISTRY: dict[str, DatasetContract] = {
     "prediction_market": PredictionMarketContract,
     "crypto_ohlcv": CryptoOHLCVContract,
     "macro_signal": MacroSignalContract,
+    "sports_event": SportsEventContract,
 }
 
 

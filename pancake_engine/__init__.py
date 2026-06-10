@@ -52,6 +52,7 @@ from .runner import (
     tick,
 )
 from .pbo import PBOResult, run_pbo_analysis
+from .portfolio import PortfolioError, PortfolioResult, compute_portfolio
 from .sensitivity import SensitivityResult, run_sensitivity_analysis
 from .trials import TrialHistory
 from .types import EvidenceDataset, EvidenceSpec
@@ -97,6 +98,9 @@ __all__ = [
     "TrialHistory",
     "run_pbo_analysis",
     "PBOResult",
+    "compute_portfolio",
+    "PortfolioResult",
+    "PortfolioError",
     "run_sensitivity_analysis",
     "SensitivityResult",
     "WalkforwardConfig",
