@@ -51,6 +51,7 @@ from .runner import (
     run_backtest,
     tick,
 )
+from .pbo import PBOResult, run_pbo_analysis
 from .sensitivity import SensitivityResult, run_sensitivity_analysis
 from .types import EvidenceDataset, EvidenceSpec
 from .validate import ValidationVerdict
@@ -92,6 +93,8 @@ __all__ = [
     "WarningCode",
     "ValidationVerdict",
     "run_backtest",
+    "run_pbo_analysis",
+    "PBOResult",
     "run_sensitivity_analysis",
     "SensitivityResult",
     "WalkforwardConfig",
