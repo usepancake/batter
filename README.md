@@ -4,7 +4,7 @@
 [![PyPI version](https://img.shields.io/pypi/v/batter.svg)](https://pypi.org/project/batter/)
 [![Python versions](https://img.shields.io/pypi/pyversions/batter.svg)](https://pypi.org/project/batter/)
 
-Built for [Pancake](https://usepancake.com) — receipts at `https://usepancake.com/r/<receipt-id>` use this engine to verify strategy math.
+Built for [Pancake](https://usepancake.com) — strategy results at `https://usepancake.com/<handle>/<strategy_slug>/v/<version_n>` use this engine to verify strategy math.
 
 `batter` is a deterministic Python research engine for prediction-market evidence-backed backtests. Given a backtest spec and an `EvidenceDataset`, it produces a canonical `result_hash` — identical bytes across ubuntu / macos / windows on Python 3.12+ — enabling reproducible research and auditability of strategy claims. Engine 0.4 adds Monte Carlo bootstrap confidence intervals and a sign-permutation Sharpe test so credibility signals travel with every result.
 
@@ -58,7 +58,7 @@ If you use batter in academic or independent research, please cite:
   title        = {batter: Deterministic Python research engine for
                   prediction-market evidence-backed backtests},
   year         = {2026},
-  version      = {0.6.0},
+  version      = {0.10.1},
   url          = {https://usepancake.com/engine},
   repository   = {https://github.com/usepancake/batter},
   license      = {Apache-2.0},
@@ -68,18 +68,18 @@ If you use batter in academic or independent research, please cite:
 }
 ```
 
-## Verify any receipt
+## Verify any result
 
-No trusted party required. Given a self-contained bundle (spec + inline dataset + expected hash), `batter verify` re-runs the engine locally and checks that the computed `result_hash` matches the declared one. Anyone can audit a Pancake receipt independently.
+No trusted party required. Given a self-contained bundle (spec + inline dataset + expected hash), `batter verify` re-runs the engine locally and checks that the computed `result_hash` matches the declared one. Anyone can audit a Pancake result independently.
 
 ```bash
 pip install batter
 
 # local bundle file
-batter verify --bundle receipt-bundle.json
+batter verify --bundle result-bundle.json
 
-# or fetch from a URL directly
-batter verify --url https://usepancake.com/r/<receipt-id>/bundle.json
+# or fetch the replay bundle for a result directly
+batter verify --url https://www.usepancake.com/api/replay-bundle/<short_id>
 ```
 
 **Exit codes:** `0` verified · `1` hash or dataset integrity mismatch · `2` input/validation error · `3` unverifiable (pointer dataset — rows not inline, license-gated)
