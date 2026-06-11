@@ -10,14 +10,36 @@ readme = "README.md"
 requires-python = ">= 3.12"
 license = { text = "Apache-2.0" }
 authors = [{ name = "Michael Mustopo", email = "michael.mustopo@gmail.com" }]
-keywords = ["batter", "pancake", "backtest", "evidence", "deterministic", "prediction-market"]
+keywords = [
+  "batter",
+  "pancake",
+  "backtest",
+  "backtesting",
+  "evidence",
+  "deterministic",
+  "reproducible",
+  "verifiable-backtest",
+  "prediction-market",
+  "polymarket",
+  "kalshi",
+  "trading",
+  "quant",
+  "mcp",
+  "model-context-protocol",
+  "ai-agent",
+]
 classifiers = [
   "Development Status :: 3 - Alpha",
+  "Intended Audience :: Financial and Insurance Industry",
+  "Intended Audience :: Science/Research",
   "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Topic :: Office/Business :: Financial :: Investment",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Information Analysis",
 ]
 dependencies = [
   "pydantic >= 2.5, < 3",
@@ -28,6 +50,9 @@ dependencies = [
 [project.urls]
 Repository = "https://github.com/usepancake/batter"
 Homepage = "https://usepancake.com"
+Documentation = "https://www.usepancake.com/engine"
+Changelog = "https://www.usepancake.com/changelog"
+Methodology = "https://www.usepancake.com/methodology"
 
 [project.optional-dependencies]
 dev = [
