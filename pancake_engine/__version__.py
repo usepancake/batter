@@ -166,9 +166,25 @@ breaking change to the receipt contract.
   - ENGINE_VERSION stays 0.9.0 — new artifact classes carry their own
     format_version; existing receipt hashes never move. No corrections.
 
+
+0.10.1 (live tick mode — ADDITIVE, result_hash UNCHANGED):
+  - TickRequest.mode gains "live" (ADR-0050 L1, Path A — the executor intent
+    contract). Identical decision path to paper (settle, mark, guards, entry,
+    sizing) to a single branch point at the fill boundary; live mode stops
+    there: no fill router, no state mutation. Emits target_positions
+    {instrument_id, side, target_shares, signal_price, source_manifest_id}
+    (rule-151 provenance echoed from the triggering bar). Guards gate live
+    intents exactly as they gate paper fills. Paper callers byte-unchanged.
+  - Parity contract: decision SET identical across modes by construction;
+    target_shares uses undepleted cash (live has no intra-tick fills), so
+    share-quantity parity vs paper holds for the first entry per tick and
+    paper cash-exhaustion can suppress marginal fills live still targets —
+    the executor owns allocation across simultaneous targets.
+  - ENGINE_VERSION stays 0.9.0 — tick is not part of result_hash.
+
 """
 
-__version__ = "0.10.0"
+__version__ = "0.10.1"
 ENGINE = "batter"
 # 0.9.0 is a DELIBERATE result_hash break: MetricsPM gains calibration_ece (hashed).
 ENGINE_VERSION = "0.9.0"
