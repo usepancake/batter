@@ -50,6 +50,7 @@ __all__ = [
     "psr_sharpe_hat",
     "return_moments",
     "deflated_sharpe_ratio",
+    "expected_max_sharpe",
     "min_track_record_length",
 ]
 
@@ -228,6 +229,52 @@ def probabilistic_sharpe_ratio(
     return _phi(z)
 
 
+from typing import Sequence
+
+
+def expected_max_sharpe(
+    trial_sharpes: Sequence[float],
+    *,
+    sharpes_annualized: bool = False,
+    periods_per_year: int = 252,
+) -> float | None:
+    """Expected maximum Sharpe under the null (Bailey & López de Prado 2014, eq. 8).
+
+        SR*₀ = sqrt(Var(trial Sharpes)) · [ (1-γ)·Z⁻¹(1 - 1/N) + γ·Z⁻¹(1 - 1/(N·e)) ]
+
+    Used as the benchmark for the Deflated Sharpe Ratio.
+
+    ``trial_sharpes`` are the PER-PERIOD Sharpes of the tested configs (pass
+    ``sharpes_annualized=True`` to supply annualised Sharpes — they are divided by
+    ``sqrt(periods_per_year)`` to match the per-period scale PSR uses).
+
+    Returns ``None`` when:
+    - fewer than 2 trials (the formula is undefined for N < 2), OR
+    - zero variance across trials (all trials identical → ``max(sr) == min(sr)``
+      or sample variance ≤ 0 after floating-point arithmetic; the formula would
+      return 0 but that is indistinguishable from a degenerate input, so we
+      signal the caller explicitly).
+    """
+    n_trials = len(trial_sharpes)
+    if n_trials < 2:
+        return None
+    sr: list[float] = (
+        [s / math.sqrt(periods_per_year) for s in trial_sharpes]
+        if sharpes_annualized
+        else list(trial_sharpes)
+    )
+    if max(sr) == min(sr):  # zero dispersion (float-robust; var > 0 would be fp noise)
+        return None
+    mean = math.fsum(sr) / n_trials
+    var = math.fsum((s - mean) ** 2 for s in sr) / (n_trials - 1)  # sample var of trial SRs
+    if var <= 0.0:
+        return None
+    return math.sqrt(var) * (
+        (1.0 - _EULER_MASCHERONI) * _norm_ppf(1.0 - 1.0 / n_trials)
+        + _EULER_MASCHERONI * _norm_ppf(1.0 - 1.0 / (n_trials * math.e))
+    )
+
+
 def deflated_sharpe_ratio(
     returns: list[float],
     trial_sharpes: list[float],
@@ -249,25 +296,12 @@ def deflated_sharpe_ratio(
     in ``[0, 1]``, or ``None`` if fewer than 2 trials, zero trial-variance, or the
     return moments are undefined.
     """
-    n_trials = len(trial_sharpes)
-    if n_trials < 2:
-        return None
-    sr = (
-        [s / math.sqrt(periods_per_year) for s in trial_sharpes]
-        if sharpes_annualized
-        else list(trial_sharpes)
+    emax = expected_max_sharpe(
+        trial_sharpes, sharpes_annualized=sharpes_annualized, periods_per_year=periods_per_year
     )
-    if max(sr) == min(sr):  # zero dispersion (float-robust; var > 0 would be fp noise)
+    if emax is None:
         return None
-    mean = math.fsum(sr) / n_trials
-    var = math.fsum((s - mean) ** 2 for s in sr) / (n_trials - 1)  # sample var of trial SRs
-    if var <= 0.0:
-        return None
-    expected_max = math.sqrt(var) * (
-        (1.0 - _EULER_MASCHERONI) * _norm_ppf(1.0 - 1.0 / n_trials)
-        + _EULER_MASCHERONI * _norm_ppf(1.0 - 1.0 / (n_trials * math.e))
-    )
-    return probabilistic_sharpe_ratio(returns, sr_benchmark=expected_max)
+    return probabilistic_sharpe_ratio(returns, sr_benchmark=emax)
 
 
 def min_track_record_length(

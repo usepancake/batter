@@ -20,7 +20,7 @@ import numpy as np
 from .__version__ import ENGINE, ENGINE_VERSION
 from .config import BacktestConfig
 from .metrics.fdr import fdr_control
-from .metrics.psr import deflated_sharpe_ratio, probabilistic_sharpe_ratio
+from .metrics.psr import deflated_sharpe_ratio, expected_max_sharpe, probabilistic_sharpe_ratio
 from .metrics.series import daily_returns_carry_forward
 from .runner.engine import run_backtest
 from .types import EvidenceDataset, EvidenceSpec
@@ -59,6 +59,10 @@ class SensitivityResult:
     fdr_n_significant: int = 0
     fdr_min_raw_p: Optional[float] = None
     fdr_min_adjusted_p: Optional[float] = None
+    # 0.10.2: multiple-testing honesty across the full sweep.
+    # Always present on a completed sweep (never None itself); inner values use
+    # per-field null semantics (documented in run_sensitivity_analysis docstring).
+    trial_stats: Optional[dict] = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -80,6 +84,7 @@ class SensitivityResult:
             "fdr_n_significant": self.fdr_n_significant,
             "fdr_min_raw_p": self.fdr_min_raw_p,
             "fdr_min_adjusted_p": self.fdr_min_adjusted_p,
+            "trial_stats": self.trial_stats,
         }
 
 
@@ -274,6 +279,67 @@ def run_sensitivity_analysis(
     )
     fdr = fdr_control(cell_p_values, alpha=0.05, method="by") if cell_p_values else None
 
+    # 0.10.2: trial_stats — multiple-testing honesty across the full sweep.
+    # Uses the SAME flat_sharpes list as the base-cell DSR above (same base-inclusion
+    # convention: all defined Sharpes across the grid, base cell included).
+    # Null semantics (cross-repo contract):
+    #   trial_stats is ALWAYS present (never None) on a completed sweep.
+    #   sharpe_best: None iff zero defined-sharpe cells (flat_sharpes is empty).
+    #   expected_max_sharpe: None iff n_trials < 2 or zero variance across trials.
+    #   dsr_best: None iff sharpe_best is None, OR expected_max_sharpe is None,
+    #             OR the best cell's re-run has <2 daily returns.
+    n_trials = len(flat_sharpes)
+    sharpe_best: Optional[float] = max(flat_sharpes) if flat_sharpes else None
+    dsr_best: Optional[float] = None
+    if sharpe_best is not None:
+        base_sharpe = sharpe_grid[base_entry_idx][base_sizing_idx]
+        if base_sharpe is not None and base_sharpe == sharpe_best:
+            # Base cell achieves the maximum Sharpe (possibly tied with others).
+            # Reuse the already-computed deflated_sharpe value bit-for-bit — this
+            # IS the DSR of the best cell vs the expected-max, and avoids any
+            # 1-ULP divergence from re-entering the PSR path separately.
+            dsr_best = deflated  # may be None if flat_sharpes < 2 or zero var
+        else:
+            # Identify the argmax cell (first occurrence when tied; base excluded above).
+            best_ei: Optional[int] = None
+            best_si: Optional[int] = None
+            for ei_idx, grid_row in enumerate(sharpe_grid):
+                for si_idx, cell_s in enumerate(grid_row):
+                    if cell_s == sharpe_best:
+                        best_ei = ei_idx
+                        best_si = si_idx
+                        break
+                if best_ei is not None:
+                    break
+            # Re-run the best cell (same with_inference=False pattern as the sweep).
+            assert best_ei is not None and best_si is not None
+            best_e = entry_thresholds[best_ei]
+            best_s_frac = sizing_fractions[best_si]
+            new_entry_best = {**entry, "when": _set_gte(entry_when, best_e)}
+            new_sizing_best = spec.strategy.sizing.model_copy(update={"value": best_s_frac})
+            new_strategy_best = spec.strategy.model_copy(
+                update={"entry": new_entry_best, "sizing": new_sizing_best}
+            )
+            best_res = run_backtest(
+                spec.model_copy(update={"strategy": new_strategy_best}),
+                dataset,
+                config,
+                with_inference=False,
+            )
+            best_daily = daily_returns_carry_forward(best_res.equity_curve)
+            # dsr_best requires expected_max (n_trials >= 2 + nonzero variance)
+            # and at least 2 daily returns for PSR to be defined.
+            em = expected_max_sharpe(flat_sharpes, sharpes_annualized=True)
+            if em is not None and len(best_daily) >= 2:
+                dsr_best = probabilistic_sharpe_ratio(best_daily, sr_benchmark=em)
+
+    trial_stats: dict = {
+        "n_trials": n_trials,
+        "sharpe_best": sharpe_best,
+        "dsr_best": dsr_best,
+        "expected_max_sharpe": expected_max_sharpe(flat_sharpes, sharpes_annualized=True),
+    }
+
     return SensitivityResult(
         engine=ENGINE,
         engine_version=ENGINE_VERSION,
@@ -293,4 +359,5 @@ def run_sensitivity_analysis(
         fdr_n_significant=(fdr.n_significant if fdr else 0),
         fdr_min_raw_p=(fdr.min_raw_p if fdr else None),
         fdr_min_adjusted_p=(fdr.min_adjusted_p if fdr else None),
+        trial_stats=trial_stats,
     )
