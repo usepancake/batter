@@ -259,7 +259,7 @@ def test_held_instrument_not_re_entered() -> None:
 
 def test_unsupported_mode_rejected() -> None:
     with pytest.raises(TickError) as ei:
-        tick(_req(bars=[], mode="live"))
+        tick(_req(bars=[], mode="bogus"))
     assert ei.value.code == "UNSUPPORTED_MODE"
 
 
