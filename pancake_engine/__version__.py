@@ -182,9 +182,21 @@ breaking change to the receipt contract.
     the executor owns allocation across simultaneous targets.
   - ENGINE_VERSION stays 0.9.0 — tick is not part of result_hash.
 
+
+0.10.2 (sweep trial_stats — ADDITIVE, result_hash UNCHANGED):
+  - SensitivityResult.trial_stats {n_trials, sharpe_best, dsr_best,
+    expected_max_sharpe}: multiple-testing honesty for the sweep surface
+    (Slice D engine half). expected_max_sharpe extracted from
+    deflated_sharpe_ratio bit-identically (hex-pinned). Base-is-best reuses
+    the existing deflated value verbatim (ties prefer base). Null semantics:
+    sharpe_best null iff no defined cells; expected_max_sharpe null iff
+    n_trials < 2 or zero trial variance; dsr_best null iff either of those
+    or the best cell re-run has < 2 daily returns. Sweeps are not receipts —
+    no result_hash impact (oracle-pinned).
+
 """
 
-__version__ = "0.10.1"
+__version__ = "0.10.2"
 ENGINE = "batter"
 # 0.9.0 is a DELIBERATE result_hash break: MetricsPM gains calibration_ece (hashed).
 ENGINE_VERSION = "0.9.0"
