@@ -39,6 +39,7 @@ __all__ = [
     "ResolutionMarker",
     "MarketBar",
     "TickPosition",
+    "TargetPosition",
     "PaperEvent",
     "VerificationBoundary",
     "TickRequest",
@@ -123,6 +124,38 @@ class VerificationBoundary(BaseModel):
     verification_grade: str
 
 
+class TargetPosition(BaseModel):
+    """A live-mode entry intent: the engine's decision, pre-fill.
+
+    The engine computes a cost-free notional target from the spec's sizing rule
+    and the signal price.  Fees, slippage, lot-rounding, and order routing are
+    the venue adapter's and executor's responsibility — not the engine's claim.
+
+    Fields:
+      instrument_id   — echo of the triggering bar's ``instrument_id`` field,
+                        if present (bar extra="allow", so read defensively).
+      side            — spec side ("YES" | "NO").
+      target_shares   — sizing_notional / signal_price, the cost-free share
+                        target before venue friction.
+      signal_price    — bar.close at decision time (the price the strategy
+                        observed).
+      source_manifest_id — echo of the triggering bar's ``source_manifest_id``
+                           (rule 151 provenance); None if the bar did not carry
+                           one.
+
+    Guard gate: a suspended deployment emits NO target_positions.  Exits and
+    settlements are still reflected in events (identical to paper mode).
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    instrument_id: str | None = None
+    side: str
+    target_shares: float
+    signal_price: float
+    source_manifest_id: str | None = None
+
+
 class TickRequest(BaseModel):
     """ADR-0035 §2.1 — dispatcher → engine (no ``tick_cadence``; engine has no
     scheduler)."""
@@ -142,7 +175,13 @@ class TickRequest(BaseModel):
 
 
 class TickResponse(BaseModel):
-    """ADR-0035 §2.2 as amended — engine → dispatcher. No ``next_check_at``."""
+    """ADR-0035 §2.2 as amended — engine → dispatcher. No ``next_check_at``.
+
+    ``target_positions`` is present only in live mode (``None`` in paper mode).
+    Keys match ``new_positions`` (instrument_id).  Each value is a
+    ``TargetPosition`` carrying the engine's pre-fill entry intent; the executor
+    is responsible for venue routing, fill math, and position accounting.
+    """
 
     events: list[PaperEvent]
     new_cash: float
@@ -154,6 +193,8 @@ class TickResponse(BaseModel):
     peak_equity: float | None = None
     consecutive_losses: int = 0
     cooldown_remaining: int = 0
+    # Live mode only: pre-fill entry intents (None in paper mode).
+    target_positions: dict[str, TargetPosition] | None = None
 
 
 class TickError(Exception):
@@ -177,22 +218,46 @@ class TickError(Exception):
 
 
 def tick(request: TickRequest) -> TickResponse:
-    """Run one paper tick. Pure function of ``request``; deterministic.
+    """Run one tick. Pure function of ``request``; deterministic.
 
-    Order within a tick (deterministic, sorted by ``instrument_id``):
+    Accepts ``mode="paper"`` (default, existing behaviour) and ``mode="live"``.
+    Any other value raises ``UNSUPPORTED_MODE``.
+
+    **Live mode contract (ADR-0050 L1, Path A):**
+    The tick runs the SAME decision path as paper — settlement, mark-to-market,
+    guard evaluation, entry-condition evaluation, and sizing — up to the fill
+    boundary.  At that boundary live mode stops: no fill router is called, no
+    position/cash mutation from entries occurs.  Instead the engine returns a
+    ``target_positions`` block (``dict[str, TargetPosition]``) containing one
+    entry per instrument whose entry condition fired.  Settlement and mark
+    bookkeeping in events and ``new_equity`` are identical to paper.
+
+    The one branch point is in step 3: paper calls ``SimFillRouter`` and mutates
+    cash/positions; live builds ``TargetPosition`` records and leaves state
+    unchanged.  The determinism property "same spec + bars ⇒ identical decision
+    set in both modes" is true by construction because both share the same code
+    path to the branch.
+
+    Guards gate live intents exactly as they gate paper fills: a suspended
+    deployment emits zero target_positions.
+
+    Order within a tick:
       1. Held positions → settle (if resolved as-of t) or mark-to-market.
          Guard state (peak_equity, consecutive_losses) is updated here.
-      2. paper_guard check → if tripped or cooldown_remaining > 0, skip all entries.
+      2. paper_guard check → if tripped or cooldown_remaining > 0, skip entries.
          If just tripped: emit guard_suspended event, set cooldown.
          If in existing cooldown: decrement, skip silently.
       3. Entries → evaluate the IR entry condition on each non-held, non-resolved
-         bar; open via ``SimFillRouter`` at ``bar.close``.
+         bar:
+         - paper: open via ``SimFillRouter`` at ``bar.close``, mutate cash.
+         - live: record a ``TargetPosition``; no state mutation.
       4. ``new_equity`` = cash + Σ mark(open positions).
     """
-    if request.mode != "paper":
+    if request.mode not in ("paper", "live"):
         raise TickError(
             "UNSUPPORTED_MODE", f"mode {request.mode!r} is not supported", retryable=False
         )
+    is_live = request.mode == "live"
 
     t = request.tick_cursor
     try:
@@ -396,6 +461,10 @@ def tick(request: TickRequest) -> TickResponse:
             ))
 
     # 3. Entries: non-held, non-resolved candidates whose entry condition fires.
+    # Both paper and live run the SAME decision path to this branch point.
+    # Paper calls SimFillRouter and mutates state; live records TargetPosition only.
+    live_targets: dict[str, TargetPosition] = {}
+
     if not skip_entries:
         for iid in sorted(bars):
             bar = bars[iid]
@@ -406,6 +475,25 @@ def tick(request: TickRequest) -> TickResponse:
             if not compiled.entry_condition(_bar_to_row(bar, entry_price_col, compiled.side)):
                 continue
 
+            if is_live:
+                # Live boundary: compute pre-fill target, no state mutation.
+                # target_shares = sizing_notional / signal_price (cost-free; fees/
+                # slippage/rounding are the venue adapter's and executor's reality).
+                signal_price = bar.close if compiled.side == "YES" else 1.0 - bar.close
+                sizing_notional = cash * compiled.sizing_value
+                target_shares = (sizing_notional / signal_price) if signal_price > 0 else 0.0
+                # Read instrument_id and source_manifest_id defensively (extra="allow").
+                bar_data = bar.model_dump()
+                live_targets[iid] = TargetPosition(
+                    instrument_id=bar_data.get("instrument_id"),
+                    side=compiled.side,
+                    target_shares=target_shares,
+                    signal_price=signal_price,
+                    source_manifest_id=bar.source_manifest_id,
+                )
+                continue
+
+            # Paper path: call fill router, mutate cash and open_positions.
             result = router.fill(
                 side=compiled.side,
                 yes_close=bar.close,
@@ -496,6 +584,7 @@ def tick(request: TickRequest) -> TickResponse:
         peak_equity=peak_equity,
         consecutive_losses=consecutive_losses,
         cooldown_remaining=cooldown_remaining,
+        target_positions=live_targets if is_live else None,
     )
 
 

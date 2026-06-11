@@ -44,6 +44,7 @@ from .runner import (
     PaperEvent,
     ResolutionMarker,
     SimFillRouter,
+    TargetPosition,
     TickError,
     TickPosition,
     TickRequest,
