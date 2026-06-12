@@ -5,6 +5,21 @@ All notable changes to `batter`. The engine version is part of every
 published receipts are re-run transparently with an `old_hash → new_hash`
 correction record, never silently version-pinned.
 
+## Unreleased (verify CLI labels — ADDITIVE, `result_hash` UNCHANGED)
+
+- **`batter verify` version warning normalized** (#46): the bundle's
+  `engine_version` is stripped of its `<package>@` prefix before identity
+  comparison — Pancake replay bundles stamp the row format `batter@0.9.0`,
+  which false-warned against the bare self-report `0.9.0` on every
+  production bundle. Real identity mismatches still warn.
+- **`batter verify` JSON output carries both version concepts** under
+  distinct names (pancake-production rule 173): `package_version` (PyPI
+  release) + `result_hash_identity` (hash identity); `engine_version`
+  stays as a deprecated alias of `result_hash_identity`. The human line
+  adds `pkg=<package_version>`.
+- CLI-output only — `run_backtest` and every hash are byte-unchanged;
+  `ENGINE_VERSION` stays 0.9.0.
+
 ## 0.6.0 — 2026-06-04 (statistics-correctness + hardening; deliberate `result_hash` break)
 
 - **Permutation p-value** is now `(count + 1) / (n + 1)` (Phipson & Smyth 2010) and

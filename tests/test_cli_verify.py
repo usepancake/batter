@@ -265,6 +265,91 @@ def test_verify_engine_version_mismatch_warning(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Engine version: 'batter@<identity>' row format must NOT false-warn (#46)
+# ---------------------------------------------------------------------------
+
+
+def test_verify_prefixed_matching_version_no_false_warning(tmp_path: Path) -> None:
+    """Pancake replay bundles stamp 'batter@0.9.0' (row format); the bare
+    identity matches, so no warning and no version_mismatch flag (#46)."""
+    import sys as _sys
+    _sys.path.insert(0, str(PROJECT_ROOT))
+    from pancake_engine.__version__ import ENGINE_VERSION
+
+    bundle = _build_inline_bundle(ROWS)
+    bundle["engine_version"] = f"batter@{ENGINE_VERSION}"
+    bundle_path = tmp_path / "bundle.json"
+    bundle_path.write_text(json.dumps(bundle), encoding="utf-8")
+
+    proc = _run_verify(["--bundle", str(bundle_path)])
+    assert proc.returncode == 0, proc.stderr
+    out = json.loads(proc.stdout)
+    assert out["verified"] is True
+    assert "version_mismatch" not in out
+    assert "warning" not in proc.stderr.lower()
+
+
+def test_verify_prefixed_old_version_still_warns(tmp_path: Path) -> None:
+    """Prefix normalization must not swallow REAL identity mismatches."""
+    bundle = _build_inline_bundle(ROWS)
+    bundle["engine_version"] = "batter@0.1.0"
+    bundle_path = tmp_path / "bundle.json"
+    bundle_path.write_text(json.dumps(bundle), encoding="utf-8")
+
+    proc = _run_verify(["--bundle", str(bundle_path)])
+    out = json.loads(proc.stdout)
+    assert out.get("version_mismatch") is True
+
+
+# ---------------------------------------------------------------------------
+# Rule-173 labels: two version concepts, two names (#46)
+# ---------------------------------------------------------------------------
+
+
+def test_verify_output_carries_both_version_labels(tmp_path: Path) -> None:
+    """JSON output names both concepts; engine_version stays as a deprecated
+    alias of result_hash_identity (rule 173 in pancake-production)."""
+    import sys as _sys
+    _sys.path.insert(0, str(PROJECT_ROOT))
+    from pancake_engine.__version__ import ENGINE_VERSION, __version__
+
+    bundle = _build_inline_bundle(ROWS)
+    bundle_path = tmp_path / "bundle.json"
+    bundle_path.write_text(json.dumps(bundle), encoding="utf-8")
+
+    proc = _run_verify(["--bundle", str(bundle_path)])
+    assert proc.returncode == 0, proc.stderr
+    out = json.loads(proc.stdout)
+    assert out["package_version"] == __version__
+    assert out["result_hash_identity"] == ENGINE_VERSION
+    assert out["engine_version"] == out["result_hash_identity"]
+
+
+def test_verify_integrity_error_output_carries_both_version_labels(tmp_path: Path) -> None:
+    """The integrity-failure JSON carries the same labels — the auditor's
+    failure report must be as self-describing as the success report."""
+    import sys as _sys
+    _sys.path.insert(0, str(PROJECT_ROOT))
+    from pancake_engine.__version__ import ENGINE_VERSION, __version__
+
+    bundle = _build_inline_bundle(ROWS)
+    # Tamper AFTER hashes were computed. ROWS is module-shared and an earlier
+    # test already mutated row 0's price to 0.99, so pick a value guaranteed
+    # to differ from whatever it currently is.
+    row = bundle["dataset"]["rows_inline"][0]
+    row["price"] = 0.123 if row["price"] != 0.123 else 0.321
+    bundle_path = tmp_path / "bundle.json"
+    bundle_path.write_text(json.dumps(bundle), encoding="utf-8")
+
+    proc = _run_verify(["--bundle", str(bundle_path)])
+    assert proc.returncode == 1, proc.stderr
+    out = json.loads(proc.stdout)
+    assert out["integrity_error"] is True
+    assert out["package_version"] == __version__
+    assert out["result_hash_identity"] == ENGINE_VERSION
+
+
+# ---------------------------------------------------------------------------
 # URL mode: serve bundle from a local HTTP server → exit 0
 # ---------------------------------------------------------------------------
 
