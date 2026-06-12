@@ -194,9 +194,21 @@ breaking change to the receipt contract.
     or the best cell re-run has < 2 daily returns. Sweeps are not receipts —
     no result_hash impact (oracle-pinned).
 
+0.10.3 (verify CLI labels — ADDITIVE, result_hash UNCHANGED):
+  - `batter verify` version warning prefix-normalized (#46): bundles stamping
+    the row format 'batter@0.9.0' no longer false-warn against the bare
+    self-report '0.9.0'; real identity mismatches still warn.
+  - verify JSON output (success + integrity-failure paths) names both version
+    concepts per pancake-production rule 173: package_version (PyPI release)
+    + result_hash_identity (hash identity); engine_version kept as deprecated
+    alias. Human line adds pkg=<package_version>.
+  - Removes a dead crypto_ohlcv import in runner/tick.py that had main's ruff
+    gate red since 0.10.x.
+  - CLI-output only: run_backtest and every hash byte-unchanged;
+    ENGINE_VERSION stays 0.9.0.
 """
 
-__version__ = "0.10.2"
+__version__ = "0.10.3"
 ENGINE = "batter"
 # 0.9.0 is a DELIBERATE result_hash break: MetricsPM gains calibration_ece (hashed).
 ENGINE_VERSION = "0.9.0"

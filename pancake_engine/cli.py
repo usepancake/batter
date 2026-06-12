@@ -16,7 +16,7 @@ import urllib.error
 import urllib.request
 from typing import Optional
 
-from .__version__ import ENGINE, ENGINE_VERSION
+from .__version__ import ENGINE, ENGINE_VERSION, __version__ as PACKAGE_VERSION
 from .config import BacktestConfig, WalkforwardConfig
 from .hash import sha256_canonical
 from .io.dump import dump_result
@@ -166,6 +166,17 @@ def _sniff_engine_version(bundle: dict) -> "str | None":
     return None
 
 
+def _normalize_engine_version(value: str) -> str:
+    """Strip a ``<package>@`` prefix before identity comparison (#46).
+
+    Pancake replay bundles and result rows stamp the row format
+    ``batter@0.9.0`` while the engine self-reports the bare hash identity
+    ``0.9.0`` — comparing the raw strings warned on every production
+    bundle even when the identities matched.
+    """
+    return value.split("@", 1)[1] if "@" in value else value
+
+
 def _dataset_schema_dict_from_dataset(dataset: EvidenceDataset) -> dict:
     """Round-trip the dataset schema through pydantic to get a canonical-shape dict."""
     return dataset.dataset_schema.model_dump(exclude_none=True, mode="python")
@@ -297,6 +308,11 @@ def cmd_verify(args: argparse.Namespace) -> int:
             "verified": False,
             "expected": expected_hash,
             "computed": None,
+            # Rule-173 labels (pancake-production): two version concepts,
+            # two names. engine_version stays as a deprecated alias of
+            # result_hash_identity.
+            "package_version": PACKAGE_VERSION,
+            "result_hash_identity": ENGINE_VERSION,
             "engine_version": ENGINE_VERSION,
             "num_trades": None,
             "integrity_error": True,
@@ -308,7 +324,7 @@ def cmd_verify(args: argparse.Namespace) -> int:
     declared_engine_version = _sniff_engine_version(raw)
     version_mismatch = (
         declared_engine_version is not None
-        and declared_engine_version != ENGINE_VERSION
+        and _normalize_engine_version(declared_engine_version) != ENGINE_VERSION
     )
     if version_mismatch:
         print(
@@ -341,7 +357,8 @@ def cmd_verify(args: argparse.Namespace) -> int:
     print(
         f"{human_verdict}  expected={expected_hash[:16]}…  "
         f"computed={computed_hash[:16]}…  "
-        f"engine={ENGINE_VERSION}  trades={result.metrics.standard.num_trades}",
+        f"engine={ENGINE_VERSION}  pkg={PACKAGE_VERSION}  "
+        f"trades={result.metrics.standard.num_trades}",
         file=sys.stderr,
     )
 
@@ -349,6 +366,11 @@ def cmd_verify(args: argparse.Namespace) -> int:
         "verified": verified,
         "expected": expected_hash,
         "computed": computed_hash,
+        # Rule-173 labels (pancake-production): two version concepts, two
+        # names. engine_version stays as a deprecated alias of
+        # result_hash_identity.
+        "package_version": PACKAGE_VERSION,
+        "result_hash_identity": ENGINE_VERSION,
         "engine_version": ENGINE_VERSION,
         "num_trades": result.metrics.standard.num_trades,
     }

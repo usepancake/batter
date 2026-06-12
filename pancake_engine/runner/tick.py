@@ -30,7 +30,6 @@ from ..__version__ import ENGINE_VERIFICATION_GRADE
 from ..compile import compile_spec
 from ..compile.condition import Condition, compile_condition
 from ..crypto_ohlcv.compile import compile_crypto_ohlcv_spec
-from ..crypto_ohlcv.indicators import compute_indicator
 from ..crypto_ohlcv.types import CryptoOhlcvSpec
 from ..types import EvidenceSpec
 from .fill import BPS_DIVISOR, Fill, FillRejection, SimFillRouter
