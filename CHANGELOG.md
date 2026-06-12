@@ -5,7 +5,7 @@ All notable changes to `batter`. The engine version is part of every
 published receipts are re-run transparently with an `old_hash → new_hash`
 correction record, never silently version-pinned.
 
-## Unreleased (verify CLI labels — ADDITIVE, `result_hash` UNCHANGED)
+## 0.10.3 — 2026-06-12 (verify CLI labels — ADDITIVE, `result_hash` UNCHANGED)
 
 - **`batter verify` version warning normalized** (#46): the bundle's
   `engine_version` is stripped of its `<package>@` prefix before identity
