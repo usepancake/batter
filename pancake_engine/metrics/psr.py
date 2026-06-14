@@ -183,23 +183,29 @@ def return_moments(returns: list[float]) -> tuple[float, float, float, int] | No
     ``sr_hat`` uses sample std (ddof=1); ``skew`` / ``kurtosis`` are population
     standardised central moments (kurtosis non-excess). ``None`` when ``n < 2``
     or the return series has zero variance (no Sharpe to speak of).
+
+    Degrades to ``None`` on ``OverflowError`` (e.g. denormal entry_price drives
+    returns to ~1e+200; squaring overflows float64). F2 fix — audit 2026-06-14.
     """
     n = len(returns)
     if n < 2:
         return None
-    mean = math.fsum(returns) / n
-    m2 = math.fsum((r - mean) ** 2 for r in returns) / n
-    if m2 <= 0.0:
+    try:
+        mean = math.fsum(returns) / n
+        m2 = math.fsum((r - mean) ** 2 for r in returns) / n
+        if m2 <= 0.0:
+            return None
+        m3 = math.fsum((r - mean) ** 3 for r in returns) / n
+        m4 = math.fsum((r - mean) ** 4 for r in returns) / n
+        std_sample = math.sqrt(m2 * n / (n - 1))  # ddof=1, matches sharpe_ratio
+        if std_sample == 0.0:
+            return None
+        sr_hat = mean / std_sample
+        skew = m3 / (m2 ** 1.5)
+        kurtosis = m4 / (m2 ** 2)  # non-excess (normal == 3)
+        return sr_hat, skew, kurtosis, n
+    except OverflowError:
         return None
-    m3 = math.fsum((r - mean) ** 3 for r in returns) / n
-    m4 = math.fsum((r - mean) ** 4 for r in returns) / n
-    std_sample = math.sqrt(m2 * n / (n - 1))  # ddof=1, matches sharpe_ratio
-    if std_sample == 0.0:
-        return None
-    sr_hat = mean / std_sample
-    skew = m3 / (m2 ** 1.5)
-    kurtosis = m4 / (m2 ** 2)  # non-excess (normal == 3)
-    return sr_hat, skew, kurtosis, n
 
 
 def psr_sharpe_hat(returns: list[float]) -> float | None:
