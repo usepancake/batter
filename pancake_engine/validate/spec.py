@@ -70,15 +70,18 @@ def validate_spec(spec: EvidenceSpec) -> ValidationVerdict:
     # feature_equal, unknown node keys). Running this before compile in run_backtest
     # means bad specs return a clean blocked verdict instead of an uncaught ValueError.
     # F1 fix — audit 2026-06-14.
+    # entry/yes_payoff are mandatory: lint unconditionally so an empty/missing
+    # `when` ({} -> "unknown condition node keys") blocks cleanly instead of
+    # raising in compile_condition. exit is optional: only lint when present.
     _condition_fields = [
         ("strategy.entry.when", _when(spec.strategy.entry)),
         ("strategy.yes_payoff.when", _when(spec.strategy.yes_payoff)),
-        ("strategy.exit.when", exit_when),
     ]
+    if spec.strategy.exit is not None:
+        _condition_fields.append(("strategy.exit.when", exit_when))
     for field_path, when_node in _condition_fields:
-        if when_node:  # skip empty {}
-            for msg in lint_condition(when_node):
-                v.add_error("E_EVIDENCE_SPEC_INVALID", msg, field=field_path)
+        for msg in lint_condition(when_node):
+            v.add_error("E_EVIDENCE_SPEC_INVALID", msg, field=field_path)
 
     if spec.strategy.side not in ("YES", "NO"):
         v.add_error(

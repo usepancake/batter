@@ -215,3 +215,47 @@ def _assert_metrics_finite_or_none(r: object, *, label: str) -> None:
         assert math.isfinite(float(val)), (
             f"{label}: {field} must be None or finite, got {val!r}"
         )
+
+
+# ---------------------------------------------------------------------------
+# F1(d) — empty {} when-nodes on the MANDATORY entry / yes_payoff blocks.
+# make_spec()'s `entry_when or {default}` cannot express an empty when, so we
+# build the spec directly. These previously raised in compile_condition
+# (residual gap after the first F1 pass); must now block cleanly.
+# ---------------------------------------------------------------------------
+
+from ._runner_helpers import EvidenceSpec, SCHEMA_COLUMNS  # noqa: E402
+
+_VALID_ENTRY = {"feature": "alpha", "gte": 2.0}
+_VALID_YP = {"feature_equal": {"a": "target", "b": "outcome"}}
+
+
+def _spec_with_whens(entry_when: dict, yes_payoff_when: dict) -> EvidenceSpec:
+    """Build a spec with EXACT when-nodes (bypasses make_spec's `or default`)."""
+    return EvidenceSpec.model_validate({
+        "spec_family": "pancake-evidence-spec",
+        "spec_version": "0.1",
+        "name": "test-spec",
+        "evidence_dataset_id": "ev_runner_test",
+        "schema_requirements": {"required_columns": SCHEMA_COLUMNS},
+        "strategy": {
+            "side": "YES",
+            "entry": {"when": entry_when},
+            "yes_payoff": {"when": yes_payoff_when},
+            "sizing": {"mode": "fixed_fraction", "value": 0.1},
+        },
+        "costs": {"slippage_bps": 0.0, "fee_bps": 0.0},
+        "starting_capital": 1000.0,
+    })
+
+
+def test_f1d_empty_entry_when_returns_blocked_not_raises() -> None:
+    """entry.when = {} must block cleanly, not raise (residual F1 gap)."""
+    r = run_backtest(_spec_with_whens({}, _VALID_YP), _BASE_DS, _BASE_CFG)
+    _assert_clean_block(r, label="empty_entry_when")
+
+
+def test_f1d_empty_yes_payoff_when_returns_blocked_not_raises() -> None:
+    """yes_payoff.when = {} must block cleanly, not raise (residual F1 gap)."""
+    r = run_backtest(_spec_with_whens(_VALID_ENTRY, {}), _BASE_DS, _BASE_CFG)
+    _assert_clean_block(r, label="empty_yes_payoff_when")
