@@ -18,7 +18,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-__all__ = ["compile_condition", "extract_referenced_columns", "Condition"]
+__all__ = ["compile_condition", "extract_referenced_columns", "lint_condition", "Condition"]
 
 Row = dict[str, Any]
 Condition = Callable[[Row], bool]
@@ -59,6 +59,92 @@ def extract_referenced_columns(node: dict[str, Any]) -> set[str]:
                 cols.add(pair["b"])
 
     return cols
+
+
+def lint_condition(node: Any) -> list[str]:
+    """Walk a condition AST and return all defects that ``compile_condition`` would raise on.
+
+    Returns a list of human-readable error strings (empty = valid). Never raises.
+    Covers:
+    - Non-dict node
+    - empty ``all_of`` (vacuously always-true)
+    - ``feature`` node with unknown operator keys (typos like ``gt``)
+    - ``feature`` node with no gte/lte/eq (bare feature reference)
+    - ``feature_equal`` missing ``a``/``b`` or non-string values
+    - Unknown top-level node keys
+
+    Recurses into ``all_of``, ``any_of``, and ``not`` children.
+    """
+    errors: list[str] = []
+    _lint_node(node, errors)
+    return errors
+
+
+def _lint_node(node: Any, errors: list[str]) -> None:
+    """Recursive helper — appends error strings to *errors*."""
+    if not isinstance(node, dict):
+        errors.append(
+            f"E_EVIDENCE_SPEC_INVALID: condition node must be a dict, got {type(node).__name__!r}"
+        )
+        return
+
+    if "all_of" in node:
+        children = node["all_of"]
+        if not isinstance(children, list) or len(children) == 0:
+            errors.append(
+                "E_EVIDENCE_SPEC_INVALID: all_of requires at least one child condition"
+            )
+        else:
+            for child in children:
+                _lint_node(child, errors)
+        return
+
+    if "any_of" in node:
+        for child in node.get("any_of") or []:
+            _lint_node(child, errors)
+        return
+
+    if "not" in node:
+        _lint_node(node["not"], errors)
+        return
+
+    if "feature" in node:
+        col = node["feature"]
+        if not isinstance(col, str):
+            errors.append(
+                f"E_EVIDENCE_SPEC_INVALID: feature must be a string column name, got {col!r}"
+            )
+        unknown = set(node.keys()) - _FEATURE_NODE_KEYS
+        if unknown:
+            errors.append(
+                f"E_EVIDENCE_SPEC_INVALID: unknown operator key(s) in feature node: "
+                f"{sorted(unknown)!r}; valid operators are gte, lte, eq"
+            )
+        elif node.get("gte") is None and node.get("lte") is None and node.get("eq") is None:
+            errors.append(
+                "E_EVIDENCE_SPEC_INVALID: feature node requires at least one of gte/lte/eq "
+                "(a bare feature reference matches every numeric row)"
+            )
+        return
+
+    if "feature_equal" in node:
+        pair = node["feature_equal"]
+        if not isinstance(pair, dict) or "a" not in pair or "b" not in pair:
+            errors.append(
+                f"E_EVIDENCE_SPEC_INVALID: feature_equal requires {{'a': str, 'b': str}}, got {pair!r}"
+            )
+        else:
+            a, b = pair["a"], pair["b"]
+            if not isinstance(a, str) or not isinstance(b, str):
+                errors.append(
+                    f"E_EVIDENCE_SPEC_INVALID: feature_equal 'a' and 'b' must be string column "
+                    f"names, got a={a!r}, b={b!r}"
+                )
+        return
+
+    errors.append(
+        f"E_EVIDENCE_SPEC_INVALID: unknown condition node keys: {sorted(node.keys())!r}"
+    )
 
 
 _FEATURE_NODE_KEYS = frozenset({"feature", "gte", "lte", "eq"})

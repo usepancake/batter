@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..compile.condition import extract_referenced_columns
+from ..compile.condition import extract_referenced_columns, lint_condition
 from ..fills.registry import resolve as _resolve_fill_model
 from ..types import EvidenceSpec
 from .verdict import ValidationVerdict
@@ -64,6 +64,21 @@ def validate_spec(spec: EvidenceSpec) -> ValidationVerdict:
             f"column silently evaluates False at runtime (NO-side → wins every trade).",
             field="strategy",
         )
+
+    # Lint condition ASTs for structural defects that compile_condition would raise on
+    # (empty all_of, unknown operator keys, bare feature with no operator, malformed
+    # feature_equal, unknown node keys). Running this before compile in run_backtest
+    # means bad specs return a clean blocked verdict instead of an uncaught ValueError.
+    # F1 fix — audit 2026-06-14.
+    _condition_fields = [
+        ("strategy.entry.when", _when(spec.strategy.entry)),
+        ("strategy.yes_payoff.when", _when(spec.strategy.yes_payoff)),
+        ("strategy.exit.when", exit_when),
+    ]
+    for field_path, when_node in _condition_fields:
+        if when_node:  # skip empty {}
+            for msg in lint_condition(when_node):
+                v.add_error("E_EVIDENCE_SPEC_INVALID", msg, field=field_path)
 
     if spec.strategy.side not in ("YES", "NO"):
         v.add_error(

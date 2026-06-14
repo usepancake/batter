@@ -188,14 +188,24 @@ def compute_pm(
     returns = [t.return_pct for t in trades]
     mean_r = math.fsum(returns) / len(returns)
     if len(returns) >= 2:
-        var = math.fsum((r - mean_r) ** 2 for r in returns) / (len(returns) - 1)
-        std_r: Optional[float] = math.sqrt(var)
+        # Guard against OverflowError when per-trade return_pct is denormal-large
+        # (e.g. entry_price=1e-203 → return_pct≈1e+200; squaring overflows float64).
+        # Mirror the AF-3 overflow-hardening pattern from standard.py: degrade to
+        # None rather than raising. F2 fix — audit 2026-06-14.
+        try:
+            var = math.fsum((r - mean_r) ** 2 for r in returns) / (len(returns) - 1)
+            std_r: Optional[float] = math.sqrt(var)
+        except OverflowError:
+            std_r = None
     else:
         std_r = None
 
     sharpe_trade: Optional[float] = None
     if std_r is not None and std_r > 0:
-        sharpe_trade = mean_r / std_r  # trade-level, NOT annualized (cadence unknown)
+        try:
+            sharpe_trade = mean_r / std_r  # trade-level, NOT annualized (cadence unknown)
+        except OverflowError:
+            sharpe_trade = None
 
     brier_crowd = brier_crowd_score(trades)
     # brier_strategy is null in PR-1 — rule-based spec emits no independent probability.

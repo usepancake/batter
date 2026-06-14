@@ -77,14 +77,22 @@ def cagr_piecewise(
 
 
 def sharpe_ratio(daily_returns: list[float]) -> float | None:
-    """Annualized Sharpe with rf=0. ``None`` if n<2 or std=0."""
+    """Annualized Sharpe with rf=0. ``None`` if n<2 or std=0.
+
+    Degrades to ``None`` on OverflowError (e.g. denormal entry_price drives
+    equity to float64-overflow territory; mirrors CAGR_EXTRAPOLATION_OVERFLOW
+    handling). F2 fix — audit 2026-06-14.
+    """
     if len(daily_returns) < 2:
         return None
-    mean = _mean(daily_returns)
-    std = _stdev_sample(daily_returns, mean)
-    if std == 0:
+    try:
+        mean = _mean(daily_returns)
+        std = _stdev_sample(daily_returns, mean)
+        if std == 0:
+            return None
+        return (mean / std) * math.sqrt(ANNUALIZATION_DAYS)
+    except OverflowError:
         return None
-    return (mean / std) * math.sqrt(ANNUALIZATION_DAYS)
 
 
 def sortino_ratio(daily_returns: list[float]) -> float | None:
@@ -95,20 +103,24 @@ def sortino_ratio(daily_returns: list[float]) -> float | None:
     which divides by ``len(negs)``. Documented as D-13.
 
     ``None`` if n<2, no negative observations, or denominator is 0.
+    Degrades to ``None`` on OverflowError. F2 fix — audit 2026-06-14.
     """
     if len(daily_returns) < 2:
         return None
     negs = [r for r in daily_returns if r < 0]
     if not negs:
         return None
-    # n = full sample size (true Sortino, Sortino & Price 1994); NOT len(negs) — D-13
-    n = len(daily_returns)
-    downside_var = math.fsum(r * r for r in negs) / n
-    ds = math.sqrt(downside_var)
-    if ds == 0:
+    try:
+        # n = full sample size (true Sortino, Sortino & Price 1994); NOT len(negs) — D-13
+        n = len(daily_returns)
+        downside_var = math.fsum(r * r for r in negs) / n
+        ds = math.sqrt(downside_var)
+        if ds == 0:
+            return None
+        mean = _mean(daily_returns)
+        return (mean / ds) * math.sqrt(ANNUALIZATION_DAYS)
+    except OverflowError:
         return None
-    mean = _mean(daily_returns)
-    return (mean / ds) * math.sqrt(ANNUALIZATION_DAYS)
 
 
 def win_rate_strict(trades: list[Trade]) -> float | None:
@@ -227,7 +239,13 @@ def _mean(xs: list[float]) -> float:
 
 
 def _stdev_sample(xs: list[float], mean: float) -> float:
-    """Sample stdev with Bessel correction (n-1). Matches TS."""
+    """Sample stdev with Bessel correction (n-1). Matches TS.
+
+    Raises ``OverflowError`` if squaring the deviations overflows float64
+    (e.g. denormal-price returns ~1e+200). Callers that need a graceful
+    fallback (sharpe_ratio, sortino_ratio) wrap this in try/except.
+    F2 fix — audit 2026-06-14 documents the caller-level guard pattern.
+    """
     if len(xs) < 2:
         return 0.0
     var = math.fsum((x - mean) ** 2 for x in xs) / (len(xs) - 1)
