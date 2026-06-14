@@ -206,9 +206,20 @@ breaking change to the receipt contract.
     gate red since 0.10.x.
   - CLI-output only: run_backtest and every hash byte-unchanged;
     ENGINE_VERSION stays 0.9.0.
+
+0.10.4 (spec-rejection + metric-overflow hardening — result_hash UNCHANGED):
+  - validate_spec now lints condition ASTs (lint_condition): malformed conditions
+    (empty all_of, unknown/typo operator keys, bare feature, empty when-nodes,
+    malformed feature_equal) return a clean blocked verdict instead of raising an
+    uncaught ValueError (which the prod shim turned into HTTP 500). (#49)
+  - PM / standard / PSR / permutation metric paths degrade to None on OverflowError
+    instead of raising, when a denormal entry_price (e.g. 1e-203) drives a return
+    to ~1e+200 and squaring overflows float64. (#49)
+  - Robustness-only: run_backtest and every hash byte-unchanged for valid specs;
+    ENGINE_VERSION stays 0.9.0.
 """
 
-__version__ = "0.10.3"
+__version__ = "0.10.4"
 ENGINE = "batter"
 # 0.9.0 is a DELIBERATE result_hash break: MetricsPM gains calibration_ece (hashed).
 ENGINE_VERSION = "0.9.0"
