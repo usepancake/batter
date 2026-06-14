@@ -259,3 +259,25 @@ def test_f1d_empty_yes_payoff_when_returns_blocked_not_raises() -> None:
     """yes_payoff.when = {} must block cleanly, not raise (residual F1 gap)."""
     r = run_backtest(_spec_with_whens(_VALID_ENTRY, {}), _BASE_DS, _BASE_CFG)
     _assert_clean_block(r, label="empty_yes_payoff_when")
+
+
+# ---------------------------------------------------------------------------
+# F2(b) — denormal price with >=10 trades exercises the PERMUTATION path.
+# The first F2 test used 2 rows, so permutation_p_sharpe bailed early (n<_MIN_N)
+# and permutation._sharpe's unguarded variance was never hit. This >=10-row case
+# drives the permutation overflow that the first pass missed.
+# ---------------------------------------------------------------------------
+
+def test_f2b_denormal_price_with_inference_permutation_no_raise() -> None:
+    """>=10 trades + a denormal entry price must NOT raise via permutation._sharpe."""
+    rows = [
+        row(mkt=f"mp/{i}", dec_ts=i * 2 * DAY, res_ts=i * 2 * DAY + DAY,
+            price=(1e-203 if i == 7 else 0.5), outcome=1, alpha=3.0, target=1)
+        for i in range(14)
+    ]
+    ds = make_dataset(rows, dataset_id="ds_denormal_perm")
+    spec = make_spec(entry_when={"feature": "alpha", "gte": 2.0}, slip_bps=0.0, fee_bps=0.0)
+    cfg = BacktestConfig(observation_time=40 * DAY)
+    r = run_backtest(spec, ds, cfg)  # with_inference=True default → runs permutation
+    assert r.metrics.standard.num_trades >= 10, "expected >=10 trades to reach the permutation path"
+    _assert_metrics_finite_or_none(r, label="denormal_permutation")

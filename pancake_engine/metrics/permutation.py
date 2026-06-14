@@ -158,13 +158,21 @@ def permutation_p_sharpe(
 
 
 def _sharpe(daily_returns: list[float]) -> float | None:
-    """Annualized Sharpe with rf=0, Bessel-corrected std. Returns None if n<2 or std=0."""
+    """Annualized Sharpe with rf=0, Bessel-corrected std. Returns None if n<2 or std=0.
+
+    Degrades to ``None`` on OverflowError (a denormal entry_price drives a daily
+    return to ~1e+200; squaring overflows float64). Both callers already treat
+    None as "skip". F2 fix — audit 2026-06-14.
+    """
     if len(daily_returns) < 2:
         return None
     n = len(daily_returns)
-    mean = math.fsum(daily_returns) / n
-    var = math.fsum((r - mean) ** 2 for r in daily_returns) / (n - 1)
-    std = math.sqrt(var)
-    if std == 0.0:
+    try:
+        mean = math.fsum(daily_returns) / n
+        var = math.fsum((r - mean) ** 2 for r in daily_returns) / (n - 1)
+        std = math.sqrt(var)
+        if std == 0.0:
+            return None
+        return (mean / std) * math.sqrt(_ANNUALIZATION_DAYS)
+    except OverflowError:
         return None
-    return (mean / std) * math.sqrt(_ANNUALIZATION_DAYS)
