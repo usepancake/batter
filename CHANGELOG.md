@@ -5,6 +5,24 @@ All notable changes to `batter`. The engine version is part of every
 published receipts are re-run transparently with an `old_hash → new_hash`
 correction record, never silently version-pinned.
 
+## 0.10.4 — 2026-06-14 (spec-rejection + metric-overflow hardening — ADDITIVE, `result_hash` UNCHANGED)
+
+- **Malformed conditions return a clean blocked verdict instead of raising** (#49):
+  `validate_spec` now lints the entry / yes_payoff / exit condition ASTs (new
+  `lint_condition`) for the defects `compile_condition` would raise on — empty
+  `all_of`, unknown/typo operator keys (`gt` vs `gte`), bare feature nodes, empty
+  `{}` when-nodes, malformed `feature_equal`. These previously surfaced as an
+  uncaught `ValueError` (HTTP 500 via the prod shim); they now produce a normal
+  `E_EVIDENCE_SPEC_INVALID` blocked result.
+- **Metric paths harden against denormal-price overflow** (#49): a denormal
+  `entry_price` (e.g. `1e-203`) passes the `0 < price < 1` guard but drives a
+  per-trade return to ~`1e+200`; squaring it overflowed float64 and raised
+  `OverflowError`. The PM, standard (Sharpe/Sortino), PSR, and permutation
+  metrics now degrade the affected field to `null` on `OverflowError` instead of
+  raising.
+- Robustness-only — `run_backtest` and every hash are byte-unchanged for valid
+  specs; `ENGINE_VERSION` stays 0.9.0.
+
 ## 0.10.3 — 2026-06-12 (verify CLI labels — ADDITIVE, `result_hash` UNCHANGED)
 
 - **`batter verify` version warning normalized** (#46): the bundle's
